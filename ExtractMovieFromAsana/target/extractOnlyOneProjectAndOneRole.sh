@@ -1,0 +1,2 @@
+#!/bin/bash
+java -cp extract-asana-events-jar-with-dependencies.jar at.ac.wu.asana.tryout.ExtractStructuralDataChanges -csv "/home/saimir/ownCloud/Holacracy/API/sdch.csv" -pat  "0/7506773dd733d4efc682cd23d5949372" -ws "Springest" -p "Organisations Roles" -r "Rep Link (Organisations)"
