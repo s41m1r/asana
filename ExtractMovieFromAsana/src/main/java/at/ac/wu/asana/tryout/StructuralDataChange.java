@@ -28,9 +28,12 @@ public class StructuralDataChange {
 	private String eventId;
 	private String workspaceId;
 	private Boolean isSubtask;
+//	private Boolean isProbableRole;
 	private String workspaceName;
 	private String projectName;
 	private String parentTask;
+	private String rawDataText;
+	private String messageType;
 
 	public String getParentTask() {
 		return parentTask;
@@ -76,11 +79,13 @@ public class StructuralDataChange {
 		taskName = task.name;
 		if(isSubtask)
 			parentTask = task.parent.name;
+		rawDataText = story.text;
+		setMessageType(story.type); 
 	}
 	
 	public static String[] csvHeader(){
 		return new String[]{"date", "time", "role",
-				"actor","action", "pathToHere", "taskId", 
+				"actor","action", "taskId", 
 				"taskName",
 				"newAssignee",
 				"eventId",
@@ -90,6 +95,9 @@ public class StructuralDataChange {
 				"workspaceName",
 				"isSubtask",
 				"parentTask",
+				"pathToHere",
+				"rawDataText",
+				"messageType",
 				"timestamp"};
 	}
 
@@ -100,7 +108,6 @@ public class StructuralDataChange {
 				role,
 				actor,
 				action,
-				pathToHere,
 				taskId,
 				taskName,
 				newAssignee,
@@ -111,6 +118,9 @@ public class StructuralDataChange {
 				workspaceName,
 				isSubtask.toString(),
 				parentTask,
+				pathToHere,
+				rawDataText,
+				messageType,
 				dateTime.toString()};
 	}
 
@@ -191,6 +201,8 @@ public class StructuralDataChange {
 			return AsanaActions.CHANGE;
 		else if(text.startsWith("duplicate")) //date change?
 			return AsanaActions.CHANGE;
+		else if(text.startsWith("move")) //date change?
+			return AsanaActions.MOVE;
 		else throw new RuntimeException("Unkown text:"+text);
 	}
 
@@ -271,6 +283,22 @@ public class StructuralDataChange {
 
 	public void setTaskName(String taskName) {
 		this.taskName = taskName;
+	}
+
+	public String getRawDataText() {
+		return rawDataText;
+	}
+
+	public void setRawDataText(String rawDataText) {
+		this.rawDataText = rawDataText;
+	}
+
+	public String getMessageType() {
+		return messageType;
+	}
+
+	public void setMessageType(String messageType) {
+		this.messageType = messageType;
 	}
 
 }
