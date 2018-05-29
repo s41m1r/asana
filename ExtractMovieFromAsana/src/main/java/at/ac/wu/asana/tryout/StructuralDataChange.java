@@ -201,8 +201,10 @@ public class StructuralDataChange {
 			return AsanaActions.CHANGE;
 		else if(text.startsWith("duplicate")) //date change?
 			return AsanaActions.CHANGE;
-		else if(text.startsWith("move")) //date change?
+		else if(text.startsWith("move")) 
 			return AsanaActions.MOVE;
+		else if(text.startsWith("attached")) //date change?
+			return AsanaActions.ATTACH;
 		else throw new RuntimeException("Unkown text:"+text);
 	}
 
@@ -226,7 +228,7 @@ public class StructuralDataChange {
 				newAssignee=""+me;
 		}
 		else if(type.equals("comment")){
-			action = AsanaActions.CHANGE;
+			action = AsanaActions.COMMENT;
 		}
 			
 		else throw new RuntimeException("I found a new action type!"+type);

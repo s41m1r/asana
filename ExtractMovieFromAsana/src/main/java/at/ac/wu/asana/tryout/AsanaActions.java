@@ -11,4 +11,6 @@ public class AsanaActions {
 	public static final String UNASSIGN = "unassign";
 	public static final String INCOMPLETE = "incomplete";
 	public static final String MOVE = "move";
+	public static final String ATTACH = "attach";
+	public static final String COMMENT = "comment";
 }

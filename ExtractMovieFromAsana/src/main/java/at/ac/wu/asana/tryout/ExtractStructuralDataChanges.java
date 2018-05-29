@@ -45,13 +45,23 @@ public class ExtractStructuralDataChanges {
 	    }
 
 //		asanaChangesToCSV(App.PAT_SAIMIR, "InfoBiz", "");
-		asanaChangesToCSV(
-				line.getOptionValue("pat"), 
-				line.getOptionValue("ws"), 
-				line.getOptionValue("csv"),
-				line.getOptionValue("p"),
-				line.getOptionValue("r")
-				);
+	    String pat = line.getOptionValue("pat");
+		String ws = line.getOptionValue("ws");
+		String csv = line.getOptionValue("csv");
+		String p = line.getOptionValue("p");
+		String r = line.getOptionValue("r");
+		String ots = line.getOptionValue("ots");
+		
+		
+	    System.out.println("Extraction started with parameters "+"\npat:"+pat+""
+	    		+ "\nws:" +ws + "," 
+	    		+ "\ncsv:" +csv + ","
+	    		+ "\np:" +p + ","
+	    		+ "\nr:" +r + ","
+	    		+ "\nots:"+ ots
+	    		);
+	    
+		asanaChangesToCSV(pat,ws,csv,p,r,(ots!=null));
 		
 		System.out.println("All done in "+ getElapsedTime(System.currentTimeMillis(), start));
 	}
@@ -74,7 +84,7 @@ public class ExtractStructuralDataChanges {
 	}
 
 	public static void asanaChangesToCSV(String pat, String workspaceName, 
-			String csvOutFile, String specificProject, String specificTask){
+			String csvOutFile, String specificProject, String specificTask, Boolean onlyTaskStories){
 		Client client = Client.accessToken(pat);
 		Workspace workspace = null;
 		Iterable<Workspace> workspaces = client.workspaces.findAll();
@@ -97,10 +107,10 @@ public class ExtractStructuralDataChanges {
 
 			csvWriter.writeNext(header);
 			
-			System.out.println("Extraction started.");
-			System.out.print("Looking for "+ specificProject + "... ");
+			System.out.print("Looking for "+ specificProject + " ... ");
 			for (Project project : projects) {
-				if(opts.getOption("p").getValue() != null){
+				
+				if(specificProject != null){
 					if(!project.name.contains(specificProject)){
 						continue;
 					}
@@ -110,17 +120,17 @@ public class ExtractStructuralDataChanges {
 				List<Task> tasks = client.tasks.findByProject(project.id).execute();
 				List<Task> allTasksAndSubtasks = null;
 				
-				if(opts.getOption("ots")!=null){
-					allTasksAndSubtasks = getAllNestedSubtasks(client, tasks);
+				if(onlyTaskStories){
+					allTasksAndSubtasks = tasks;
 				}
 				else{
-					allTasksAndSubtasks = tasks;
+					allTasksAndSubtasks = getAllNestedSubtasks(client, tasks);
 				}
 				
 				System.out.println("Scanning "+project.name+ " containing "+allTasksAndSubtasks.size()+ " tasks and subtasks.");
 //				List<StructuralDataChange> changes = new ArrayList<StructuralDataChange>();
 				for (Task task : allTasksAndSubtasks) {//find the stories and create the StructuralDataChanges
-					if(opts.getOption("r").getValue()!=null){
+					if(specificTask!=null){
 						if(!task.name.contains(specificTask))
 							continue;
 					}
