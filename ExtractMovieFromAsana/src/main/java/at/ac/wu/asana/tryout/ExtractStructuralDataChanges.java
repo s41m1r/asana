@@ -37,7 +37,7 @@ public class ExtractStructuralDataChanges {
 
 	    try {
 	        // parse the command line arguments
-	        line = commandLineParser.parse(options, args );
+	        line = commandLineParser.parse(options, args);
 	    }
 	    catch(ParseException exp ) {
 	        // oops, something went wrong
@@ -62,8 +62,14 @@ public class ExtractStructuralDataChanges {
 		Option wspace = new Option("ws", "workspace", true, "use given workspace name");
 		Option project = new Option("p", "project", true, "use given project name");
 		Option role = new Option("r", "role", true, "use given role name");
+		Option onlyTaskStories = new Option("ots", "onlyTaskStories", false, "use given role name");
 		
-		opts.addOption(wspace).addOption(csvOutFile).addOption(pat).addOption(project).addOption(role);
+		opts.addOption(wspace).
+		addOption(csvOutFile).
+		addOption(pat).
+		addOption(project).
+		addOption(role).addOption(onlyTaskStories);
+		
 		return opts;
 	}
 
@@ -90,22 +96,36 @@ public class ExtractStructuralDataChanges {
 			String[] header = StructuralDataChange.csvHeader();
 
 			csvWriter.writeNext(header);
-
+			
+			System.out.println("Extraction started.");
+			System.out.print("Looking for "+ specificProject + "... ");
 			for (Project project : projects) {
-				if(opts.hasOption("p")){
+				if(opts.getOption("p").getValue() != null){
 					if(!project.name.contains(specificProject)){
 						continue;
 					}
 				}
+				System.out.println("Found.");
+				System.out.println("Retrieving all the tasks and subtasks.");
 				List<Task> tasks = client.tasks.findByProject(project.id).execute();
-				List<Task> allTasksAndSubtasks = getAllNestedSubtasks(client, tasks);
+				List<Task> allTasksAndSubtasks = null;
+				
+				if(opts.getOption("ots")!=null){
+					allTasksAndSubtasks = getAllNestedSubtasks(client, tasks);
+				}
+				else{
+					allTasksAndSubtasks = tasks;
+				}
+				
+				System.out.println("Scanning "+project.name+ " containing "+allTasksAndSubtasks.size()+ " tasks and subtasks.");
 //				List<StructuralDataChange> changes = new ArrayList<StructuralDataChange>();
 				for (Task task : allTasksAndSubtasks) {//find the stories and create the StructuralDataChanges
-					if(opts.hasOption("r")){
+					if(opts.getOption("r").getValue()!=null){
 						if(!task.name.contains(specificTask))
 							continue;
 					}
 					CollectionRequest<Story> stories = client.stories.findByTask(task.id);
+					System.out.println("Extracting stories (events) of "+task.name);
 					for (Story story : stories) {
 						StructuralDataChange change = new StructuralDataChange(task, story, client.users.me().execute().name.trim());
 						change.setProjectId(project.id);
@@ -125,7 +145,8 @@ public class ExtractStructuralDataChanges {
 			e.printStackTrace();
 		}
 	}
-
+	
+	
 	public static List<Task> getAllNestedSubtasks(Client client, List<Task> roots){//recursive
 		List<Task> allTasks = new ArrayList<Task>();
 		try {
@@ -178,7 +199,8 @@ public class ExtractStructuralDataChanges {
 		long second = (elapsed / 1000) % 60;
 		long minute = (elapsed / (1000 * 60)) % 60;
 		long hour = (elapsed / (1000 * 60 * 60)) % 24;
+		long day = (elapsed / (1000 * 60 * 60 * 24));
 		
-		return String.format("%02d:%02d:%02d.%03d [h:m:s.msec]", hour, minute, second, elapsed%1000);
+		return String.format("%03d %02d:%02d:%02d.%03d d[days h:m:s.msec]", day, hour, minute, second, elapsed%1000);
 	}
 }

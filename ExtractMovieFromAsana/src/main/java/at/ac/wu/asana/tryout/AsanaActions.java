@@ -10,4 +10,5 @@ public class AsanaActions {
 	public static final String LIKE = "like";
 	public static final String UNASSIGN = "unassign";
 	public static final String INCOMPLETE = "incomplete";
+	public static final String MOVE = "move";
 }
