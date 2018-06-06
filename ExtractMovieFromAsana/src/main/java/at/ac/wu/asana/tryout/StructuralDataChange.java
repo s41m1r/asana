@@ -179,12 +179,12 @@ public class StructuralDataChange {
 
 	private String parseAction(String text) {
 		if(text.startsWith("added"))
-			return AsanaActions.CREATE;
+			return AsanaActions.ADD;
 		else if(text.startsWith("assigned"))
 				return AsanaActions.ASSIGN;
 		else if(text.startsWith("completed") | 
 				text.startsWith("marked this task complete"))
-			return AsanaActions.COMPLETE;//delete role?
+			return AsanaActions.COMPLETE;
 		else if(text.startsWith("change"))
 			return AsanaActions.CHANGE;
 		else if(text.startsWith("removed"))
@@ -193,18 +193,20 @@ public class StructuralDataChange {
 			return AsanaActions.UNASSIGN;
 		else if(text.startsWith("liked"))
 			return AsanaActions.LIKE;
-//		else if(text.startsWith("marked incomplete"))
-//			return AsanaActions.INCOMPLETE;
-		else if(text.startsWith("marked"))
-			return AsanaActions.CHANGE;
-		else if(text.startsWith("unmarked")) //date change?
-			return AsanaActions.CHANGE;
+		else if(text.startsWith("marked incomplete"))
+			return AsanaActions.INCOMPLETE;
+//		else if(text.startsWith("marked"))
+//			return AsanaActions.CHANGE;
+//		else if(text.startsWith("unmarked")) //date change?
+//			return AsanaActions.CHANGE;
 		else if(text.startsWith("duplicate")) //date change?
-			return AsanaActions.CHANGE;
+			return AsanaActions.DUPLICATE;
 		else if(text.startsWith("move")) 
 			return AsanaActions.MOVE;
 		else if(text.startsWith("attached")) //date change?
 			return AsanaActions.ATTACH;
+		else if(text.startsWith("set"))
+			return AsanaActions.SET;
 		else throw new RuntimeException("Unkown text:"+text);
 	}
 

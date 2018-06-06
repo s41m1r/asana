@@ -108,6 +108,7 @@ public class ExtractStructuralDataChanges {
 			csvWriter.writeNext(header);
 			
 			System.out.print("Looking for "+ specificProject + " ... ");
+			boolean foundSpecificProject = false;
 			for (Project project : projects) {
 				
 				if(specificProject != null){
@@ -115,7 +116,7 @@ public class ExtractStructuralDataChanges {
 						continue;
 					}
 				}
-				System.out.println("Found.");
+				System.out.println("Found ("+project.name+")");
 				System.out.println("Retrieving all the tasks and subtasks.");
 				List<Task> tasks = client.tasks.findByProject(project.id).execute();
 				List<Task> allTasksAndSubtasks = null;
@@ -151,6 +152,9 @@ public class ExtractStructuralDataChanges {
 			}
 			csvWriter.flush();
 			csvWriter.close();
+			if(!foundSpecificProject){
+				System.out.println("Not found.");
+			}
 		}catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -204,13 +208,13 @@ public class ExtractStructuralDataChanges {
 	/**
 	 * @param startTime
 	 */
-	private static String getElapsedTime(long time, long startTime) {
+	static String getElapsedTime(long time, long startTime) {
 		long elapsed = time-startTime;
 		long second = (elapsed / 1000) % 60;
 		long minute = (elapsed / (1000 * 60)) % 60;
 		long hour = (elapsed / (1000 * 60 * 60)) % 24;
 		long day = (elapsed / (1000 * 60 * 60 * 24));
 		
-		return String.format("%03d %02d:%02d:%02d.%03d d[days h:m:s.msec]", day, hour, minute, second, elapsed%1000);
+		return String.format("%03d %02d:%02d:%02d.%03d [days h:m:s.msec]", day, hour, minute, second, elapsed%1000);
 	}
 }
