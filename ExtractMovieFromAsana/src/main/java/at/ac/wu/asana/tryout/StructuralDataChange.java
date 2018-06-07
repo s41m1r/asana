@@ -207,7 +207,11 @@ public class StructuralDataChange {
 			return AsanaActions.ATTACH;
 		else if(text.startsWith("set"))
 			return AsanaActions.SET;
-		else throw new RuntimeException("Unkown text:"+text);
+//		else throw new RuntimeException("Unkown text:"+text);
+		else {
+			System.err.println("Unkown text:"+text + ". I will use "+text.split(" ")[0].trim());
+			return text.split(" ")[0].trim();
+		}
 	}
 
 	private String parseAssignee(String text) {
