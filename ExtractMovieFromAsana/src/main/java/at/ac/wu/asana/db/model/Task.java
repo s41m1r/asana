@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.Collection;
 
 import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
@@ -12,7 +14,10 @@ import javax.persistence.OneToMany;
 public class Task {
 	
 	@Id
-	public String id;
+	@GeneratedValue(strategy=GenerationType.AUTO)
+	public Integer id;
+	
+	public String asanaId;
 	
 	public String name;
 	
@@ -30,7 +35,7 @@ public class Task {
 	}
 	
 	public Task(com.asana.models.Task apiTask) {
-		id = apiTask.id;
+		asanaId = apiTask.id;
 		name = apiTask.name;
 		
 		storyLines = new ArrayList<Story>();
