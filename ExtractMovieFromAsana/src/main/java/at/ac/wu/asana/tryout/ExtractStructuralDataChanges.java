@@ -208,7 +208,7 @@ public class ExtractStructuralDataChanges {
 	/**
 	 * @param startTime
 	 */
-	static String getElapsedTime(long time, long startTime) {
+	public static String getElapsedTime(long time, long startTime) {
 		long elapsed = time-startTime;
 		long second = (elapsed / 1000) % 60;
 		long minute = (elapsed / (1000 * 60)) % 60;
