@@ -38,7 +38,7 @@ public class ExtractAllProjects {
 	/**
 	 * @param args
 	 */
-	private static void extractProjects(String[] args) {
+	public static void extractProjects(String[] args) {
 		CommandLineParser lineParser = new DefaultParser();
 		CommandLine cmd = null;
 		Options opts = new Options();
@@ -120,7 +120,7 @@ public class ExtractAllProjects {
 		}
 	}
 
-	private static String[] getCSVRow(String id, String color, DateTime createdAt,
+	public static String[] getCSVRow(String id, String color, DateTime createdAt,
 			Collection<CustomFieldSetting> customFieldSettings, 
 			Collection<User> followers, boolean isArchived,
 			boolean isPublic, Collection<User> members, 
