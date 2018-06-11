@@ -249,7 +249,7 @@ public class CreateDB {
 		at.ac.wu.asana.db.model.Story s = new at.ac.wu.asana.db.model.Story();
 		s.task = new at.ac.wu.asana.db.model.Task(task);
 		s.action = change.getAction();
-		s.id = change.getEventId();
+		s.asanaId = change.getEventId();
 		long datetimeValue = change.getDateTime().getValue();
 		s.date = new Date(datetimeValue);
 		s.time = new Time(datetimeValue);
@@ -265,7 +265,7 @@ public class CreateDB {
 	private static void persistTask(Task task, at.ac.wu.asana.db.model.Project theProject, StatelessSession session) {
 		at.ac.wu.asana.db.model.Task t = new at.ac.wu.asana.db.model.Task();
 
-		t.id = task.id;
+		t.asanaId = task.id;
 		t.name = task.name;
 		
 		t.project = theProject;

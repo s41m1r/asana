@@ -6,6 +6,8 @@ import java.sql.Timestamp;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.ManyToOne;
 
@@ -13,7 +15,10 @@ import javax.persistence.ManyToOne;
 public class Story {
 
 	@Id
-	public String id;
+	@GeneratedValue(strategy=GenerationType.AUTO)
+	public Integer id;
+	
+	public String asanaId;
 
 	public Date date;
 	public Time time;
@@ -22,7 +27,7 @@ public class Story {
 
 	public String type;
 	
-	@Column(columnDefinition="TEXT")
+	@Column(length = 100000)
 	public String text;
 
 	public String action;
@@ -34,7 +39,7 @@ public class Story {
 
 	@Override
 	public String toString() {
-		return "Story [id=" + id + ", type=" + type + ", text=" + text + ", action=" + action + ", user=" + user
+		return "Story [id=" + asanaId + ", type=" + type + ", text=" + text + ", action=" + action + ", user=" + user
 				+ ", timestamp=" + timestamp + "]";
 	}
 
