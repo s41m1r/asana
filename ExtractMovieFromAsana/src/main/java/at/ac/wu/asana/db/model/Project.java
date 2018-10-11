@@ -3,6 +3,7 @@ package at.ac.wu.asana.db.model;
 import java.util.ArrayList;
 import java.util.Collection;
 
+import javax.persistence.CascadeType;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
@@ -21,7 +22,7 @@ public class Project {
 	public String workspaceName;
 
 	
-	@OneToMany(mappedBy="project")
+	@OneToMany(mappedBy="project", cascade=CascadeType.ALL)
 	public Collection<Task> tasks;
 	
 		

@@ -4,7 +4,11 @@ import java.io.IOException;
 import java.sql.Date;
 import java.sql.Time;
 import java.sql.Timestamp;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
@@ -28,6 +32,16 @@ import at.ac.wu.asana.tryout.ExtractStructuralDataChanges;
 import at.ac.wu.asana.tryout.StructuralDataChange;
 
 public class CreateDB {
+	
+	static Map<at.ac.wu.asana.db.model.Task, at.ac.wu.asana.db.model.Task> taskParentMap = 
+			new HashMap<at.ac.wu.asana.db.model.Task, at.ac.wu.asana.db.model.Task>();
+	
+	static Map<at.ac.wu.asana.db.model.Story, at.ac.wu.asana.db.model.Task> storyTaskMap = 
+			new HashMap<at.ac.wu.asana.db.model.Story, at.ac.wu.asana.db.model.Task>();
+	
+	static Map<at.ac.wu.asana.db.model.Task, at.ac.wu.asana.db.model.Project> taskProjectMap = 
+			new HashMap<at.ac.wu.asana.db.model.Task, at.ac.wu.asana.db.model.Project>();
+	
 
 	static Options opts = new Options();
 
@@ -37,6 +51,7 @@ public class CreateDB {
 		populate(args);
 
 	}
+	
 
 	static void test(String dbname){
 		SessionFactory sessionFactory;
@@ -49,7 +64,6 @@ public class CreateDB {
 			sessionFactory = DatabaseConnector.getSessionFactory();
 		StatelessSession session = sessionFactory.openStatelessSession();
 		Transaction tx = session.beginTransaction();
-
 
 		tx.commit();
 		session.close();
@@ -101,12 +115,9 @@ public class CreateDB {
 			sessionFactory = DatabaseConnector.getSessionFactory("asana");
 		
 		StatelessSession session = sessionFactory.openStatelessSession();
-		Transaction tx = session.beginTransaction();
+		
 
 		asanaChangesToDB(pat,ws,csv,p,r,(ots!=null), session);
-
-
-		tx.commit();
 		session.close();
 		//		System.out.println(100*(users.size()+commits.size()+files.size()+renames.size())/total+"% done");
 		DatabaseConnector.shutdown();
@@ -192,9 +203,11 @@ public class CreateDB {
 			at.ac.wu.asana.db.model.Project p = new at.ac.wu.asana.db.model.Project(project, pId);
 			p.workspaceId = workspace.id;
 			p.workspaceName = workspace.name;
+			
 			session.insert(p);
 			pId++;
-
+			
+			
 			System.out.println("Retrieving all the tasks and subtasks.");
 			List<Task> tasks;
 			try {
@@ -218,10 +231,10 @@ public class CreateDB {
 					}
 
 					persistTask(task, p, session);
-
+					
 					CollectionRequest<Story> stories = client.stories.findByTask(task.id);
 					System.out.println("Extracting stories (events) of "+task.name);
-
+					
 					for (Story story : stories) {
 						StructuralDataChange change = new StructuralDataChange(task, story, client.users.me().execute().name.trim());
 						change.setProjectId(project.id);
@@ -247,7 +260,7 @@ public class CreateDB {
 
 	private static void persistStory(StructuralDataChange change, Task task, Client client, StatelessSession session) {
 		at.ac.wu.asana.db.model.Story s = new at.ac.wu.asana.db.model.Story();
-		s.task = new at.ac.wu.asana.db.model.Task(task);
+		
 		s.action = change.getAction();
 		s.asanaId = change.getEventId();
 		long datetimeValue = change.getDateTime().getValue();
@@ -258,6 +271,22 @@ public class CreateDB {
 		s.text = change.getRawDataText();
 		s.type = change.getMessageType();
 		s.user = change.getActor();
+		
+		at.ac.wu.asana.db.model.Task t = new at.ac.wu.asana.db.model.Task(task);
+		
+//		if(allTasks.contains(t)){
+//			System.out.println("have it! "+t.parent);
+//			for (at.ac.wu.asana.db.model.Task task2 : allTasks) {
+//				if(task2.equals(t)){
+//					s.task = task2;
+//				}
+//			}
+//		}
+//		else
+			s.task = t;
+		
+		
+		System.out.println("Saving "+ s + " "+s.task);
 		
 		session.insert(s);
 	}
@@ -270,10 +299,14 @@ public class CreateDB {
 		
 		t.project = theProject;
 		
-		if(task.parent!=null)
+		if(task.parent!=null){
 			t.parent =  new at.ac.wu.asana.db.model.Task(task.parent);
+		}
 
-		session.insert(t);
+//		allTasks.add(t);
+		
+		System.out.println("Saving "+ t + " parent: "+t.parent);
+		
 
 	}
 

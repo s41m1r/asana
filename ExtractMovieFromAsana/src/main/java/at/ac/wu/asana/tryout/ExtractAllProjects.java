@@ -22,7 +22,6 @@ import com.asana.models.Project;
 import com.asana.models.Team;
 import com.asana.models.User;
 import com.asana.models.Workspace;
-import com.asana.requests.CollectionRequest;
 import com.google.api.client.util.DateTime;
 import com.opencsv.CSVWriter;
 
@@ -66,7 +65,7 @@ public class ExtractAllProjects {
 
 		System.out.println("Workspace id:"+workspace.id+ " name:"+ workspace.name);
 
-		CollectionRequest<Project> projects = client.projects.findByWorkspace(workspace.id);
+		Iterable<Project> projects = client.projects.findByWorkspace(workspace.id);
 		String filename = cmd.getOptionValue("csv");
 		CSVWriter writer = null;
 		try {
@@ -108,6 +107,8 @@ public class ExtractAllProjects {
 						project.team,
 						project.workspace
 						);
+				
+				System.out.println(project.id+" "+project.name);
 				writer.writeNext(row);
 			}
 			
@@ -128,7 +129,7 @@ public class ExtractAllProjects {
 			Team team, Workspace workspace) {
 		String[] result = new String[14];
 		
-		result[1] = id+"";
+		result[0] = id;
 		result[1] = color+"";
 		result[2] = createdAt+"";
 		result[3] = toStringCustomFields(customFieldSettings);
