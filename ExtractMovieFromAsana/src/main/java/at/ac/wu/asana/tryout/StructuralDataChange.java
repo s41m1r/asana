@@ -6,62 +6,64 @@ import java.util.Date;
 
 import com.asana.models.Story;
 import com.asana.models.Task;
+import com.asana.models.User;
 import com.google.api.client.util.DateTime;
 
-public class StructuralDataChange {
-	
-	public static String getPath(Task task) {
-		String path = "";
-		if(task.parent!=null)
-			path += getPath(task.parent) + "/" + task.parent.name + "/" + task.name;
-		return path;
-	}
-	
-	private DateTime dateTime;
+public class StructuralDataChange {	
+	private DateTime storyCreatedAt;
 	private String role;
 	private String actor;
+	private String assigneeId;
+	private String assigneeName;
 	private String action;
 	private String circle; //location
 	private String pathToHere;
 	private String taskId;
 	private String taskName;
-	private String eventId;
+	private String storyId;
 	private String workspaceId;
 	private Boolean isSubtask;
-//	private Boolean isProbableRole;
 	private String workspaceName;
 	private String projectName;
-	private String parentTask;
+	private String parentTaskName;
 	private String rawDataText;
-	private String messageType;
-
-	public String getParentTask() {
-		return parentTask;
-	}
-
-	public void setParentTask(String parentTask) {
-		this.parentTask = parentTask;
-	}
-
-	public String getWorkspaceName() {
-		return workspaceName;
-	}
-
-	public void setWorkspaceName(String workspaceName) {
-		this.workspaceName = workspaceName;
-	}
-
-	public String getProjectName() {
-		return projectName;
-	}
-
-	public void setProjectName(String projectName) {
-		this.projectName = projectName;
-	}
-
+	private String storyType;
 	private String newAssignee;
-
 	private String projectId;
+	private DateTime createdAt;
+	private DateTime modifiedAt;
+	private DateTime completedAt;
+	private String storyCreatedById;
+	private String storyCreatedByName;
+	private String parentTaskId;
+	
+	/**
+	 * 
+	 * @param task
+	 * @param story
+	 * @param me = client
+	 */
+	public StructuralDataChange(Task task, Story story) {
+		storyCreatedAt = story.createdAt;
+		storyId = story.id;
+		taskId = task.id;
+		taskName = task.name;
+		pathToHere = getPath(task);
+		setStoryCreatedById(story.createdBy.id);
+		setStoryCreatedByName(story.createdBy.name);
+		if(task.assignee!=null){
+			assigneeId = task.assignee.id;
+			assigneeName = task.assignee.name;
+		}
+		isSubtask = (task.parent!=null);
+		if(isSubtask){
+			parentTaskName = task.parent.name;
+			setParentTaskId(task.parent.id);
+		}
+		rawDataText = story.text;
+		storyType = story.type; 
+	}
+
 	/**
 	 * 
 	 * @param task
@@ -69,8 +71,8 @@ public class StructuralDataChange {
 	 * @param me = client
 	 */
 	public StructuralDataChange(Task task, Story story, String me) {
-		dateTime = story.createdAt;
-		eventId = story.id;
+		storyCreatedAt = story.createdAt;
+		storyId = story.id;
 		taskId = task.id;
 		pathToHere = getPath(task);
 		setActionAndAssignee(story.text, story.type, me);
@@ -78,50 +80,54 @@ public class StructuralDataChange {
 		isSubtask = (task.parent!=null);
 		taskName = task.name;
 		if(isSubtask)
-			parentTask = task.parent.name;
+			parentTaskName = task.parent.name;
 		rawDataText = story.text;
 		setMessageType(story.type); 
 	}
 	
 	public static String[] csvHeader(){
-		return new String[]{"date", "time", "role",
-				"actor","action", "taskId", 
-				"taskName",
-				"newAssignee",
-				"eventId",
-				"projectId",
+		return new String[]{
+				"timestamp",
+				"createdById", 
+				"createdByName",
 				"projectName",
+				"taskId", 
+				"taskName",
+				"messageType",
+				"storyEventId",
+				"projectId",
 				"workspaceId",
 				"workspaceName",
 				"isSubtask",
-				"parentTask",
+				"parentTaskId",
+				"parentTaskName",
 				"pathToHere",
 				"rawDataText",
-				"messageType",
-				"timestamp"};
+				"date", 
+				"time"
+				};
 	}
 
 	public String[] csvRow(){
 		return new String[]{ 
-				new SimpleDateFormat("yyyy-MM-dd").format(new Date(dateTime.getValue())),
-				new SimpleDateFormat("hh:mm:ss.SSS").format(new Date(dateTime.getValue())),
-				role,
-				actor,
-				action,
+				storyCreatedAt.toString(),
+				storyCreatedById,
+				storyCreatedByName,
+				projectName,
 				taskId,
 				taskName,
-				newAssignee,
-				eventId,
-				projectId,
-				projectName,				
+				storyType,
+				storyId,
+				projectId,				
 				workspaceId,
 				workspaceName,
 				isSubtask.toString(),
-				parentTask,
+				parentTaskId,
+				parentTaskName,
 				pathToHere,
 				rawDataText,
-				messageType,
-				dateTime.toString()};
+				new SimpleDateFormat("yyyy-MM-dd").format(new Date(storyCreatedAt.getValue())),
+				new SimpleDateFormat("hh:mm:ss.SSS").format(new Date(storyCreatedAt.getValue())),};
 	}
 
 	public String getAction() {
@@ -132,37 +138,72 @@ public class StructuralDataChange {
 		return actor;
 	}
 
+	public String getAssigneeId() {
+		return assigneeId;
+	}
+
+	public String getAssigneeName() {
+		return assigneeName;
+	}
+
 	public String getCircle() {
 		return circle;
 	}
+	
+	public DateTime getCompletedAt() {
+		return completedAt;
+	}
+
+	public DateTime getCreatedAt() {
+		return createdAt;
+	}
 
 	public String getDate(){
-		return DateFormat.getInstance().format(dateTime);
+		return DateFormat.getInstance().format(storyCreatedAt);
 	}
 
 	public DateTime getDateTime() {
-		return dateTime;
+		return storyCreatedAt;
 	}
 
 	public String getEventId() {
-		return eventId;
+		return storyId;
 	}
 
 	public Boolean getIsSubtask() {
 		return isSubtask;
 	}
 
+	public String getMessageType() {
+		return storyType;
+	}
+	
+	public DateTime getModifiedAt() {
+		return modifiedAt;
+	}
+
 	public String getNewAssignee() {
 		return newAssignee;
 	}
 
-	
+	public String getParentTask() {
+		return parentTaskName;
+	}
+
 	public String getPathToHere() {
 		return pathToHere;
 	}
-	
+
 	public String getProjectId() {
 		return projectId;
+	}
+
+	public String getProjectName() {
+		return projectName;
+	}
+
+	public String getRawDataText() {
+		return rawDataText;
 	}
 
 	public String getRole() {
@@ -173,8 +214,17 @@ public class StructuralDataChange {
 		return taskId;
 	}
 
+	public String getTaskName() {
+		return taskName;
+	}
+
+	
 	public String getWorkspaceId() {
 		return workspaceId;
+	}
+	
+	public String getWorkspaceName() {
+		return workspaceName;
 	}
 
 	private String parseAction(String text) {
@@ -245,32 +295,74 @@ public class StructuralDataChange {
 		this.actor = actor;
 	}
 
+	public void setAssigneeId(String assigneeId) {
+		this.assigneeId = assigneeId;
+	}
+
+	public void setAssigneeName(String assigneeName) {
+		this.assigneeName = assigneeName;
+	}
+
 	public void setCircle(String circle) {
 		this.circle = circle;
 	}
-	
-	public void setDateTime(DateTime createdAt) {
-		this.dateTime = createdAt;
+
+	public void setCompletedAt(DateTime completedAt) {
+		this.completedAt = completedAt;
 	}
 	
+	public void setCreatedAt(DateTime createdAt) {
+		this.createdAt = createdAt;
+	}
+	
+	public void setDateTime(DateTime createdAt) {
+		this.storyCreatedAt = createdAt;
+	}
+
 	public void setEventId(String eventId) {
-		this.eventId = eventId;
+		this.storyId = eventId;
 	}
 
 	public void setIsSubtask(Boolean isSubtask) {
 		this.isSubtask = isSubtask;
 	}
+	
+	public void setMessageType(String messageType) {
+		this.storyType = messageType;
+	}
+
+	public void setModifiedAt(DateTime modifiedAt) {
+		this.modifiedAt = modifiedAt;
+	}
 
 	public void setNewAssignee(String newAssignee) {
 		this.newAssignee = newAssignee;
 	}
-	
+
+	public void setNewAssignee(User assignee) {
+		if(assignee!=null)
+		this.assigneeId = assignee.id;
+		this.assigneeName = assignee.name;
+	}
+
+	public void setParentTask(String parentTask) {
+		this.parentTaskName = parentTask;
+	}
+
 	public void setPathToHere(String pathToHere) {
 		this.pathToHere = pathToHere;
 	}
 
 	public void setProjectId(String projectId) {
 		this.projectId = projectId;
+	}
+
+	public void setProjectName(String projectName) {
+		this.projectName = projectName;
+	}
+
+	public void setRawDataText(String rawDataText) {
+		this.rawDataText = rawDataText;
 	}
 
 	public void setRole(String role) {
@@ -280,33 +372,48 @@ public class StructuralDataChange {
 	public void setTaskId(String taskId) {
 		this.taskId = taskId;
 	}
+	
+	public void setTaskName(String taskName) {
+		this.taskName = taskName;
+	}
 
 	public void setWorkspaceId(String workspaceId) {
 		this.workspaceId = workspaceId;
 	}
 
-	public String getTaskName() {
-		return taskName;
+	public void setWorkspaceName(String workspaceName) {
+		this.workspaceName = workspaceName;
 	}
 
-	public void setTaskName(String taskName) {
-		this.taskName = taskName;
+	public static String getPath(Task task) {
+		String path = "";
+		if(task.parent!=null)
+			path += getPath(task.parent) + "/" + task.parent.name + "/" + task.name;
+		return path;
 	}
 
-	public String getRawDataText() {
-		return rawDataText;
+	public String getStoryCreatedById() {
+		return storyCreatedById;
 	}
 
-	public void setRawDataText(String rawDataText) {
-		this.rawDataText = rawDataText;
+	public void setStoryCreatedById(String storyCreatedById) {
+		this.storyCreatedById = storyCreatedById;
 	}
 
-	public String getMessageType() {
-		return messageType;
+	public String getStoryCreatedByName() {
+		return storyCreatedByName;
 	}
 
-	public void setMessageType(String messageType) {
-		this.messageType = messageType;
+	public void setStoryCreatedByName(String storyCreatedByName) {
+		this.storyCreatedByName = storyCreatedByName;
+	}
+
+	public String getParentTaskId() {
+		return parentTaskId;
+	}
+
+	public void setParentTaskId(String parentTaskId) {
+		this.parentTaskId = parentTaskId;
 	}
 
 }

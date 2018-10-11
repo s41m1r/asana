@@ -32,7 +32,7 @@ public class Story {
 
 	public String action;
 
-	@ManyToOne
+	@ManyToOne(optional=true)
 	public Task task;
 
 	public Timestamp timestamp;
