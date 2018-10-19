@@ -239,7 +239,6 @@ public class CreateDB {
 						StructuralDataChange change = new StructuralDataChange(task, story, client.users.me().execute().name.trim());
 						change.setProjectId(project.id);
 						change.setWorkspaceId(workspace.id);
-						change.setRole("");
 						change.setProjectId(project.id);
 						change.setProjectName(project.name);
 						change.setWorkspaceId(workspace.id);
