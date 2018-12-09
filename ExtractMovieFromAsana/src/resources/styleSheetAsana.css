@@ -1,0 +1,40 @@
+node {
+	size: 10px, 10px;
+	fill-color: rgba(255,100,100,128);
+	text-size: 15px;
+}
+
+node:clicked {
+	fill-color: red;
+}
+
+node.role {
+	shape: circle;
+	size: 15px, 15px;
+}
+
+node.circleClass {
+	shape: box;
+	size: 25px, 25px;
+}
+
+node.master {
+	shape: cross;
+	size: 30px, 30px;
+}
+
+node.subcircle {
+	shape: rounded-box;
+	size: 20px, 20px;
+}
+
+sprite {
+	fill-color: red;
+	shape: rounded-box;
+}
+
+edge {
+	shape: angle;
+	stroke-width: 5px;
+}
+

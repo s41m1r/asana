@@ -1,0 +1,36 @@
+node {
+	size: 40px, 45px;
+	shape: rounded-box;
+	fill-color: green;
+	text-size: 15px;
+}
+
+node#A {
+	shape: box;
+	size: 15px, 20px;
+	fill-mode: plain;   /* Default.          */
+	fill-color: red;    /* Default is black. */
+	stroke-mode: plain; /* Default is none.  */
+	stroke-color: blue; /* Default is black. */
+}
+
+node:clicked {
+	fill-color: red;
+}
+
+node.marked{
+	shape: circle;
+	size: 70px, 70px;
+	stroke-mode: plain; /* Default is none.  */	
+	shadow-mode: plain;
+}
+
+sprite {
+	fill-color: red;
+	shape: rounded-box;
+}
+
+edge {
+	shape: angle;
+	stroke-width: 5px;
+}
