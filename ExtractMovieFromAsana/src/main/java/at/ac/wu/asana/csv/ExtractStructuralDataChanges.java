@@ -7,7 +7,6 @@ import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Date;
 import java.util.List;
 import java.util.logging.FileHandler;
 import java.util.logging.Logger;
@@ -19,6 +18,9 @@ import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
+import org.hibernate.Query;
+import org.hibernate.Session;
+import org.hibernate.SessionFactory;
 
 import com.asana.Client;
 import com.asana.models.Project;
@@ -28,8 +30,9 @@ import com.asana.models.Workspace;
 import com.google.api.client.util.DateTime;
 import com.opencsv.CSVWriter;
 
-import at.ac.wu.asana.csv.model.AsanaActions;
-import at.ac.wu.asana.csv.model.StructuralDataChange;
+import at.ac.wu.asana.db.utils.DatabaseConnector;
+import at.ac.wu.asana.model.AsanaActions;
+import at.ac.wu.asana.model.StructuralDataChange;
 
 public class ExtractStructuralDataChanges {
 
@@ -41,7 +44,7 @@ public class ExtractStructuralDataChanges {
 		long start = System.currentTimeMillis();
 		FileHandler fh;
 		try {
-			fh = new FileHandler(new Date()+"-Extraction.log");
+			fh = new FileHandler("Extraction.log");
 			logger.addHandler(fh);
 			SimpleFormatter formatter = new SimpleFormatter();  
 			fh.setFormatter(formatter);
@@ -125,12 +128,51 @@ public class ExtractStructuralDataChanges {
 		}
 
 		Iterable<Project> projects = client.projects.findByWorkspace(workspace.id);
+		
+//		SessionFactory sessionFactory = DatabaseConnector.getSessionFactory("asana_manual2");
+//		
+//		Session session = sessionFactory.openSession();
+//		
+//		Query query = session.createSQLQuery("CREATE TABLE IF NOT EXISTS `out2` (\n" + 
+//				"	timestamp TIMESTAMP NULL, \n" + 
+//				"	`taskId` DECIMAL(38, 0) NOT NULL, \n" + 
+//				"	`parentTaskId` DECIMAL(38, 0), \n" + 
+//				"	`taskName` VARCHAR(207), \n" + 
+//				"	`rawDataText` VARCHAR(511), \n" + 
+//				"	`messageType` VARCHAR(7) NOT NULL, \n" + 
+//				"	`typeOfChange` DECIMAL(38, 0) NOT NULL, \n" + 
+//				"	`typeOfChangeDescription` VARCHAR(33) NOT NULL, \n" + 
+//				"	`isRole` BOOL NOT NULL, \n" + 
+//				"	`taskCreatedAt` TIMESTAMP NULL, \n" + 
+//				"	`createdByName` VARCHAR(19), \n" + 
+//				"	`projectName` VARCHAR(21) NOT NULL, \n" + 
+//				"	`isCicle` BOOL NOT NULL, \n" + 
+//				"	`createdById` DECIMAL(38, 0), \n" + 
+//				"	`assigneeId` DECIMAL(38, 0), \n" + 
+//				"	`assigneeName` VARCHAR(17), \n" + 
+//				"	`eventId` DECIMAL(38, 0), \n" + 
+//				"	`projectId` DECIMAL(38, 0) NOT NULL, \n" + 
+//				"	`workspaceId` DECIMAL(38, 0) NOT NULL, \n" + 
+//				"	`workspaceName` VARCHAR(9) NOT NULL, \n" + 
+//				"	`isSubtask` BOOL NOT NULL, \n" + 
+//				"	`parentTaskName` VARCHAR(63), \n" + 
+//				"	date DATE NOT NULL, \n" + 
+//				"	time DATETIME NOT NULL, \n" + 
+//				"	`taskCompletedAt` TIMESTAMP NULL, \n" + 
+//				"	`taskModifiedAt` TIMESTAMP NULL, \n" + 
+//				"	`taskNotes` VARCHAR(370), \n" + 
+//				"	CHECK (`isRole` IN (0, 1)), \n" + 
+//				"	CHECK (`isCicle` IN (0, 1)), \n" + 
+//				"	CHECK (`isSubtask` IN (0, 1))\n" + 
+//				");");
+//		query.list();
+		
 
 		try {
 			String me = client.users.me().execute().name.trim();
 			PrintWriter rolesFileWriter = new PrintWriter(
 					new OutputStreamWriter(
-							new FileOutputStream(csvOutFile), StandardCharsets.UTF_16) );
+							new FileOutputStream(csvOutFile), StandardCharsets.UTF_8) );
 
 			CSVWriter csvWriter = new CSVWriter(rolesFileWriter);
 			String[] header = StructuralDataChange.csvHeader();
@@ -154,12 +196,11 @@ public class ExtractStructuralDataChanges {
 										"created_at", "name", "completed",
 										"tags","completed_at", "notes", 
 										"modified_at", "parent", "parent.name", 
-										"assignee", "assignee.name")).execute();
+										"assignee", "assignee.name", "include_archived")).execute();
 				List<Task> tasks = new ArrayList<Task>();
 				for (Task task : tasksIt) {
 					tasks.add(task);
 
-//					//					TODO: remove				
 //					System.out.println("Assignee Status:"+task.assigneeStatus + 
 //							" id: "+task.id+" name:"+ task.name + " notes: "+
 //							task.notes + " completed: "+task.completedAt + 

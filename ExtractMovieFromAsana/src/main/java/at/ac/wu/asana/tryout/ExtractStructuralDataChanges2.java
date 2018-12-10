@@ -27,7 +27,7 @@ import com.asana.models.Workspace;
 import com.asana.requests.CollectionRequest;
 import com.opencsv.CSVWriter;
 
-import at.ac.wu.asana.csv.model.StructuralDataChange;
+import at.ac.wu.asana.model.StructuralDataChange;
 
 public class ExtractStructuralDataChanges2 {
 
