@@ -26,8 +26,8 @@ import com.asana.models.Workspace;
 import com.asana.requests.CollectionRequest;
 
 import at.ac.wu.asana.csv.ExtractStructuralDataChanges;
-import at.ac.wu.asana.csv.model.StructuralDataChange;
 import at.ac.wu.asana.db.utils.DatabaseConnector;
+import at.ac.wu.asana.model.StructuralDataChange;
 
 public class CreateDB2 {
 	

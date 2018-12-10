@@ -15,12 +15,12 @@ import java.util.List;
 
 import org.graphstream.graph.Graph;
 import org.graphstream.graph.Node;
-import org.graphstream.graph.implementations.MultiGraph;
+import org.graphstream.graph.implementations.SingleGraph;
 
 import com.google.api.client.util.DateTime;
 import com.opencsv.CSVReader;
 
-import at.ac.wu.asana.csv.model.StructuralDataChange;
+import at.ac.wu.asana.model.StructuralDataChange;
 
 public class CreateVizEasy {
 	
@@ -29,9 +29,9 @@ public class CreateVizEasy {
 		List<String> projects = readFromFile("/home/saimir/ownCloud/PhD/Collaborations/Waldemar/API/allSmileys.txt");
 		System.setProperty("org.graphstream.ui.renderer", "org.graphstream.ui.j2dviewer.J2DGraphRenderer");
 
-		Graph graph = new MultiGraph("Asana graph");
+		Graph graph = new SingleGraph("Asana graph");
 		
-		graph.addAttribute("ui.stylesheet", "url('file:///home/saimir/eclipse-workspace/ExtractMovieFromAsana/src/resources/styleSheetAsana.css')");
+		graph.addAttribute("ui.stylesheet", "url('file:///home/saimir/asana/ExtractMovieFromAsana/src/resources/styleSheetAsana.css')");
         graph.setStrict(false);
 		graph.setAutoCreate(true);
 //		graph.addAttribute("ui.quality");
@@ -46,7 +46,7 @@ public class CreateVizEasy {
 		
 //		addAllProjects(graph, master, projects);
 		
-		String csv = "/home/saimir/ownCloud/PhD/Collaborations/Waldemar/API/Organisations Roles 8.csv";
+		String csv = "/home/saimir/ownCloud/PhD/Collaborations/Waldemar/API/InfoBiz.csv";
 		
 		addNodesStepByStep(graph, master, csv);
 	}
@@ -90,7 +90,7 @@ public class CreateVizEasy {
 			
 			if(e.isRole()) {
 				n.addAttribute("ui.class", "role");
-//				n.addAttribute("ui.label", e.getTaskName());
+				n.addAttribute("ui.label", e.getTaskName());
 			}
 			else {
 				n.addAttribute("ui.label", e.getTaskName());

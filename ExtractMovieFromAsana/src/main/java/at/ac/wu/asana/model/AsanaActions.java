@@ -1,4 +1,4 @@
-package at.ac.wu.asana.csv.model;
+package at.ac.wu.asana.model;
 
 /**
  * 
