@@ -1,5 +1,6 @@
-package at.ac.wu.asana.csv.model;
+package at.ac.wu.asana.model;
 
+import java.sql.Timestamp;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Collection;
@@ -84,6 +85,7 @@ public class StructuralDataChange {
 			setParentTaskId(task.parent.id);
 		}
 		setRole(taskName);
+		this.isCircle = isCircle(task.name);
 		rawDataText = story.text;
 		messageType = story.type;
 		typeOfChange = typeOfChange(story.text, messageType);
@@ -91,6 +93,8 @@ public class StructuralDataChange {
 	}
 	
 	private void setRole(String taskName2) {
+		if(messageType == null)
+			return;
 		if(messageType.equals(AsanaActions.codeToString(AsanaActions.CREATE_ROLE)) ||
 				messageType.equals(AsanaActions.codeToString(AsanaActions.LAST_MODIFY_ROLE)) ||
 				messageType.equals(AsanaActions.codeToString(AsanaActions.COMPLETE_ROLE)))
@@ -160,17 +164,17 @@ public class StructuralDataChange {
 	public static String[] csvHeader(){
 		return new String[]{
 				"timestamp",
-				"role id (taskId)",
-				"role id of parent (parentTaskId)",
-				"role name (taskName)",
+				"taskId",
+				"parentTaskId",
+				"taskName",
 				"rawDataText",
 				"messageType",
 				"typeOfChange",
-				"typeOfChange-Description",
+				"typeOfChangeDescription",
 				"isRole",
-				"roleCreatedAt (taskCreatedAt)", 
-				"actor (createdByName)",
-				"circle (projectName)",
+				"taskCreatedAt", 
+				"createdByName",
+				"projectName",
 				"isCicle",
 				"createdById",
 				"assigneeId",
@@ -192,7 +196,7 @@ public class StructuralDataChange {
 
 	public String[] csvRow(){
 		return new String[]{ 
-				storyCreatedAt.toString(),
+				new Timestamp(storyCreatedAt.getValue()).toString(),
 				taskId,
 				parentTaskId,
 				taskName,
@@ -201,7 +205,7 @@ public class StructuralDataChange {
 				typeOfChange+"",
 				typeOfChangeDescription,
 				isRole+"",
-				taskCreatedAt.toString(),
+				new Timestamp(taskCreatedAt.getValue()).toString(),
 				storyCreatedByName,				
 				projectName,
 				isCircle+"",
@@ -225,7 +229,8 @@ public class StructuralDataChange {
 	public static StructuralDataChange fromString(String[] row){
 		StructuralDataChange sdc = new StructuralDataChange();
 				
-		sdc.storyCreatedAt = new DateTime(row[0]);
+		sdc.storyCreatedAt = DateTime.parseRfc3339(row[0].replace(' ', 'T'));
+		sdc.createdAt = DateTime.parseRfc3339(row[0].replace(' ', 'T'));
 		sdc.taskId = row[1];	
 		sdc.parentTaskId = row[2];
 		sdc.taskName = row[3];
@@ -234,7 +239,7 @@ public class StructuralDataChange {
 		sdc.typeOfChange = Integer.parseInt(row[6]);
 		sdc.typeOfChangeDescription = row[7];
 		sdc.isRole = Boolean.parseBoolean(row[8]);
-		sdc.taskCreatedAt = new DateTime(row[9]);
+		sdc.taskCreatedAt = DateTime.parseRfc3339(row[9].replace(' ', 'T'));
 		sdc.storyCreatedByName = row[10];
 		sdc.projectName = row[11];
 		sdc.isCircle = Boolean.parseBoolean(row[12]);
@@ -696,6 +701,13 @@ public class StructuralDataChange {
 	 */
 	public boolean isCircle() {
 		if(projectName.contains("☺") && projectName.toLowerCase().endsWith("roles"))
+			return true;
+		else 
+			return false;
+	}
+	
+	public static boolean isCircle(String name) {
+		if(name.contains("☺") && name.toLowerCase().endsWith("roles"))
 			return true;
 		else 
 			return false;
