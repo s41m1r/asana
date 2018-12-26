@@ -1,21 +1,25 @@
 node {
-	size: 10px, 10px;
-	fill-color: rgba(255,100,100,128);
+	size: 15px, 15px;
+	fill-color: rgb(155,0,0);
 	text-size: 15px;
+	text-mode:hidden;
 }
 
 node:clicked {
 	fill-color: red;
+	text-mode: normal;
 }
 
 node.role {
 	shape: circle;
 	size: 15px, 15px;
+	fill-color: rgb(155,0,0);
 }
 
 node.circleClass {
 	shape: box;
 	size: 25px, 25px;
+	text-mode: normal;
 }
 
 node.master {
@@ -28,9 +32,25 @@ node.subcircle {
 	size: 20px, 20px;
 }
 
+node.emphasize {
+	fill-color: green;
+	text-mode: normal;
+}
+
+node.unemphasize {
+	fill-color: rgb(155,0,0);
+	text-mode: hidden;
+}
+
+node.deleted {
+	fill-color: rgb(169,169,169);
+	text-mode: hidden;
+}
+
 sprite {
 	fill-color: red;
 	shape: rounded-box;
+	size: 128px, 128px;
 }
 
 edge {
