@@ -24,7 +24,7 @@ import at.ac.wu.asana.db.utils.DatabaseConnector;
 import at.ac.wu.asana.model.AsanaActions;
 import at.ac.wu.asana.model.StructuralDataChange;
 
-public class CreateSpringestViz {
+public class CreateVizMain {
 
 	static Set<String> allTaskIds = new HashSet<String>();
 
@@ -40,13 +40,11 @@ public class CreateSpringestViz {
 		graph.addAttribute("ui.quality");
 		graph.addAttribute("ui.antialias");
 
-		Viewer viewer = graph.display();
+		graph.display();
 
-		Node master = graph.addNode("864733919245"); // Springest center
+		Node master = graph.addNode("864733919245"); // center
 
 		allTaskIds.add(master.getId());
-
-		//		viewer.disableAutoLayout();
 
 		master.addAttribute("ui.class", "master");
 		master.addAttribute("ui.label", "Springest");
@@ -56,9 +54,7 @@ public class CreateSpringestViz {
 		s1.setPosition(Units.PX, 100, 10, 0);
 		s1.setAttribute("ui.label", "");
 
-		//		viewer.enableAutoLayout();
 		addNodesStepByStep(graph, master, s1);
-//		viewer.close();
 
 	}
 
@@ -74,7 +70,6 @@ public class CreateSpringestViz {
 
 		List<String> result = (List<String>) queryAllDates.list();		
 		System.out.println("Retrieved "+result.size()+ " days of history.");
-//		s1.setAttribute("ui.label", "Days: "+ result.size());
 		sleep(1500);
 
 		int i = 1;
@@ -92,8 +87,6 @@ public class CreateSpringestViz {
 				StructuralDataChange sdc = StructuralDataChange.fromString(str);
 
 				changeEvents.add(sdc);
-				//				System.out.println("i="+i+++" "+sdc.getTaskId()+" "+sdc.getTypeOfChangeDescription()+" "+
-				//				sdc.getCreatedAt()+" prjId="+sdc.getProjectId());
 			}
 			List<Node> nodesAdded = addToGraph(graph, changeEvents);
 			for (Node n : nodesAdded) {
@@ -109,12 +102,6 @@ public class CreateSpringestViz {
 					allTaskIds.add(n.getId());
 				}
 			}
-//			Collection<Node> nodes = graph.getNodeSet();
-//			for (Node n : nodes) {
-//				if(n.getInDegree() == 0)
-//					graph.removeNode(n);
-//			}	
-			//			sleep(500);
 		}
 		sf.close();
 	}
@@ -154,50 +141,21 @@ public class CreateSpringestViz {
 				}
 			}
 			switch(e.getTypeOfChange()) {
-			//			case AsanaActions.ADD_SUB_ROLE:
-			//			case AsanaActions.ADD_TO_CIRCLE:
-			//			case AsanaActions.ASSIGN_TO_ACTOR:
 			case AsanaActions.CREATE_ROLE:
 				n.addAttribute("ui.class", "added");
 				break;
-				//			case AsanaActions.REVIVE_OR_MARK_INCOMPLETE:
-				//				break;
 			case AsanaActions.COMPLETE_ROLE:
 			case AsanaActions.DETELE_OR_MARK_COMPLETE:
-				//			case AsanaActions.REMOVE_FROM_CIRCLE:
 				n.addAttribute("ui.class", "deleted");
 				n.addAttribute("deleted", "true");
 				nodesAdded.remove(n);
 				allTaskIds.remove(n.getId());
 				graph.removeNode(n.getId());
 				
-//				for(String tId : allTaskIds) {
-//					if(graph.getNode(tId)!=null)
-//						if(graph.getNode(tId).getDegree()==0)
-//							graph.removeNode(tId);
-//				}
-				
 				removeOrphans(graph);
 				
 				break;
-				//			case AsanaActions.CHANGE_NAME_OF_ROLE:
-				////			case AsanaActions.UNCLEAR_OR_CONFLICT_WITH_CODEBOOK:
-				//			case AsanaActions.LAST_MODIFY_ROLE:
-				//			case AsanaActions.COMMENT:
-				//			case AsanaActions.UNASSIGN_FROM_ACTOR:
-				//				n.setAttribute("ui.style", "size: 20px;");
-				//				sleep(200);
-				//				n.setAttribute("ui.style", "size: 15px;");
-				//				sleep(200);
-				//				n.addAttribute("ui.class", "modified");
-				//				break;
 			default:
-				//				n.addAttribute("ui.class", "deleted");
-				//				graph.removeNode(n.getId());
-				//				n.setAttribute("ui.style", "size: 15px;");
-				//				sleep(200);
-				//				n.setAttribute("ui.style", "size: 10px;");
-				//				sleep(200);
 				n.addAttribute("ui.class", "modified");
 				break;
 			}
