@@ -1,4 +1,4 @@
-package at.ac.wu.asana.csv;
+package at.ac.wu.asana.tryout;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -6,7 +6,7 @@ import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
 import java.util.logging.FileHandler;
 import java.util.logging.Logger;
@@ -18,23 +18,18 @@ import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
-import org.hibernate.Query;
-import org.hibernate.Session;
-import org.hibernate.SessionFactory;
 
 import com.asana.Client;
 import com.asana.models.Project;
 import com.asana.models.Story;
 import com.asana.models.Task;
 import com.asana.models.Workspace;
-import com.google.api.client.util.DateTime;
+import com.asana.requests.CollectionRequest;
 import com.opencsv.CSVWriter;
 
-import at.ac.wu.asana.db.utils.DatabaseConnector;
-import at.ac.wu.asana.model.AsanaActions;
 import at.ac.wu.asana.model.StructuralDataChange;
 
-public class ExtractStructuralDataChanges {
+public class ExtractStructuralDataChanges2 {
 
 	static List<StructuralDataChange> structuralDataChanges = new ArrayList<StructuralDataChange>();
 	static Options opts = new Options();
@@ -44,10 +39,10 @@ public class ExtractStructuralDataChanges {
 		long start = System.currentTimeMillis();
 		FileHandler fh;
 		try {
-			fh = new FileHandler("Extraction.log");
+			fh = new FileHandler(new Date()+"-Extraction.log");
 			logger.addHandler(fh);
-			SimpleFormatter formatter = new SimpleFormatter();  
-			fh.setFormatter(formatter);
+		    SimpleFormatter formatter = new SimpleFormatter();  
+	        fh.setFormatter(formatter);
 		} catch (SecurityException e) {
 			e.printStackTrace();
 		} catch (IOException e) {
@@ -74,8 +69,8 @@ public class ExtractStructuralDataChanges {
 		String csv = line.getOptionValue("csv");
 		String p = line.getOptionValue("p");
 		String r = line.getOptionValue("r");
-		Boolean ots = line.hasOption("ots");
-		Boolean os = line.hasOption("os");
+		String ots = line.getOptionValue("ots");
+		String os = line.getOptionValue("os");
 		
 		String info = "Extraction started with parameters "+"\npat:"+pat+""
 				+ "\nws:" +ws + "," 
@@ -86,11 +81,10 @@ public class ExtractStructuralDataChanges {
 				+ "\nos:"+ os;
 		logger.info(info); 
 
-		asanaChangesToCSV(pat,ws,csv,p,r,ots,os);	
+		asanaChangesToCSV(pat,ws,csv,p,r,(ots!=null),(os!=null));	
 
-		//		System.out.println("All done in "+ getElapsedTime(System.currentTimeMillis(), start));
+//		System.out.println("All done in "+ getElapsedTime(System.currentTimeMillis(), start));
 		logger.info("All done in "+ getElapsedTime(System.currentTimeMillis(), start));
-		logger.info("Output stored in:  "+ csv);
 	}
 
 	private static Options initOpts() {
@@ -99,7 +93,7 @@ public class ExtractStructuralDataChanges {
 		Option wspace = new Option("ws", "workspace", true, "use given workspace name");
 		Option project = new Option("p", "project", true, "use given project name");
 		Option role = new Option("r", "role", true, "use given role name");
-		Option onlyTaskStories = new Option("ots", "onlyTaskStories", false, "do not retrieve subtasks");
+		Option onlyTaskStories = new Option("ots", "onlyTaskStories", true, "do not retrieve subtasks");
 		Option onlySmileys = new Option("os", "onlySmileys", true, "only extract projects/tasks with smileys (roles)");
 
 		opts.addOption(wspace).
@@ -116,7 +110,7 @@ public class ExtractStructuralDataChanges {
 		Client client = Client.accessToken(pat);
 		client.options.put("page_size", 100);
 		client.options.put("max_retries", 100);
-		//		client.options.put("poll_interval", 10);
+//		client.options.put("poll_interval", 10);
 
 		Workspace workspace = null;
 		Iterable<Workspace> workspaces = client.workspaces.findAll();
@@ -128,48 +122,8 @@ public class ExtractStructuralDataChanges {
 		}
 
 		Iterable<Project> projects = client.projects.findByWorkspace(workspace.id);
-		
-//		SessionFactory sessionFactory = DatabaseConnector.getSessionFactory("asana_manual2");
-//		
-//		Session session = sessionFactory.openSession();
-//		
-//		Query query = session.createSQLQuery("CREATE TABLE IF NOT EXISTS `out2` (\n" + 
-//				"	timestamp TIMESTAMP NULL, \n" + 
-//				"	`taskId` DECIMAL(38, 0) NOT NULL, \n" + 
-//				"	`parentTaskId` DECIMAL(38, 0), \n" + 
-//				"	`taskName` VARCHAR(207), \n" + 
-//				"	`rawDataText` VARCHAR(511), \n" + 
-//				"	`messageType` VARCHAR(7) NOT NULL, \n" + 
-//				"	`typeOfChange` DECIMAL(38, 0) NOT NULL, \n" + 
-//				"	`typeOfChangeDescription` VARCHAR(33) NOT NULL, \n" + 
-//				"	`isRole` BOOL NOT NULL, \n" + 
-//				"	`taskCreatedAt` TIMESTAMP NULL, \n" + 
-//				"	`createdByName` VARCHAR(19), \n" + 
-//				"	`projectName` VARCHAR(21) NOT NULL, \n" + 
-//				"	`isCicle` BOOL NOT NULL, \n" + 
-//				"	`createdById` DECIMAL(38, 0), \n" + 
-//				"	`assigneeId` DECIMAL(38, 0), \n" + 
-//				"	`assigneeName` VARCHAR(17), \n" + 
-//				"	`eventId` DECIMAL(38, 0), \n" + 
-//				"	`projectId` DECIMAL(38, 0) NOT NULL, \n" + 
-//				"	`workspaceId` DECIMAL(38, 0) NOT NULL, \n" + 
-//				"	`workspaceName` VARCHAR(9) NOT NULL, \n" + 
-//				"	`isSubtask` BOOL NOT NULL, \n" + 
-//				"	`parentTaskName` VARCHAR(63), \n" + 
-//				"	date DATE NOT NULL, \n" + 
-//				"	time DATETIME NOT NULL, \n" + 
-//				"	`taskCompletedAt` TIMESTAMP NULL, \n" + 
-//				"	`taskModifiedAt` TIMESTAMP NULL, \n" + 
-//				"	`taskNotes` VARCHAR(370), \n" + 
-//				"	CHECK (`isRole` IN (0, 1)), \n" + 
-//				"	CHECK (`isCicle` IN (0, 1)), \n" + 
-//				"	CHECK (`isSubtask` IN (0, 1))\n" + 
-//				");");
-//		query.list();
-		
 
 		try {
-			String me = client.users.me().execute().name.trim();
 			PrintWriter rolesFileWriter = new PrintWriter(
 					new OutputStreamWriter(
 							new FileOutputStream(csvOutFile), StandardCharsets.UTF_8) );
@@ -179,34 +133,28 @@ public class ExtractStructuralDataChanges {
 
 			csvWriter.writeNext(header);
 
+			boolean foundSpecificProject = false;
 			for (Project project : projects) {
 
 				if(specificProject != null){
 					logger.info("Looking for "+ specificProject + " ... ");
+					System.out.print("Looking for "+ specificProject + " ... ");
 					if(!project.name.contains(specificProject)){
 						continue;
 					}
 				}
-				logger.info("Found project: "+project.name);
+				logger.info("Found ("+project.name+")");
+//				System.out.println("Found ("+project.name+")");
 				logger.info("Retrieving all the tasks and subtasks.");
-				
-				List<Task> tasksIt = client.tasks.findByProject(project.id).
-						option("fields",
-								Arrays.asList(
-										"created_at", "name", "completed",
-										"tags","completed_at", "notes", 
-										"modified_at", "parent", "parent.name", 
-										"assignee", "assignee.name", "include_archived")).execute();
+//				System.out.println("Retrieving all the tasks and subtasks.");
+				Iterable<Task> tasksIt = client.tasks.findByProject(project.id);
 				List<Task> tasks = new ArrayList<Task>();
 				for (Task task : tasksIt) {
+					if(onlySmileys){
+						if(!(containsSmiley(project.name) || containsSmiley(task.name)))
+							continue;
+					}
 					tasks.add(task);
-
-//					System.out.println("Assignee Status:"+task.assigneeStatus + 
-//							" id: "+task.id+" name:"+ task.name + " notes: "+
-//							task.notes + " completed: "+task.completedAt + 
-//							" assignee: "+((task.assignee!=null)? 
-//									("id="+task.assignee.id+" name="+task.assignee.name) : task.assignee)
-//							);		
 				}
 
 				List<Task> allTasksAndSubtasks = null;
@@ -217,33 +165,20 @@ public class ExtractStructuralDataChanges {
 				else{
 					allTasksAndSubtasks = getAllNestedSubtasks(client, tasks);
 				}
-												
 				logger.info("Scanning "+project.name+ " containing "+allTasksAndSubtasks.size()+ " tasks and subtasks.");
+				System.out.println("Scanning "+project.name+ " containing "+allTasksAndSubtasks.size()+ " tasks and subtasks.");
+				//				List<StructuralDataChange> changes = new ArrayList<StructuralDataChange>();
 				for (Task task : allTasksAndSubtasks) {//find the stories and create the StructuralDataChanges
 					if(specificTask!=null){
 						if(!task.name.contains(specificTask))
 							continue;
 					}
-					List<Story> stories = client.stories.findByTask(task.id).option("fields", 
-								Arrays.asList(
-										"created_at", "created_by","created_by.name",
-										"type", "target", "text")).execute();
-					if(stories == null){
-						logger.severe("Stories of "+task.name+ "is "+stories);
-						continue;
-					}
-					
+					CollectionRequest<Story> stories = client.stories.findByTask(task.id);
+//					System.out.println("Extracting stories (events) of "+task.name);
 					logger.info("Extracting stories (events) of "+task.name);
-					/*
-					 * Here we can define a new event to be inserted about only Tasks creation. 
-					 * But what about the other fields?
-					 */					
-					addCSVRow(project, workspace, task, csvWriter, task.createdAt, AsanaActions.CREATE_ROLE);
-					
 					for (Story story : stories) {
 						try{
-							StructuralDataChange change = new StructuralDataChange(task, story, me);
-//							StructuralDataChange change = new StructuralDataChange(task, story);
+							StructuralDataChange change = new StructuralDataChange(task, story, client.users.me().execute().name.trim());
 							change.setProjectId(project.id);
 							change.setWorkspaceId(workspace.id);
 							change.setProjectId(project.id);
@@ -258,42 +193,29 @@ public class ExtractStructuralDataChanges {
 							e.printStackTrace();
 						}
 					}
-					addCSVRow(project, workspace, task, csvWriter, task.completedAt, AsanaActions.COMPLETE_ROLE);
-					addCSVRow(project, workspace, task, csvWriter, task.modifiedAt, AsanaActions.LAST_MODIFY_ROLE);
 				}
 			}
 			csvWriter.flush();
 			csvWriter.close();
+			if(specificProject!=null && !foundSpecificProject){
+//				System.out.println("Not found.");
+				logger.info("Not found.");
+			}
 		}catch (IOException e) {
 			e.printStackTrace();
 		}
 	}
 
-//	private static boolean containsSmiley(String name) {
-//		if(name!=null){
-//			char[] chars = name.toCharArray();
-//			for (int c : chars) {
-//				if(c==9786) //smiley character ☺
-//					return true;
-//			}
-//		}
-//		return false;
-//	}
 
-	public static void addCSVRow(Project project, Workspace workspace, Task task, 
-			CSVWriter csvWriter, DateTime eventTimestamp, int action) {
-		
-		if(eventTimestamp == null) 
-			return;
-		StructuralDataChange chTask = new StructuralDataChange(task, eventTimestamp, action);
-		chTask.setProjectId(project.id);
-		chTask.setWorkspaceId(workspace.id);
-		chTask.setProjectId(project.id);
-		chTask.setProjectName(project.name);
-		chTask.setWorkspaceId(workspace.id);
-		chTask.setWorkspaceName(workspace.name);
-		chTask.setMessageType("derived");
-		csvWriter.writeNext(chTask.csvRow());
+	private static boolean containsSmiley(String name) {
+		if(name!=null){
+			char[] chars = name.toCharArray();
+			for (int c : chars) {
+				if(c==9786) //smiley character ☺
+					return true;
+			}
+		}
+		return false;
 	}
 
 	public static List<Task> getAllNestedSubtasks(Client client, List<Task> roots){//recursive
@@ -302,14 +224,9 @@ public class ExtractStructuralDataChanges {
 		for (Task task : roots) {
 			List<Task> subtasks = null;
 			try {
-//				subtasks = client.tasks.subtasks(task.id).execute();
-				logger.info("Getting subtasks of "+task.name);
-				subtasks = client.tasks.subtasks(task.id).option("fields", 
-						Arrays.asList(
-								"created_at", "name", "completed",
-								"tags","completed_at",
-								"modified_at", "parent", "parent.name")).execute();
+				subtasks = client.tasks.subtasks(task.id).execute();
 			} catch (IOException e) {
+				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 
@@ -336,23 +253,15 @@ public class ExtractStructuralDataChanges {
 
 	public static void printTasks(List<Task> tasks){
 		for (Task task : tasks) {
-			System.out.print("Task id:\t"+task.id+ 
+			System.out.println("Task id:\t"+task.id+ 
 					"\tname:"+task.name+
 					"\ttask.createdAt:"+task.createdAt + 
 					"\ttask.modifiedAt:"+task.modifiedAt + 
 					"\ttask.assignedTo:"+task.assigneeStatus + "," + task.assignee +
 					"\ttask.completedAt:"+task.completedAt + 
 					"\ttask.completed:"+task.completed + 
-					"\ttask.dueAt:"+task.dueAt +
-					"\ttask.dueOn:"+task.dueOn +
-					"\ttask.tags:"+task.tags
+					"\ttask.parents:"+StructuralDataChange.getPath(task)
 					);
-			if(task.parent !=null){
-				List<Task> p = new ArrayList<Task>();
-				p.add(task.parent);
-				printTasks(p);
-			}
-			System.out.println();
 		}
 	}
 

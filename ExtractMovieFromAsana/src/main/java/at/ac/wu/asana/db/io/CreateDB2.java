@@ -5,10 +5,8 @@ import java.sql.Date;
 import java.sql.Time;
 import java.sql.Timestamp;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
@@ -31,7 +29,7 @@ import at.ac.wu.asana.csv.ExtractStructuralDataChanges;
 import at.ac.wu.asana.db.utils.DatabaseConnector;
 import at.ac.wu.asana.model.StructuralDataChange;
 
-public class CreateDB {
+public class CreateDB2 {
 	
 	static Map<at.ac.wu.asana.db.model.Task, at.ac.wu.asana.db.model.Task> taskParentMap = 
 			new HashMap<at.ac.wu.asana.db.model.Task, at.ac.wu.asana.db.model.Task>();
