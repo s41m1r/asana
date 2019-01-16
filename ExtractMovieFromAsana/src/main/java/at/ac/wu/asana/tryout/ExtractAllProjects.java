@@ -25,6 +25,8 @@ import com.asana.models.Workspace;
 import com.google.api.client.util.DateTime;
 import com.opencsv.CSVWriter;
 
+import at.ac.wu.asana.csv.ExtractStructuralDataChanges;
+
 public class ExtractAllProjects {
 
 	public static void main(String[] args) {
