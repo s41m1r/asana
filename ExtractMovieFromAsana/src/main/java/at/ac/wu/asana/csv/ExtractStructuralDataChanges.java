@@ -86,11 +86,125 @@ public class ExtractStructuralDataChanges {
 				+ "\nos:"+ os;
 		logger.info(info); 
 
-		asanaChangesToCSV(pat,ws,csv,p,r,ots,os);	
+//		asanaChangesToCSV(pat,ws,csv,p,r,ots,os);
+		parseRawDataText(pat,ws,csv,p,r,ots,os);
+		
 
 		//		System.out.println("All done in "+ getElapsedTime(System.currentTimeMillis(), start));
 		logger.info("All done in "+ getElapsedTime(System.currentTimeMillis(), start));
 		logger.info("Output stored in:  "+ csv);
+	}
+
+	private static void parseRawDataText(String pat, String ws, String csv, String p, String r, Boolean ots,
+			Boolean os) {
+		Client client = Client.accessToken(pat);
+		client.options.put("page_size", 100);
+		client.options.put("max_retries", 100);
+		//		client.options.put("poll_interval", 10);
+
+		Workspace workspace = null;
+		Iterable<Workspace> workspaces = client.workspaces.findAll();
+		for (Workspace wspace : workspaces) {
+			if (wspace.name.equals(ws)) {
+				workspace = wspace;
+				break;
+			}
+		}
+
+		Iterable<Project> projects = client.projects.findByWorkspace(workspace.id);
+		
+		try {
+			String me = client.users.me().execute().name.trim();
+			PrintWriter rolesFileWriter = new PrintWriter(
+					new OutputStreamWriter(
+							new FileOutputStream(csv), StandardCharsets.UTF_8) );
+
+			CSVWriter csvWriter = new CSVWriter(rolesFileWriter);
+			String[] header = StructuralDataChange.csvHeader();
+
+			csvWriter.writeNext(header);
+
+			for (Project project : projects) {
+				if(p != null){
+					logger.info("Looking for "+ p + " ... ");
+					if(!project.name.contains(p)){
+						continue;
+					}
+				}
+				logger.info("Found project: "+project.name);
+				logger.info("Retrieving all the tasks and subtasks.");
+				
+				List<Task> tasksIt = client.tasks.findByProject(project.id).
+						option("fields",
+								Arrays.asList(
+										"created_at", "name", "completed",
+										"tags","completed_at", "notes", 
+										"modified_at", "parent", "parent.name", 
+										"assignee", "assignee.name", "include_archived")).execute();
+				List<Task> tasks = new ArrayList<Task>();
+				for (Task task : tasksIt) {
+					tasks.add(task);
+				}
+
+				List<Task> allTasksAndSubtasks = null;
+
+				if(ots){
+					allTasksAndSubtasks = tasks;
+				}
+				else{
+					allTasksAndSubtasks = getAllNestedSubtasks(client, tasks);
+				}
+												
+				logger.info("Scanning "+project.name+ " containing "+allTasksAndSubtasks.size()+ " tasks and subtasks.");
+				for (Task task : allTasksAndSubtasks) {//find the stories and create the StructuralDataChanges
+					if(r!=null){
+						if(!task.name.contains(r))
+							continue;
+					}
+					List<Story> stories = client.stories.findByTask(task.id).option("fields", 
+								Arrays.asList(
+										"created_at", "created_by","created_by.name",
+										"type", "target", "text")).execute();
+					if(stories == null){
+						logger.severe("Stories of "+task.name+ "is "+stories);
+						continue;
+					}
+					
+					logger.info("Extracting stories (events) of "+task.name);
+					/*
+					 * Here we can define a new event to be inserted about only Tasks creation. 
+					 * But what about the other fields?
+					 */					
+					addCSVRow(project, workspace, task, csvWriter, task.createdAt, AsanaActions.CREATE_ROLE);
+					
+					for (Story story : stories) {
+						try{
+//							StructuralDataChange change = new StructuralDataChange(task, story, me);
+//							StructuralDataChange change = new StructuralDataChange(task, story);
+							StructuralDataChange change = StructuralDataChange.parseFromText(task,story,me);
+							change.setProjectId(project.id);
+							change.setWorkspaceId(workspace.id);
+							change.setProjectId(project.id);
+							change.setProjectName(project.name);
+							change.setWorkspaceId(workspace.id);
+							change.setWorkspaceName(workspace.name);
+							csvWriter.writeNext(change.csvRow());
+						}
+						catch (NullPointerException e) {
+							System.err.println("Story: "+story);
+							logger.info("Problem in Story: "+story);
+							e.printStackTrace();
+						}
+					}
+					addCSVRow(project, workspace, task, csvWriter, task.completedAt, AsanaActions.COMPLETE_ROLE);
+					addCSVRow(project, workspace, task, csvWriter, task.modifiedAt, AsanaActions.LAST_MODIFY_ROLE);
+				}
+			}
+			csvWriter.flush();
+			csvWriter.close();
+		}catch (IOException e) {
+			e.printStackTrace();
+		}
 	}
 
 	private static Options initOpts() {
