@@ -58,3 +58,23 @@ edge {
 	stroke-width: 5px;
 }
 
+node.added {
+	fill-color: rgba(51, 204, 51, 250);
+}
+
+node.modified {
+	fill-color: rgba(51, 153, 255, 250);
+	text-mode: hidden;
+}
+
+node.deleted {
+	fill-color: rgba(30, 30, 30, 200);
+	text-mode: hidden;
+}
+
+sprite {
+	fill-color: white;
+	text-color: black;
+	shape: rounded-box;
+	z-index: 1;
+}

@@ -105,7 +105,7 @@ public class CreateSpringestViz {
 					n.setAttribute("ui.style", "size: 3px;");
 					n.setAttribute("ui.style", "fill-color: blue;");
 					n.setAttribute("ui.style", "stroke-mode: none;");
-					//				sleep(200);	
+//					sleep(500);	
 					allTaskIds.add(n.getId());
 				}
 			}
@@ -114,7 +114,7 @@ public class CreateSpringestViz {
 //				if(n.getInDegree() == 0)
 //					graph.removeNode(n);
 //			}	
-			//			sleep(500);
+			sleep(500);
 		}
 		sf.close();
 	}
@@ -240,6 +240,5 @@ public class CreateSpringestViz {
 
 			allTaskIds.add(n.getId());
 		}
-
 	}
 }
