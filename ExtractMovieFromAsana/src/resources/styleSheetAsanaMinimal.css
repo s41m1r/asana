@@ -2,7 +2,7 @@ node {
 	fill-color: rgba(155,0,0,128);
 	text-mode:hidden;
 	text-color: black;
-	size: 3px;
+	size: 5px;
 }
 
 node:clicked {
@@ -31,7 +31,6 @@ node.subcircle {
 	shape: rounded-box;
 	size: 10px, 10px;
 	text-mode: normal;
-	
 }
 
 node.added {
@@ -40,12 +39,13 @@ node.added {
 
 node.modified {
 	fill-color: rgba(51, 153, 255, 250);
-	text-mode: hidden;
+	text-mode: normal;
+	size: 10px;
 }
 
 node.deleted {
 	fill-color: rgba(30, 30, 30, 200);
-	text-mode: hidden;
+	size: 10px;
 }
 
 sprite {
