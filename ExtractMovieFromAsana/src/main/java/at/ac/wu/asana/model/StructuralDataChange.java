@@ -716,6 +716,12 @@ public class StructuralDataChange {
 	public void setCircle(boolean isCircle) {
 		this.isCircle = isCircle;
 	}
+	
+	public static boolean isYinAndYang(String taskname) {
+		if(taskname.startsWith("☯"))
+			return true;
+		return false;
+	}
 
 	public static StructuralDataChange parseFromText(Task task, Story story, String me) {
 		StructuralDataChange dataChange = new StructuralDataChange();
@@ -748,6 +754,10 @@ public class StructuralDataChange {
 		dataChange.typeOfChange = dataChange.typeOfChange(story.text, dataChange.messageType);
 		dataChange.typeOfChangeDescription = AsanaActions.codeToString(dataChange.typeOfChange);
 		return null;
+	}
+
+	public static boolean isSmiley(String parentName) {
+		return parentName.startsWith("☺");
 	}
 
 }
