@@ -31,7 +31,9 @@ public class CreateVizFromText {
 	static Set<String> allTaskIds = new HashSet<String>();
 	static Map<String,String> circleTaskMap = new HashMap<String,String>();
 	static Map<String,String> circleNameId = new HashMap<String, String>();
-	
+	static Set<String> aliveCircles = new HashSet<String>();
+	static Set<String> deadCircles = new HashSet<String>();
+
 	static String GRAPH_CENTER = "864733919245";
 
 	public static void main(String[] args) {
@@ -48,14 +50,15 @@ public class CreateVizFromText {
 
 		Viewer viewer = graph.display();
 
-		Node master = graph.addNode("864733919245"); // Springest center
+		Node master = graph.addNode("☯ Alignment"); // Springest center
 
 		allTaskIds.add(master.getId());
 
 		//		viewer.disableAutoLayout();
 
 		master.addAttribute("ui.class", "master");
-		master.addAttribute("ui.label", "Springest");
+		master.addAttribute("ui.label", "☯ Alignment");
+		aliveCircles.add("☯ Alignment");
 
 		SpriteManager sManager = new SpriteManager(graph);
 		Sprite s1 = sManager.addSprite("S1");
@@ -81,7 +84,7 @@ public class CreateVizFromText {
 		List<String> result = (List<String>) queryAllDates.list();		
 		System.out.println("Retrieved "+result.size()+ " days of history.");
 		//		s1.setAttribute("ui.label", "Days: "+ result.size());
-		sleep(1500);
+		//		sleep(1500);
 
 		int i = 1;
 		for (String d : result) {
@@ -103,7 +106,8 @@ public class CreateVizFromText {
 				//				sdc.getCreatedAt()+" prjId="+sdc.getProjectId());
 			}
 
-			List<Node> nodesAdded = addToGraphFromText(graph, changeEvents);
+			//			List<Node> nodesAdded = addToGraphFromText(graph, changeEvents);
+			List<Node> nodesAdded = addToGraphWithCircleDetection(graph, changeEvents);
 
 			for (Node n : nodesAdded) {
 				if(n.getAttribute("ui.class").equals("modified")) {
@@ -123,11 +127,98 @@ public class CreateVizFromText {
 			//				if(n.getInDegree() == 0)
 			//					graph.removeNode(n);
 			//			}	
-//			sleep(500);
+			//			sleep(500);
 		}
 		sf.close();
 	}
 
+
+	private static List<Node> addToGraphWithCircleDetection(Graph graph, List<StructuralDataChange> changeEvents) {
+		List<Node> nodesAdded = new ArrayList<Node>();
+		for (StructuralDataChange e : changeEvents) {
+			boolean found = false;
+			//it is a circle event
+			if(StructuralDataChange.isYinAndYang(e.getTaskName())) {
+				if(e.getMessageType().equals("system")) {
+					Edge ed = null;
+					if(e.getRawDataText().equals("added to ☺ Alignment Roles")){
+						aliveCircles.add(e.getTaskName());
+						found = true;
+						String parent = getParentCircle(e);
+						ed = connect(e, parent, graph, "circle");
+						System.out.println("Added edge "+ed.toString());
+					}
+					if(e.getRawDataText().equals("removed from ☺ Alignment Roles")) {
+						deadCircles.add(e.getTaskName());
+						found = true;
+//						disconnect(e, graph);
+						Node n = graph.removeNode(e.getTaskName());
+						System.out.println("Removed node "+n);
+
+					}
+				}
+				if(found) {
+					System.out.println("alive circles:"+aliveCircles);
+					System.out.println("dead circles:"+deadCircles);
+//					sleep(1000);
+				}
+			}
+			//it is a role event
+//			String parentId = e.getParentTaskId();
+//			String circleId = StructuralDataChange.getMatchingCirle(parentId);
+//			graph.addEdge(id, index1, index2)
+			
+		}
+		return nodesAdded;
+	}
+
+	private static String getParentCircle(StructuralDataChange e) {
+		String res = e.getParentTaskName();
+		if(res.toLowerCase().endsWith("roles") && res.toLowerCase().startsWith("☺")) {
+			String r1 = res.replace("☺", "☯");
+			res = r1.replace("Roles", "");
+		}
+		return res;
+	}
+
+	private static Node disconnect(StructuralDataChange e, Graph graph) {
+		Node n = graph.removeNode(e.getTaskName());
+		removeOrphans(graph);
+		return n;
+	}
+
+
+	private static Edge connect(StructuralDataChange e, String parent, Graph graph, String attribute) {
+		Edge ed = null;
+		String par = null;
+		if(e.getIsSubtask()) {
+			if(parent!=null && !parent.equals("")) {
+				par = parent;
+			}
+			else
+				par = e.getParentTaskName();
+			
+			ed = graph.addEdge(par+e.getTaskName(),
+					par, e.getTaskName());
+		}
+		else {
+			par = toYinYang(e.getProjectName());
+			ed = graph.addEdge(par+e.getTaskName(),
+					par, e.getTaskName());
+		}
+		ed.getTargetNode().addAttribute("ui.class", "circleClass");
+		ed.getTargetNode().addAttribute("ui.label", e.getTaskName());
+		return ed;
+	}
+
+	private static String toYinYang(String projectName) {
+		String res = ""+projectName;
+		if(res.toLowerCase().endsWith("roles") && res.toLowerCase().startsWith("☺")) {
+			String r1 = res.replace("☺", "☯");
+			res = r1.replace("Roles", "");
+		}
+		return res;
+	}
 
 	private static List<Node> addToGraph(Graph graph, List<StructuralDataChange> events) {
 		List<Node> nodesAdded = new ArrayList<Node>();
@@ -251,7 +342,7 @@ public class CreateVizFromText {
 		}
 	}
 
-	private static List<Node> addToGraphFromText(Graph graph, List<StructuralDataChange> events) {
+	public static List<Node> addToGraphFromText(Graph graph, List<StructuralDataChange> events) {
 		List<Node> nodesAdded = new ArrayList<Node>();
 		for (StructuralDataChange e : events) {
 			boolean skip = false;
@@ -277,7 +368,7 @@ public class CreateVizFromText {
 			if(text.startsWith("removed from")) {
 				theProject = text.split("removed from")[1].trim();
 				circleTaskMap.remove(theProject, taskId);
-//				graph.getNode(taskId).addAttribute("ui.class", "deleted");
+				//				graph.getNode(taskId).addAttribute("ui.class", "deleted");
 				graph.removeNode(taskId);
 				graph.removeEdge(theProject+taskId);
 			}
