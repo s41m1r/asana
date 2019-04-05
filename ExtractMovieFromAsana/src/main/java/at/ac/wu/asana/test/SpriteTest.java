@@ -1,4 +1,4 @@
-package at.ac.wu.asana.viz.test;
+package at.ac.wu.asana.test;
 
 import org.graphstream.graph.Graph;
 import org.graphstream.graph.Node;

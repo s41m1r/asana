@@ -716,5 +716,48 @@ public class StructuralDataChange {
 	public void setCircle(boolean isCircle) {
 		this.isCircle = isCircle;
 	}
+	
+	public static boolean isYinAndYang(String taskname) {
+		if(taskname.startsWith("☯"))
+			return true;
+		return false;
+	}
+
+	public static StructuralDataChange parseFromText(Task task, Story story, String me) {
+		StructuralDataChange dataChange = new StructuralDataChange();
+		dataChange.storyCreatedAt = story.createdAt;
+		dataChange.storyId = story.id;
+		dataChange.taskId = task.id;
+		dataChange.taskName = task.name;
+		dataChange.taskCreatedAt = task.createdAt;
+		dataChange.taskCompletedAt = task.completedAt;
+		dataChange.taskModifiedAt = task.modifiedAt;
+		dataChange.setActionAndAssignee(story.text, story.type, me);
+		dataChange.setTaskTags(dataChange.extractTaskTags(task.tags));
+		dataChange.setTaskNotes(task.notes);
+//		pathToHere = getPath(task);
+		dataChange.setStoryCreatedById(story.createdBy.id);
+		dataChange.setStoryCreatedByName(story.createdBy.name);
+		if(task.assignee!=null){
+			dataChange.assigneeId = task.assignee.id;
+			dataChange.assigneeName = task.assignee.name;
+		}
+		dataChange.isSubtask = (task.parent!=null);
+		if(dataChange.isSubtask){
+			dataChange.parentTaskName = task.parent.name;
+			dataChange.setParentTaskId(task.parent.id);
+		}
+		dataChange.setRole(dataChange.taskName);
+		dataChange.isCircle = isCircle(task.name);
+		dataChange.rawDataText = story.text;
+		dataChange.messageType = story.type;
+		dataChange.typeOfChange = dataChange.typeOfChange(story.text, dataChange.messageType);
+		dataChange.typeOfChangeDescription = AsanaActions.codeToString(dataChange.typeOfChange);
+		return null;
+	}
+
+	public static boolean isSmiley(String parentName) {
+		return parentName.startsWith("☺");
+	}
 
 }

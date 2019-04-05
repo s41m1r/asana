@@ -1,4 +1,4 @@
-package at.ac.wu.asana.viz.test;
+package at.ac.wu.asana.test;
 
 import org.graphstream.algorithm.generator.Generator;
 import org.graphstream.stream.SourceBase;

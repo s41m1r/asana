@@ -456,8 +456,12 @@ public class App
 				}
 				rolesFileWriter.flush();
 				rolesFileWriter.close();
+				csvWriter.close();
 
 			} catch (FileNotFoundException e) {
+				e.printStackTrace();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
 				e.printStackTrace();
 			} 
 		}
