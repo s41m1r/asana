@@ -753,7 +753,7 @@ public class StructuralDataChange {
 		dataChange.messageType = story.type;
 		dataChange.typeOfChange = dataChange.typeOfChange(story.text, dataChange.messageType);
 		dataChange.typeOfChangeDescription = AsanaActions.codeToString(dataChange.typeOfChange);
-		return null;
+		return dataChange;
 	}
 
 	public static boolean isSmiley(String parentName) {
