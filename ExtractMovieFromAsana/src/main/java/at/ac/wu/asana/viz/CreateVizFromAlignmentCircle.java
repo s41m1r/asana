@@ -29,6 +29,7 @@ import org.hibernate.SessionFactory;
 import at.ac.wu.asana.db.utils.DatabaseConnector;
 import at.ac.wu.asana.model.Circle;
 import at.ac.wu.asana.model.StructuralDataChange;
+import at.ac.wu.asana.util.GeneralUtils;
 
 public class CreateVizFromAlignmentCircle {
 
@@ -54,7 +55,7 @@ public class CreateVizFromAlignmentCircle {
 		graph.addAttribute("ui.antialias");
 
 		// reading the data
-		SessionFactory sf = DatabaseConnector.getSessionFactory("asana_manual2");
+		SessionFactory sf = DatabaseConnector.getSessionFactory("asana_manual3");
 		org.hibernate.Session session = sf.openSession();
 
 		String queryStringYinYang = "SELECT * FROM yinAndYang";
@@ -69,6 +70,8 @@ public class CreateVizFromAlignmentCircle {
 
 		allEventsByDate = readAllEventsByDate(session);
 
+		session.flush();
+		session.close();
 		sf.close();
 
 		//		Set<String> keys = allEventsByDate.keySet();
@@ -351,7 +354,7 @@ public class CreateVizFromAlignmentCircle {
 			List<StructuralDataChange> changeEvents = new ArrayList<StructuralDataChange>();
 			for (Object e : events) {
 				Object[] row = (Object[]) e;
-				String[] str = toStrObjArray(row);
+				String[] str = GeneralUtils.toStrObjArray(row);
 				StructuralDataChange sdc = StructuralDataChange.fromString(str);
 				//				if(sdc.getMessageType().equals("system"))
 				changeEvents.add(sdc);
@@ -405,19 +408,12 @@ public class CreateVizFromAlignmentCircle {
 
 		for (Object e : events) {
 			Object[] row = (Object[]) e;
-			String[] str = toStrObjArray(row);
+			String[] str = GeneralUtils.toStrObjArray(row);
 			System.out.println();
 			Circle c = new Circle(str[1], str[0]);
 
 			res.add(c);
 		}
-		return res;
-	}
-
-	private static String[] toStrObjArray(Object[] row) {
-		String[] res = new String[row.length];
-		for(int i=0; i<row.length; i++)
-			res[i] = row[i].toString();
 		return res;
 	}
 
