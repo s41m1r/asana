@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -18,9 +19,6 @@ import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
-import org.hibernate.Query;
-import org.hibernate.Session;
-import org.hibernate.SessionFactory;
 
 import com.asana.Client;
 import com.asana.models.Project;
@@ -30,7 +28,6 @@ import com.asana.models.Workspace;
 import com.google.api.client.util.DateTime;
 import com.opencsv.CSVWriter;
 
-import at.ac.wu.asana.db.utils.DatabaseConnector;
 import at.ac.wu.asana.model.AsanaActions;
 import at.ac.wu.asana.model.StructuralDataChange;
 
@@ -44,7 +41,7 @@ public class ExtractStructuralDataChanges {
 		long start = System.currentTimeMillis();
 		FileHandler fh;
 		try {
-			fh = new FileHandler("Extraction.log");
+			fh = new FileHandler("Extraction"+ LocalDateTime.now()+".log");
 			logger.addHandler(fh);
 			SimpleFormatter formatter = new SimpleFormatter();  
 			fh.setFormatter(formatter);
