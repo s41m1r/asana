@@ -61,8 +61,7 @@ public class ExtractStructuralDataChanges {
 		}
 		catch(ParseException exp ) {
 			// oops, something went wrong
-			System.err.println( "Parsing failed.  Reason: " + exp.getMessage() );
-			logger.warning("Parsing failed.  Reason: " + exp.getMessage());
+			logger.warning("Parsing failed. Reason: " + exp.getMessage());
 		}
 
 		//		asanaChangesToCSV(App.PAT_SAIMIR, "InfoBiz", "");
@@ -103,6 +102,7 @@ public class ExtractStructuralDataChanges {
 		Client client = Client.accessToken(pat);
 		client.options.put("page_size", 100);
 		client.options.put("max_retries", 100);
+		client.headers.put("asana-enable", "string_ids,new_sections");
 		//		client.options.put("poll_interval", 10);
 
 		Workspace workspace = null;
@@ -114,7 +114,7 @@ public class ExtractStructuralDataChanges {
 			}
 		}
 
-		Iterable<Project> projects = client.projects.findByWorkspace(workspace.id);
+		Iterable<Project> projects = client.projects.findByWorkspace(workspace.gid);
 
 		try {
 			String me = client.users.me().execute().name.trim();
@@ -137,13 +137,14 @@ public class ExtractStructuralDataChanges {
 				logger.info("Found project: "+project.name);
 				logger.info("Retrieving all the tasks and subtasks.");
 
-				List<Task> tasksIt = client.tasks.findByProject(project.id).
+				List<Task> tasksIt = client.tasks.findByProject(project.gid).
 						option("fields",
 								Arrays.asList(
 										"created_at", "name", "completed",
 										"tags","completed_at", "notes", 
 										"modified_at", "parent", "parent.name", 
-										"assignee", "assignee.name", "include_archived")).execute();
+										"assignee", "assignee.name", "include_archived",
+										"resource_subtype")).execute();
 				List<Task> tasks = new ArrayList<Task>();
 				for (Task task : tasksIt) {
 					tasks.add(task);
@@ -164,7 +165,7 @@ public class ExtractStructuralDataChanges {
 						if(!task.name.contains(r))
 							continue;
 					}
-					List<Story> stories = client.stories.findByTask(task.id).option("fields", 
+					List<Story> stories = client.stories.findByTask(task.gid).option("fields", 
 							Arrays.asList(
 									"created_at", "created_by","created_by.name",
 									"type", "target", "text")).execute();
@@ -185,11 +186,11 @@ public class ExtractStructuralDataChanges {
 							//							StructuralDataChange change = new StructuralDataChange(task, story, me);
 							//							StructuralDataChange change = new StructuralDataChange(task, story);
 							StructuralDataChange change = StructuralDataChange.parseFromText(task,story,me);
-							change.setProjectId(project.id);
-							change.setWorkspaceId(workspace.id);
-							change.setProjectId(project.id);
+							change.setProjectId(project.gid);
+							change.setWorkspaceId(workspace.gid);
+							change.setProjectId(project.gid);
 							change.setProjectName(project.name);
-							change.setWorkspaceId(workspace.id);
+							change.setWorkspaceId(workspace.gid);
 							change.setWorkspaceName(workspace.name);
 							csvWriter.writeNext(change.csvRow());
 						}
@@ -235,6 +236,7 @@ public class ExtractStructuralDataChanges {
 		Client client = Client.accessToken(pat);
 		client.options.put("page_size", 100);
 		client.options.put("max_retries", 100);
+		client.headers.put("asana-enable", "string_ids,new_sections");
 		//		client.options.put("poll_interval", 10);
 
 		Workspace workspace = null;
@@ -246,7 +248,7 @@ public class ExtractStructuralDataChanges {
 			}
 		}
 
-		Iterable<Project> projects = client.projects.findByWorkspace(workspace.id);
+		Iterable<Project> projects = client.projects.findByWorkspace(workspace.gid);
 
 		//		SessionFactory sessionFactory = DatabaseConnector.getSessionFactory("asana_manual2");
 		//		
@@ -309,7 +311,7 @@ public class ExtractStructuralDataChanges {
 				logger.info("Found project: "+project.name);
 				logger.info("Retrieving all the tasks and subtasks.");
 
-				List<Task> tasksIt = client.tasks.findByProject(project.id).
+				List<Task> tasksIt = client.tasks.findByProject(project.gid).
 						option("fields",
 								Arrays.asList(
 										"created_at", "name", "completed",
@@ -317,15 +319,11 @@ public class ExtractStructuralDataChanges {
 										"modified_at", "parent", "parent.name", 
 										"assignee", "assignee.name", "include_archived")).execute();
 				List<Task> tasks = new ArrayList<Task>();
-				for (Task task : tasksIt) {
-					tasks.add(task);
-
-					//					System.out.println("Assignee Status:"+task.assigneeStatus + 
-					//							" id: "+task.id+" name:"+ task.name + " notes: "+
-					//							task.notes + " completed: "+task.completedAt + 
-					//							" assignee: "+((task.assignee!=null)? 
-					//									("id="+task.assignee.id+" name="+task.assignee.name) : task.assignee)
-					//							);		
+	
+				for (Task task : tasksIt) {					
+					if(task.resourceSubtype.equals("default_task")) {
+						tasks.add(task);
+					}
 				}
 
 				List<Task> allTasksAndSubtasks = null;
@@ -343,7 +341,7 @@ public class ExtractStructuralDataChanges {
 						if(!task.name.contains(specificTask))
 							continue;
 					}
-					List<Story> stories = client.stories.findByTask(task.id).option("fields", 
+					List<Story> stories = client.stories.findByTask(task.gid).option("fields", 
 							Arrays.asList(
 									"created_at", "created_by","created_by.name",
 									"type", "target", "text")).execute();
@@ -363,11 +361,11 @@ public class ExtractStructuralDataChanges {
 						try{
 							StructuralDataChange change = new StructuralDataChange(task, story, me);
 							//							StructuralDataChange change = new StructuralDataChange(task, story);
-							change.setProjectId(project.id);
-							change.setWorkspaceId(workspace.id);
-							change.setProjectId(project.id);
+							change.setProjectId(project.gid);
+							change.setWorkspaceId(workspace.gid);
+							change.setProjectId(project.gid);
 							change.setProjectName(project.name);
-							change.setWorkspaceId(workspace.id);
+							change.setWorkspaceId(workspace.gid);
 							change.setWorkspaceName(workspace.name);
 							csvWriter.writeNext(change.csvRow());
 						}
@@ -405,11 +403,11 @@ public class ExtractStructuralDataChanges {
 		if(eventTimestamp == null) 
 			return;
 		StructuralDataChange chTask = new StructuralDataChange(task, eventTimestamp, action);
-		chTask.setProjectId(project.id);
-		chTask.setWorkspaceId(workspace.id);
-		chTask.setProjectId(project.id);
+		chTask.setProjectId(project.gid);
+		chTask.setWorkspaceId(workspace.gid);
+		chTask.setProjectId(project.gid);
 		chTask.setProjectName(project.name);
-		chTask.setWorkspaceId(workspace.id);
+		chTask.setWorkspaceId(workspace.gid);
 		chTask.setWorkspaceName(workspace.name);
 		chTask.setMessageType("derived");
 		csvWriter.writeNext(chTask.csvRow());
@@ -417,25 +415,35 @@ public class ExtractStructuralDataChanges {
 
 	public static List<Task> getAllNestedSubtasks(Client client, List<Task> roots){//recursive
 		List<Task> allTasks = new ArrayList<Task>();
-		allTasks.addAll(roots);
 		for (Task task : roots) {
 			List<Task> subtasks = null;
+			List<Task> nextSubtasks = new ArrayList<Task>();
 			try {
-				//				subtasks = client.tasks.subtasks(task.id).execute();
-				logger.info("Getting subtasks of "+task.name);
-				subtasks = client.tasks.subtasks(task.id).option("fields", 
+				//				subtasks = client.tasks.subtasks(task.gid).execute();
+				logger.info("Getting subtasks of "+task.gid+" "+task.name);
+				
+				
+				subtasks = client.tasks.subtasks(task.gid).option("fields", 
 						Arrays.asList(
-								"created_at", "name", "completed",
-								"tags","completed_at",
-								"modified_at", "parent", "parent.name")).execute();
+								"created_at", "name",
+								"completed_at", "memberships",
+								"modified_at", "parent", "parent.name",
+								"resource_type","resource_subtype")).execute();
+				
+				for (Task t : subtasks) {
+					if(t.resourceSubtype.equals("default_task")) {
+						t.parent = task;
+						nextSubtasks.add(t);
+					}
+					else {
+						logger.info("Discarding section: "+t.gid+" "+t.name);
+					}
+				}
 			} catch (IOException e) {
 				e.printStackTrace();
-			}
-
-			for (Task t : subtasks) {
-				t.parent = task;
-			}
-			allTasks.addAll(getAllNestedSubtasks(client, subtasks));				
+			}	
+			allTasks.addAll(getAllNestedSubtasks(client, nextSubtasks));	
+			allTasks.addAll(roots);
 		}
 		return allTasks;
 	}
@@ -443,11 +451,11 @@ public class ExtractStructuralDataChanges {
 	//	public static List<StructuralDataChange> getAllStructuralDataChanges(Client client, List<Task> allTasks, String path){
 	//		List<StructuralDataChange> list = new ArrayList<StructuralDataChange>();
 	//		for (Task task : allTasks) {
-	//			CollectionRequest<Story> stories = client.stories.findByTask(task.id);
+	//			CollectionRequest<Story> stories = client.stories.findByTask(task.gid);
 	//			for (Story story : stories) {
 	//				StructuralDataChange structuralDataChange = new StructuralDataChange();
 	//				structuralDataChange.setDateTime(story.createdAt);
-	//				structuralDataChange.setPathToHere(task.id);
+	//				structuralDataChange.setPathToHere(task.gid);
 	//			}
 	//		}
 	//		return list;
@@ -455,7 +463,7 @@ public class ExtractStructuralDataChanges {
 
 	public static void printTasks(List<Task> tasks){
 		for (Task task : tasks) {
-			System.out.print("Task id:\t"+task.id+ 
+			System.out.print("Task id:\t"+task.gid+ 
 					"\tname:"+task.name+
 					"\ttask.createdAt:"+task.createdAt + 
 					"\ttask.modifiedAt:"+task.modifiedAt + 
@@ -494,6 +502,8 @@ public class ExtractStructuralDataChanges {
 		Client client = Client.accessToken(pat);
 		client.options.put("page_size", 100);
 		client.options.put("max_retries", 100);
+//		client.options.put("opt_fields", "resource_subtype");
+		client.headers.put("asana-disable", "string_ids,new_sections");
 		//		client.options.put("poll_interval", 10);
 		try {
 			String me = client.users.me().execute().name.trim();
@@ -502,14 +512,14 @@ public class ExtractStructuralDataChanges {
 			
 			for(Workspace w : client.workspaces.findAll()) {
 				if(w.name.equals(ws)) {
-					wsid = w.id;
+					wsid = w.gid;
 					found = true;
 					break;
 				}
 			}
 			
 			if(!found) {
-				System.err.println("Workspace not found.");
+				logger.severe("Workspace not found.");
 				System.exit(-1);
 			}
 			Workspace workspace = client.workspaces.findById(wsid).execute();
@@ -527,17 +537,21 @@ public class ExtractStructuralDataChanges {
 			logger.info("Found project: "+project.name);
 			logger.info("Retrieving all the tasks and subtasks.");
 
-			List<Task> tasksIt = client.tasks.findByProject(project.id).
+			List<Task> tasksIt = client.tasks.findByProject(project.gid).
 					option("fields",
 							Arrays.asList(
 									"created_at", "name", "completed",
 									"tags","completed_at", "notes", 
 									"modified_at", "parent", "parent.name", 
-									"assignee", "assignee.name", "include_archived")).execute();
+									"assignee", "assignee.name", "memberships", 
+									"include_archived", "resource_type",
+									"resource_subtype")).execute();
+			
 			List<Task> tasks = new ArrayList<Task>();
-			for (Task task : tasksIt) {
-				tasks.add(task);
-			}
+			for (Task task : tasksIt) {								
+				if(task.resourceSubtype.equals("default_task"))
+					tasks.add(task);
+			}			
 
 			List<Task> allTasksAndSubtasks = null;
 
@@ -554,7 +568,7 @@ public class ExtractStructuralDataChanges {
 					if(!task.name.contains(r))
 						continue;
 				}
-				List<Story> stories = client.stories.findByTask(task.id).option("fields", 
+				List<Story> stories = client.stories.findByTask(task.gid).option("fields", 
 						Arrays.asList(
 								"created_at", "created_by","created_by.name",
 								"type", "target", "text")).execute();
@@ -575,11 +589,11 @@ public class ExtractStructuralDataChanges {
 						//							StructuralDataChange change = new StructuralDataChange(task, story, me);
 						//							StructuralDataChange change = new StructuralDataChange(task, story);
 						StructuralDataChange change = StructuralDataChange.parseFromText(task,story,me);
-						change.setProjectId(project.id);
-						change.setWorkspaceId(workspace.id);
-						change.setProjectId(project.id);
+						change.setProjectId(project.gid);
+						change.setWorkspaceId(workspace.gid);
+						change.setProjectId(project.gid);
 						change.setProjectName(project.name);
-						change.setWorkspaceId(workspace.id);
+						change.setWorkspaceId(workspace.gid);
 						change.setWorkspaceName(workspace.name);
 						csvWriter.writeNext(change.csvRow());
 					}
