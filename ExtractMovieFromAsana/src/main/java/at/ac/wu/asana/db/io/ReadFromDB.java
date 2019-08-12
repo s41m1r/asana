@@ -21,8 +21,8 @@ public abstract class ReadFromDB {
 		List<StructuralDataChange> allEvents = new ArrayList<StructuralDataChange>();
 		
 		Query queryEvents = session.createSQLQuery(""
-				+ "SELECT * FROM `Springest` "
-				+ "ORDER by timestamp ASC");
+				+ "SELECT * FROM `SpringestWithCircle` "
+				+ "ORDER BY taskId, `timestamp`");
 		
 		List<Object> results = queryEvents.list();
 		List<StructuralDataChange> changeEvents = new ArrayList<StructuralDataChange>();
