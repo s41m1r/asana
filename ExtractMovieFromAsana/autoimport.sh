@@ -43,8 +43,14 @@ for filename in *.csv; do
     readarray -t eCollection < <(cut -d, -f12 $filename ) # name of file
     projName=$(echo ${eCollection[1]} | cut -d' ' -f2)
     projId=$(echo $filename| cut -d'/'  -f2 | cut -d'.'  -f1)
-    tablename=${projId}"_"$projName
+    
     use=$(echo "USE $DATABASE;")
+
+    if [[ "$var" =~ $re ]]; then
+        tablename=${projId}"_"$projName
+    else 
+        echo tablename=${projId}"_";
+    fi
     
     echo "Loading data into table: $tablename"
 

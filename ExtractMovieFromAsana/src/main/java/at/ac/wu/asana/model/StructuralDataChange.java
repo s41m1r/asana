@@ -751,7 +751,7 @@ public class StructuralDataChange {
 	}
 
 	public void setTaskNotes(String taskNotes) {
-		this.taskNotes = taskNotes;
+		this.taskNotes = ""+taskNotes;
 	}
 
 	public void setTaskTags(String taskTags) {

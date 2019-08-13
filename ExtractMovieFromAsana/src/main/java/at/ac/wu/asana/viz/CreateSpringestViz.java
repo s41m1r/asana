@@ -8,6 +8,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
+import org.graphstream.algorithm.measure.Modularity;
 import org.graphstream.graph.Edge;
 import org.graphstream.graph.Graph;
 import org.graphstream.graph.Node;
@@ -113,7 +114,7 @@ public class CreateSpringestViz {
 //			for (Node n : nodes) {
 //				if(n.getInDegree() == 0)
 //					graph.removeNode(n);
-//			}	
+//			}
 			sleep(500);
 		}
 		sf.close();
