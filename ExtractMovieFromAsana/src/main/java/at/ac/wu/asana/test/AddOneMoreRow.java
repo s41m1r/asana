@@ -115,10 +115,7 @@ public class AddOneMoreRow {
 					if(!circles.contains(curCircle))
 						circles.add(curCircle);
 				}
-//				else {
-////					circle = null;
-////					circles = new ArrayList<String>();
-//				}
+
 			}
 			if(sdc.getTypeOfChange()==AsanaActions.REMOVE_FROM_CIRCLE) {
 				String curCircle = sdc.getRawDataText().replaceAll("removed from ", "").trim();
@@ -126,12 +123,8 @@ public class AddOneMoreRow {
 				if(i!=-1) {
 //					circle = curCircle;
 					if(circles.contains(curCircle))
-						circles.add(curCircle);
+						circles.remove(curCircle);
 				}
-//				else {
-////					circle = null;
-//					circles = new ArrayList<String>();
-//				}
 			}
 			sdc.setCircle(commaSeparate(circles));
 			csvWriter.writeNext(sdc.csvRowCircle());
