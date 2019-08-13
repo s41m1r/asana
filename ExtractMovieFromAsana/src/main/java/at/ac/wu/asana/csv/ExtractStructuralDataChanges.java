@@ -415,6 +415,7 @@ public class ExtractStructuralDataChanges {
 
 	public static List<Task> getAllNestedSubtasks(Client client, List<Task> roots){//recursive
 		List<Task> allTasks = new ArrayList<Task>();
+		allTasks.addAll(roots);
 		for (Task task : roots) {
 			List<Task> subtasks = null;
 			List<Task> nextSubtasks = new ArrayList<Task>();
@@ -443,7 +444,6 @@ public class ExtractStructuralDataChanges {
 				e.printStackTrace();
 			}	
 			allTasks.addAll(getAllNestedSubtasks(client, nextSubtasks));	
-			allTasks.addAll(roots);
 		}
 		return allTasks;
 	}
@@ -548,7 +548,7 @@ public class ExtractStructuralDataChanges {
 									"resource_subtype")).execute();
 			
 			List<Task> tasks = new ArrayList<Task>();
-			for (Task task : tasksIt) {								
+			for (Task task : tasksIt) {
 				if(task.resourceSubtype.equals("default_task"))
 					tasks.add(task);
 			}			
