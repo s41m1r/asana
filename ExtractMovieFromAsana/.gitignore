@@ -7,3 +7,4 @@ ExtractMovieFromAsana
 .git
 README.md
 ExtractMovieFromAsana/src/main/java/at/ac/wu/asana/tryout/TryTaskType.java
+ExtractMovieFromAsana/src/main/java/at/ac/wu/asana/tryout/DownloadAllCiclesAndSubcircles.java
