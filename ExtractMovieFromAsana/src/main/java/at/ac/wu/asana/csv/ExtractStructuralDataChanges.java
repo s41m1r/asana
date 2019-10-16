@@ -1,5 +1,6 @@
 package at.ac.wu.asana.csv;
 
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
@@ -8,7 +9,11 @@ import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
 import java.util.logging.FileHandler;
 import java.util.logging.Logger;
 import java.util.logging.SimpleFormatter;
@@ -30,12 +35,158 @@ import com.opencsv.CSVWriter;
 
 import at.ac.wu.asana.model.AsanaActions;
 import at.ac.wu.asana.model.StructuralDataChange;
+import scala.util.parsing.combinator.testing.Str;
 
 public class ExtractStructuralDataChanges {
 
 	static List<StructuralDataChange> structuralDataChanges = new ArrayList<StructuralDataChange>();
 	static Options opts = new Options();
 	static Logger logger = Logger.getLogger("Extraction");	
+
+	private static void extractTasksFromPID(String pat, String ws, String csv, String pid, String r, Boolean ots,
+			Boolean os) {
+
+		Client client = Client.accessToken(pat);
+		client.options.put("page_size", 100);
+		client.options.put("max_retries", 100);
+		//		client.options.put("opt_fields", "resource_subtype");
+		client.headers.put("asana-disable", "string_ids,new_sections");
+		//		client.options.put("poll_interval", 10);
+		try {
+			String me = client.users.me().execute().name.trim();
+			String wsid = null;
+			boolean found = false;
+
+			for(Workspace w : client.workspaces.findAll()) {
+				if(w.name.equals(ws)) {
+					wsid = w.gid;
+					found = true;
+					break;
+				}
+			}
+
+			if(!found) {
+				logger.severe("Workspace not found.");
+				System.exit(-1);
+			}
+			Workspace workspace = client.workspaces.findById(wsid).execute();
+			Project project = client.projects.findById(pid).execute();
+
+			PrintWriter rolesFileWriter = new PrintWriter(
+					new OutputStreamWriter(
+							new FileOutputStream(csv), StandardCharsets.UTF_8) );
+
+			CSVWriter csvWriter = new CSVWriter(rolesFileWriter);
+			String[] header = StructuralDataChange.csvHeader();
+
+			csvWriter.writeNext(header);
+
+			logger.info("Found project: "+project.name);
+			logger.info("Retrieving all the tasks and subtasks.");
+
+			List<Task> tasksIt = client.tasks.findByProject(project.gid).
+					option("fields",
+							Arrays.asList(
+									"created_at", "name", "completed",
+									"tags","completed_at", "notes", 
+									"modified_at", "parent", "parent.name", 
+									"assignee", "assignee.name", "memberships", 
+									"include_archived", "resource_type",
+									"resource_subtype")).execute();
+
+			List<Task> tasks = new ArrayList<Task>();
+			for (Task task : tasksIt) {
+				//				if(task.resourceSubtype.equals("default_task"))
+				tasks.add(task);
+			}			
+
+			List<Task> allTasksAndSubtasks = null;
+
+			if(ots){
+				allTasksAndSubtasks = tasks;
+			}
+			else{
+				allTasksAndSubtasks = getAllNestedSubtasks(client, tasks);
+			}
+
+			logger.info("Scanning "+project.name+ " containing "+allTasksAndSubtasks.size()+ " tasks and subtasks.");
+			boolean foundSection = false;
+			Task lastPurpose = null;
+			Task lastAssignee = null;
+			Task lastAccount = null;
+			for (Task task : allTasksAndSubtasks) {//find the stories and create the StructuralDataChanges
+				if(r!=null){
+					if(!task.name.contains(r))
+						continue;
+				}
+
+				if(task.resourceSubtype.equals("section")) {
+					if(task.name.toLowerCase().contains("purpose")) {
+						if(lastPurpose!=null) {
+							lastPurpose = task;
+							lastAssignee = null;
+							lastAccount = null;
+						}
+					}
+					if(task.name.toLowerCase().contains("accountabilit")) {
+						if(lastPurpose!=null) {
+							lastAccount = task;
+						}
+					}
+					if(task.name.toLowerCase().contains("assignee")) {
+						if(lastPurpose!=null) {
+							lastAssignee = task;
+						}
+					}
+				}
+				List<Story> stories = null;
+				if(!task.resourceSubtype.equals("section")) {
+					stories = client.stories.findByTask(task.gid).option("fields", 
+							Arrays.asList(
+									"created_at", "created_by","created_by.name",
+									"type", "target", "text", "resource_type",
+									"resource_subtype")).execute();
+				}
+				if(stories == null){
+					logger.severe("Stories of "+task.name+ "is "+stories);
+					continue;
+				}
+
+				logger.info("Extracting stories (events) of "+task.name);
+				/*
+				 * Here we can define a new event to be inserted about only Tasks creation. 
+				 * But what about the other fields?
+				 */	
+				addCSVRow(project, workspace, task, csvWriter, task.createdAt, AsanaActions.CREATE_ROLE);
+
+				for (Story story : stories) {
+					try{
+						//							StructuralDataChange change = new StructuralDataChange(task, story, me);
+						//							StructuralDataChange change = new StructuralDataChange(task, story);
+						StructuralDataChange change = StructuralDataChange.parseFromText(task,story,me);
+						change.setProjectId(project.gid);
+						change.setWorkspaceId(workspace.gid);
+						change.setProjectId(project.gid);
+						change.setProjectName(project.name);
+						change.setWorkspaceId(workspace.gid);
+						change.setWorkspaceName(workspace.name);
+						csvWriter.writeNext(change.csvRow());
+					}
+					catch (NullPointerException e) {
+						System.err.println("Story: "+story);
+						logger.info("Problem in Story: "+story);
+						e.printStackTrace();
+					}
+				}
+				addCSVRow(project, workspace, task, csvWriter, task.completedAt, AsanaActions.COMPLETE_ROLE);
+				addCSVRow(project, workspace, task, csvWriter, task.modifiedAt, AsanaActions.LAST_MODIFY_ROLE);
+			}
+			csvWriter.flush();
+			csvWriter.close();
+		}catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
 
 	public static void main(String[] args) {
 		long start = System.currentTimeMillis();
@@ -86,8 +237,8 @@ public class ExtractStructuralDataChanges {
 
 		//		asanaChangesToCSV(pat,ws,csv,p,r,ots,os);
 		if(pid!=null)
-			extractTasksFromPID(pat, ws, csv, pid, r, ots, os);
-		
+			extractTasksFromPID2(pat, ws, csv, pid, r, ots, os);
+
 		else{
 			parseRawDataText(pat,ws,csv,p,r,ots,os);
 		}
@@ -319,7 +470,7 @@ public class ExtractStructuralDataChanges {
 										"modified_at", "parent", "parent.name", 
 										"assignee", "assignee.name", "include_archived")).execute();
 				List<Task> tasks = new ArrayList<Task>();
-	
+
 				for (Task task : tasksIt) {					
 					if(task.resourceSubtype.equals("default_task")) {
 						tasks.add(task);
@@ -422,23 +573,26 @@ public class ExtractStructuralDataChanges {
 			try {
 				//				subtasks = client.tasks.subtasks(task.gid).execute();
 				logger.info("Getting subtasks of "+task.gid+" "+task.name);
-				
-				
+
+
 				subtasks = client.tasks.subtasks(task.gid).option("fields", 
 						Arrays.asList(
 								"created_at", "name",
 								"completed_at", "memberships",
 								"modified_at", "parent", "parent.name",
 								"resource_type","resource_subtype")).execute();
-				
+
 				for (Task t : subtasks) {
-					if(t.resourceSubtype.equals("default_task")) {
-						t.parent = task;
-						nextSubtasks.add(t);
-					}
-					else {
-						logger.info("Discarding section: "+t.gid+" "+t.name);
-					}
+					//					if(t.resourceSubtype.equals("default_task")) {
+					t.parent = task;
+					nextSubtasks.add(t);
+					//					}
+					//					else {
+					//						if(t.resourceSubtype.equals("section")) {
+					//							
+					//						}
+					//						logger.info("Discarding section: "+t.gid+" "+t.name);
+					//					}
 				}
 			} catch (IOException e) {
 				e.printStackTrace();
@@ -496,20 +650,20 @@ public class ExtractStructuralDataChanges {
 		return String.format("%03d %02d:%02d:%02d.%03d [days h:m:s.msec]", day, hour, minute, second, elapsed%1000);
 	}
 
-	private static void extractTasksFromPID(String pat, String ws, String csv, String pid, String r, Boolean ots,
+	private static void extractTasksFromPID2(String pat, String ws, String csv, String pid, String r, Boolean ots,
 			Boolean os) {
 
 		Client client = Client.accessToken(pat);
 		client.options.put("page_size", 100);
 		client.options.put("max_retries", 100);
-//		client.options.put("opt_fields", "resource_subtype");
+		//		client.options.put("opt_fields", "resource_subtype");
 		client.headers.put("asana-disable", "string_ids,new_sections");
 		//		client.options.put("poll_interval", 10);
 		try {
 			String me = client.users.me().execute().name.trim();
 			String wsid = null;
 			boolean found = false;
-			
+
 			for(Workspace w : client.workspaces.findAll()) {
 				if(w.name.equals(ws)) {
 					wsid = w.gid;
@@ -517,7 +671,7 @@ public class ExtractStructuralDataChanges {
 					break;
 				}
 			}
-			
+
 			if(!found) {
 				logger.severe("Workspace not found.");
 				System.exit(-1);
@@ -525,17 +679,9 @@ public class ExtractStructuralDataChanges {
 			Workspace workspace = client.workspaces.findById(wsid).execute();
 			Project project = client.projects.findById(pid).execute();
 
-			PrintWriter rolesFileWriter = new PrintWriter(
-					new OutputStreamWriter(
-							new FileOutputStream(csv), StandardCharsets.UTF_8) );
-
-			CSVWriter csvWriter = new CSVWriter(rolesFileWriter);
-			String[] header = StructuralDataChange.csvHeader();
-
-			csvWriter.writeNext(header);
 
 			logger.info("Found project: "+project.name);
-			logger.info("Retrieving all the tasks and subtasks.");
+			logger.info("Retrieving all the tasks.");
 
 			List<Task> tasksIt = client.tasks.findByProject(project.gid).
 					option("fields",
@@ -545,71 +691,248 @@ public class ExtractStructuralDataChanges {
 									"modified_at", "parent", "parent.name", 
 									"assignee", "assignee.name", "memberships", 
 									"include_archived", "resource_type",
-									"resource_subtype")).execute();
-			
-			List<Task> tasks = new ArrayList<Task>();
-			for (Task task : tasksIt) {
-				if(task.resourceSubtype.equals("default_task"))
-					tasks.add(task);
-			}			
+									"resource_subtype", "num_subtasks")).execute();
 
+			Map<String, Task> tasksMap = new TreeMap<String, Task>();
+			List<StructuralDataChange> listOfChanges = new ArrayList<StructuralDataChange>();
+			Map<String, List<StructuralDataChange>> taskChanges = new TreeMap<String, List<StructuralDataChange>>();
+			for (Task task : tasksIt) {
+				tasksMap.put(task.id, task);
+			}
+
+//			listOfChanges.addAll(collectChangesOfTasksToList(tasksMap, project, workspace, client));
+//			writeListOfChangesToCSV(listOfChanges, csv);
+			
+			taskChanges = collectChangesOfTasksToMap(tasksMap, project, workspace, client);
+			writeMapOfChangesToCSV(taskChanges, csv);
+
+			//			OLD CODE:
 			List<Task> allTasksAndSubtasks = null;
 
-			if(ots){
-				allTasksAndSubtasks = tasks;
-			}
-			else{
-				allTasksAndSubtasks = getAllNestedSubtasks(client, tasks);
-			}
+			//			if(ots){
+			//				allTasksAndSubtasks = tasks;
+			//			}
+			//			else{
+			//				allTasksAndSubtasks = getAllNestedSubtasks(client, tasks);
+			//			}
+			//
+			//			logger.info("Scanning "+project.name+ " containing "+allTasksAndSubtasks.size()+ " tasks and subtasks.");
+			//			boolean foundSection = false;
+			//			Task lastPurpose = null;
+			//			Task lastAssignee = null;
+			//			Task lastAccount = null;
+			//			for (Task task : allTasksAndSubtasks) {//find the stories and create the StructuralDataChanges
+			//				if(r!=null){
+			//					if(!task.name.contains(r))
+			//						continue;
+			//				}
+			//
+			//				if(task.resourceSubtype.equals("section")) {
+			//					if(task.name.toLowerCase().contains("purpose")) {
+			//						if(lastPurpose!=null) {
+			//							lastPurpose = task;
+			//							lastAssignee = null;
+			//							lastAccount = null;
+			//						}
+			//					}
+			//					if(task.name.toLowerCase().contains("accountabilit")) {
+			//						if(lastPurpose!=null) {
+			//							lastAccount = task;
+			//						}
+			//					}
+			//					if(task.name.toLowerCase().contains("assignee")) {
+			//						if(lastPurpose!=null) {
+			//							lastAssignee = task;
+			//						}
+			//					}
+			//				}
+			//				List<Story> stories = null;
+			//				if(!task.resourceSubtype.equals("section")) {
+			//					stories = client.stories.findByTask(task.gid).option("fields", 
+			//							Arrays.asList(
+			//									"created_at", "created_by","created_by.name",
+			//									"type", "target", "text", "resource_type",
+			//									"resource_subtype")).execute();
+			//				}
+			//				if(stories == null){
+			//					logger.severe("Stories of "+task.name+ "is "+stories);
+			//					continue;
+			//				}
+			//
+			//				logger.info("Extracting stories (events) of "+task.name);
+			//				/*
+			//				 * Here we can define a new event to be inserted about only Tasks creation. 
+			//				 * But what about the other fields?
+			//				 */	
+			//				addCSVRow(project, workspace, task, csvWriter, task.createdAt, AsanaActions.CREATE_ROLE);
+			//
+			//				for (Story story : stories) {
+			//					try{
+			//						//							StructuralDataChange change = new StructuralDataChange(task, story, me);
+			//						//							StructuralDataChange change = new StructuralDataChange(task, story);
+			//						StructuralDataChange change = StructuralDataChange.parseFromText(task,story,me);
+			//						change.setProjectId(project.gid);
+			//						change.setWorkspaceId(workspace.gid);
+			//						change.setProjectId(project.gid);
+			//						change.setProjectName(project.name);
+			//						change.setWorkspaceId(workspace.gid);
+			//						change.setWorkspaceName(workspace.name);
+			//						csvWriter.writeNext(change.csvRow());
+			//					}
+			//					catch (NullPointerException e) {
+			//						System.err.println("Story: "+story);
+			//						logger.info("Problem in Story: "+story);
+			//						e.printStackTrace();
+			//					}
+			//				}
+			//				addCSVRow(project, workspace, task, csvWriter, task.completedAt, AsanaActions.COMPLETE_ROLE);
+			//				addCSVRow(project, workspace, task, csvWriter, task.modifiedAt, AsanaActions.LAST_MODIFY_ROLE);
+			//			}
 
-			logger.info("Scanning "+project.name+ " containing "+allTasksAndSubtasks.size()+ " tasks and subtasks.");
-			for (Task task : allTasksAndSubtasks) {//find the stories and create the StructuralDataChanges
-				if(r!=null){
-					if(!task.name.contains(r))
-						continue;
-				}
-				List<Story> stories = client.stories.findByTask(task.gid).option("fields", 
-						Arrays.asList(
-								"created_at", "created_by","created_by.name",
-								"type", "target", "text")).execute();
-				if(stories == null){
-					logger.severe("Stories of "+task.name+ "is "+stories);
-					continue;
-				}
-
-				logger.info("Extracting stories (events) of "+task.name);
-				/*
-				 * Here we can define a new event to be inserted about only Tasks creation. 
-				 * But what about the other fields?
-				 */					
-				addCSVRow(project, workspace, task, csvWriter, task.createdAt, AsanaActions.CREATE_ROLE);
-
-				for (Story story : stories) {
-					try{
-						//							StructuralDataChange change = new StructuralDataChange(task, story, me);
-						//							StructuralDataChange change = new StructuralDataChange(task, story);
-						StructuralDataChange change = StructuralDataChange.parseFromText(task,story,me);
-						change.setProjectId(project.gid);
-						change.setWorkspaceId(workspace.gid);
-						change.setProjectId(project.gid);
-						change.setProjectName(project.name);
-						change.setWorkspaceId(workspace.gid);
-						change.setWorkspaceName(workspace.name);
-						csvWriter.writeNext(change.csvRow());
-					}
-					catch (NullPointerException e) {
-						System.err.println("Story: "+story);
-						logger.info("Problem in Story: "+story);
-						e.printStackTrace();
-					}
-				}
-				addCSVRow(project, workspace, task, csvWriter, task.completedAt, AsanaActions.COMPLETE_ROLE);
-				addCSVRow(project, workspace, task, csvWriter, task.modifiedAt, AsanaActions.LAST_MODIFY_ROLE);
-			}
-			csvWriter.flush();
-			csvWriter.close();
 		}catch (IOException e) {
 			e.printStackTrace();
 		}
+	}
+
+	private static void writeMapOfChangesToCSV(Map<String, List<StructuralDataChange>> taskChanges, String csv) {
+		PrintWriter rolesFileWriter;
+		try {
+			rolesFileWriter = new PrintWriter(
+					new OutputStreamWriter(
+							new FileOutputStream(csv), StandardCharsets.UTF_8) );
+
+			CSVWriter csvWriter = new CSVWriter(rolesFileWriter);
+			String[] header = StructuralDataChange.csvHeader();
+			csvWriter.writeNext(header);
+			for (String taskId : taskChanges.keySet()) {
+				List<StructuralDataChange> changes = taskChanges.get(taskId);
+				for (StructuralDataChange change : changes) {
+					csvWriter.writeNext(change.csvRow());
+				}
+			}
+			csvWriter.flush();
+			csvWriter.close();
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+
+	private static Map<String, List<StructuralDataChange>> collectChangesOfTasksToMap(Map<String, Task> tasksMap, Project project,
+			Workspace workspace, Client client) {
+		Map<String, List<StructuralDataChange>> res = new TreeMap<String, List<StructuralDataChange>>();
+		Set<String> keys = tasksMap.keySet();
+		for (String k : keys) {
+			List<StructuralDataChange> list = new ArrayList<StructuralDataChange>();
+			Task currentTask = tasksMap.get(k);
+			//			loop through its history
+			List<Story> stories = null;
+			try {
+				stories = client.stories.findByTask(currentTask.gid).option("fields", 
+						Arrays.asList(
+								"created_at", "created_by","created_by.name",
+								"type", "target", "text", "resource_type",
+								"resource_subtype")).execute();
+				if(stories!=null && currentTask.createdAt!=null) {
+//					Add first derived event
+					list.add(createDerivedEvent(currentTask, project, workspace, currentTask.createdAt, AsanaActions.CREATE_ROLE)); 
+					for (Story story : stories) {
+						list.add(createStoryEvent(project, workspace, story, currentTask, client.users.me().execute().name));
+					}
+					//				Add complete and last_modify 
+					list.add(createDerivedEvent(currentTask, project, workspace, currentTask.completedAt, AsanaActions.COMPLETE_ROLE));
+					list.add(createDerivedEvent(currentTask, project, workspace, currentTask.modifiedAt, AsanaActions.LAST_MODIFY_ROLE));
+				}
+				res.put(currentTask.gid, list);
+			} catch (IOException e) {
+				System.err.println("Could not retrieve stories of task "+currentTask.gid+" "+currentTask.name);
+				e.printStackTrace();
+			}
+		}
+		
+		return res;
+	}
+
+	private static void writeListOfChangesToCSV(List<StructuralDataChange> listOfChanges, String csv) {
+		PrintWriter rolesFileWriter;
+		try {
+			rolesFileWriter = new PrintWriter(
+					new OutputStreamWriter(
+							new FileOutputStream(csv), StandardCharsets.UTF_8) );
+
+			CSVWriter csvWriter = new CSVWriter(rolesFileWriter);
+			String[] header = StructuralDataChange.csvHeader();
+			csvWriter.writeNext(header);
+			for (StructuralDataChange structuralDataChange : listOfChanges) {
+				csvWriter.writeNext(structuralDataChange.csvRow());
+			}
+
+			csvWriter.flush();
+			csvWriter.close();
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+
+	}
+
+	private static Collection<? extends StructuralDataChange> collectChangesOfTasksToList(Map<String, Task> tasksMap, Project project, Workspace workspace, Client client) {
+		List<StructuralDataChange> list = new ArrayList<StructuralDataChange>();
+		Set<String> keys = tasksMap.keySet();
+		for (String k : keys) {
+			Task currentTask = tasksMap.get(k);
+			//			loop through its history
+			List<Story> stories = null;
+			try {
+				stories = client.stories.findByTask(currentTask.gid).option("fields", 
+						Arrays.asList(
+								"created_at", "created_by","created_by.name",
+								"type", "target", "text", "resource_type",
+								"resource_subtype")).execute();
+				if(stories!=null && currentTask.createdAt!=null) {
+//					Add first derived event
+					list.add(createDerivedEvent(currentTask, project, workspace, currentTask.createdAt, AsanaActions.CREATE_ROLE)); 
+					for (Story story : stories) {
+						list.add(createStoryEvent(project, workspace, story, currentTask, client.users.me().execute().name));
+					}
+					//				Add complete and last_modify 
+					list.add(createDerivedEvent(currentTask, project, workspace, currentTask.completedAt, AsanaActions.COMPLETE_ROLE));
+					list.add(createDerivedEvent(currentTask, project, workspace, currentTask.modifiedAt, AsanaActions.LAST_MODIFY_ROLE));
+				}
+			} catch (IOException e) {
+				System.err.println("Could not retrieve stories of task "+currentTask.gid+" "+currentTask.name);
+				e.printStackTrace();
+			}
+		}
+		return list;
+	}
+
+	private static StructuralDataChange createStoryEvent(Project project, Workspace workspace, Story story, Task task, String me) {
+		StructuralDataChange change = StructuralDataChange.parseFromText(task,story,me);
+		change.setProjectId(project.gid);
+		change.setWorkspaceId(workspace.gid);
+		change.setProjectId(project.gid);
+		change.setProjectName(project.name);
+		change.setWorkspaceId(workspace.gid);
+		change.setWorkspaceName(workspace.name);
+		return change;
+	}
+
+	private static StructuralDataChange createDerivedEvent(Task task, Project project, Workspace workspace,
+			DateTime timestamp, int action) {
+		StructuralDataChange chTask = new StructuralDataChange(task, timestamp, action);
+		chTask.setStoryCreatedAt(task.createdAt);
+		chTask.setModifiedAt(task.modifiedAt);
+		chTask.setCompletedAt(task.completedAt);
+		chTask.setProjectId(project.gid);
+		chTask.setWorkspaceId(workspace.gid);
+		chTask.setProjectId(project.gid);
+		chTask.setProjectName(project.name);
+		chTask.setWorkspaceId(workspace.gid);
+		chTask.setWorkspaceName(workspace.name);
+		chTask.setMessageType("derived");
+		return chTask;
 	}
 }

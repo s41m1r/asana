@@ -12,17 +12,17 @@ import at.ac.wu.asana.util.GeneralUtils;
 
 public abstract class ReadFromDB {
 
-	public static List<StructuralDataChange> readFromDB(String dbname){
+	public static List<StructuralDataChange> readFromDB(String dbname, String sql){
 		
 		// read the data
 		SessionFactory sf = DatabaseConnector.getSessionFactory(dbname);
 		org.hibernate.Session session = sf.openSession();
 		
 		List<StructuralDataChange> allEvents = new ArrayList<StructuralDataChange>();
-		
-		Query queryEvents = session.createSQLQuery(""
-				+ "SELECT * FROM `SpringestWithCircle` "
-				+ "ORDER BY taskId, `timestamp`");
+			
+		Query queryEvents = session.createSQLQuery((sql!=null)? sql: ""
+				+ "SELECT * FROM `Springest`"
+				+ "ORDER BY taskId, `timestamp`, `parentTaskId`");
 		
 		List<Object> results = queryEvents.list();
 		List<StructuralDataChange> changeEvents = new ArrayList<StructuralDataChange>();
@@ -40,6 +40,5 @@ public abstract class ReadFromDB {
 		
 		return allEvents;
 	}
-	
 	
 }
