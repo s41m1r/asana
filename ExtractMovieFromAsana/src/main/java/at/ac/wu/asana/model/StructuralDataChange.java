@@ -15,163 +15,16 @@ import com.google.api.client.util.DateTime;
 
 public class StructuralDataChange {	
 
-	public static String[] csvHeader(){
-		return new String[]{
-				"timestamp",
-				"taskId",
-				"parentTaskId",
-				"taskName",
-				"rawDataText",
-				"messageType",
-				"typeOfChange",
-				"typeOfChangeDescription",
-				"isRole",
-				"taskCreatedAt", 
-				"createdByName",
-				"projectName",
-				"isCicle",
-				"createdById",
-				"assigneeId",
-				"assigneeName",
-				"eventId",
-				"projectId",
-				"workspaceId",
-				"workspaceName",
-				"isSubtask",
-				"parentTaskName",
-				//				"pathToHere",
-				"date", 
-				"time",
-				"taskCompletedAt",
-				"taskModifiedAt",
-				"taskNotes"
-		};
-	}
-
-	public static String[] csvHeaderCircle(){
-		return new String[]{
-				"timestamp",
-				"taskId",
-				"parentTaskId",
-				"taskName",
-				"rawDataText",
-				"messageType",
-				"typeOfChange",
-				"typeOfChangeDescription",
-				"isRole",
-				"taskCreatedAt", 
-				"createdByName",
-				"projectName",
-				"isCicle",
-				"createdById",
-				"assigneeId",
-				"assigneeName",
-				"eventId",
-				"projectId",
-				"workspaceId",
-				"workspaceName",
-				"isSubtask",
-				"parentTaskName",
-				//				"pathToHere",
-				"date", 
-				"time",
-				"taskCompletedAt",
-				"taskModifiedAt",
-				"taskNotes",
-				"circle",
-				"migration"
-		};
-	}
-	public static StructuralDataChange fromString(String[] row){
-		StructuralDataChange sdc = new StructuralDataChange();
-
-		sdc.storyCreatedAt = DateTime.parseRfc3339(row[0].replace(' ', 'T'));
-		sdc.createdAt = DateTime.parseRfc3339(row[0].replace(' ', 'T'));
-		sdc.taskId = row[1];	
-		sdc.parentTaskId = row[2];
-		sdc.taskName = row[3];
-		sdc.rawDataText = row[4];
-		sdc.messageType = row[5];
-		sdc.typeOfChange = Integer.parseInt(row[6]);
-		sdc.typeOfChangeDescription = row[7];
-		sdc.isRole = Boolean.parseBoolean(row[8]);
-		sdc.taskCreatedAt = DateTime.parseRfc3339(row[9].replace(' ', 'T'));
-		sdc.storyCreatedByName = row[10];
-		sdc.projectName = row[11];
-		sdc.isCircle = Boolean.parseBoolean(row[12]);
-		sdc.storyCreatedById = row[13];
-		sdc.assigneeId = row[14];
-		sdc.assigneeName = row[15];
-		sdc.storyId = row[16];
-		sdc.projectId = row[17];				
-		sdc.workspaceId = row[18];
-		sdc.workspaceName = row[19];
-		sdc.isSubtask = Boolean.parseBoolean(row[20]);
-		sdc.parentTaskName = row[21];
-
-		return sdc;
-	}
-	public static String getPath(Task task) {
-		String path = "";
-		if(task.parent!=null)
-			path += getPath(task.parent) + "/" + task.parent.name + "/" + task.name;
-		return path;
-	}
-	public static boolean isCircle(String name) {
-		if(name.contains("☺") && name.toLowerCase().endsWith("roles"))
-			return true;
-		else 
-			return false;
-	}
-	public static boolean isSmiley(String parentName) {
-		return parentName.startsWith("☺");
-	}
-	public static boolean isYinAndYang(String taskname) {
-		if(taskname.startsWith("☯"))
-			return true;
-		return false;
-	}
-	public static StructuralDataChange parseFromText(Task task, Story story, String me) {
-		StructuralDataChange dataChange = new StructuralDataChange();
-		dataChange.storyCreatedAt = story.createdAt;
-		dataChange.storyId = story.gid;
-		dataChange.taskId = task.gid;
-		dataChange.taskName = task.name;
-		dataChange.taskCreatedAt = task.createdAt;
-		dataChange.taskCompletedAt = task.completedAt;
-		dataChange.taskModifiedAt = task.modifiedAt;
-		dataChange.setActionAndAssignee(story.text, story.type, me);
-		dataChange.setTaskTags(dataChange.extractTaskTags(task.tags));
-		dataChange.setTaskNotes(task.notes);
-		//		pathToHere = getPath(task);
-		dataChange.setStoryCreatedById(story.createdBy.gid);
-		dataChange.setStoryCreatedByName(story.createdBy.name);
-		if(task.assignee!=null){
-			dataChange.assigneeId = task.assignee.gid;
-			dataChange.assigneeName = task.assignee.name;
-		}
-		dataChange.isSubtask = (task.parent!=null);
-		if(dataChange.isSubtask){
-			dataChange.parentTaskName = task.parent.name;
-			dataChange.setParentTaskId(task.parent.gid);
-		}
-		dataChange.setRole(dataChange.taskName);
-		dataChange.isCircle = isCircle(task.name);
-		dataChange.rawDataText = story.text;
-		dataChange.messageType = story.type;
-		dataChange.typeOfChange = dataChange.typeOfChange(story.text, dataChange.messageType);
-		dataChange.typeOfChangeDescription = AsanaActions.codeToString(dataChange.typeOfChange);
-		return dataChange;
-	}
 	final Logger logger = Logger.getLogger(this.getClass().getName());
+
 	private DateTime storyCreatedAt;
 	private DateTime taskCreatedAt;
 	private DateTime taskModifiedAt;
 	private DateTime taskCompletedAt;
 	private boolean isRole;
 	private String actor;
-	private String assigneeId;
-	private String assigneeName;
+	private String lastAssigneeId;
+	private String lastAssigneeName;
 	private String action;
 	private String circle; //location
 	private String pathToHere;
@@ -185,27 +38,24 @@ public class StructuralDataChange {
 	private String parentTaskName;
 	private String rawDataText;
 	private String messageType;
-	private String newAssignee;
+	private String currentAssignee;
 	private String projectId;
 	private DateTime createdAt;
 	private DateTime modifiedAt;
 	private DateTime completedAt;
 	private String storyCreatedById;
-
 	private String storyCreatedByName;
-
 	private String parentTaskId;
-
 	private String taskNotes;
-
 	private String taskTags;
-
 	private int typeOfChange;
-
 	private String typeOfChangeDescription;
 	private boolean isCircle;
-
 	private boolean migration;
+
+	private String circleIds;
+
+	private String parentCircle;
 
 	public StructuralDataChange() {
 	}
@@ -238,6 +88,9 @@ public class StructuralDataChange {
 		taskCreatedAt = task.createdAt;
 		taskCompletedAt = task.completedAt;
 		taskModifiedAt = task.modifiedAt;
+		createdAt=taskCreatedAt;
+		completedAt=taskCompletedAt;
+		modifiedAt=taskModifiedAt;
 		//		pathToHere = getPath(task);
 
 		// at some point also set action
@@ -245,8 +98,8 @@ public class StructuralDataChange {
 		this.typeOfChangeDescription = AsanaActions.codeToString(typeOfChange);
 
 		if(task.assignee!=null){
-			assigneeId = task.assignee.gid;
-			assigneeName = task.assignee.name;
+			lastAssigneeId = task.assignee.gid;
+			lastAssigneeName = task.assignee.name;
 		}
 		isSubtask = (task.parent!=null);
 		if(isSubtask){
@@ -279,8 +132,8 @@ public class StructuralDataChange {
 		setStoryCreatedById(story.createdBy.gid);
 		setStoryCreatedByName(story.createdBy.name);
 		if(task.assignee!=null){
-			assigneeId = task.assignee.gid;
-			assigneeName = task.assignee.name;
+			lastAssigneeId = task.assignee.gid;
+			lastAssigneeName = task.assignee.name;
 		}
 		isSubtask = (task.parent!=null);
 		if(isSubtask){
@@ -294,6 +147,7 @@ public class StructuralDataChange {
 		typeOfChange = typeOfChange(story.text, messageType);
 		typeOfChangeDescription = AsanaActions.codeToString(typeOfChange);
 	}
+
 	public String[] csvRow(){
 		return new String[]{ 
 				new Timestamp(storyCreatedAt.getValue()).toString(),
@@ -310,8 +164,9 @@ public class StructuralDataChange {
 				projectName,
 				isCircle+"",
 				storyCreatedById,
-				assigneeId,
-				assigneeName,
+				currentAssignee,
+				lastAssigneeId,
+				lastAssigneeName,
 				storyId,
 				projectId,				
 				workspaceId,
@@ -341,8 +196,8 @@ public class StructuralDataChange {
 				projectName,
 				isCircle+"",
 				storyCreatedById,
-				assigneeId,
-				assigneeName,
+				lastAssigneeId,
+				lastAssigneeName,
 				storyId,
 				projectId,				
 				workspaceId,
@@ -355,9 +210,12 @@ public class StructuralDataChange {
 				((taskModifiedAt != null)? taskModifiedAt.toString(): ""),
 				taskNotes,
 				circle,
-				migration+""
+				circleIds,
+				migration+"",
+				parentCircle
 		};
 	}
+
 	private String extractTaskTags(Collection<Tag> tags) {
 		String res = "";
 		if(tags!=null) {
@@ -373,12 +231,15 @@ public class StructuralDataChange {
 	public String getActor() {
 		return actor;
 	}
+
 	public String getAssigneeId() {
-		return assigneeId;
+		return lastAssigneeId;
 	}
+
 	public String getAssigneeName() {
-		return assigneeName;
+		return lastAssigneeName;
 	}
+
 	public String getCircle() {
 		return circle;
 	}
@@ -388,35 +249,27 @@ public class StructuralDataChange {
 	public DateTime getCreatedAt() {
 		return createdAt;
 	}
-
 	public String getDate(){
 		return DateFormat.getInstance().format(storyCreatedAt);
 	}
-
 	public DateTime getDateTime() {
 		return storyCreatedAt;
 	}
-
 	public String getEventId() {
 		return storyId;
 	}
-
 	public Boolean getIsSubtask() {
 		return isSubtask;
 	}
-
 	public String getMessageType() {
 		return messageType;
 	}
-
 	public DateTime getModifiedAt() {
 		return modifiedAt;
 	}
-
 	public String getNewAssignee() {
-		return newAssignee;
+		return currentAssignee;
 	}
-
 	public String getParentTask() {
 		return parentTaskName;
 	}
@@ -526,7 +379,6 @@ public class StructuralDataChange {
 		return migration;
 	}
 
-
 	/**
 	 * if taskName is empty --> not a role
 	 * @return 1 if it is role, 0 otherwise
@@ -590,9 +442,9 @@ public class StructuralDataChange {
 	private void setActionAndAssignee(String text, String type, String me) {
 		if(type.equals("system")){
 			action = parseAction(text);
-			newAssignee = parseAssignee(text);
-			if(newAssignee!=null && newAssignee.equals("you"))
-				newAssignee=""+me;
+			currentAssignee = parseAssignee(text);
+			if(currentAssignee!=null && currentAssignee.equals("you"))
+				currentAssignee=""+me;
 		}
 		else if(type.equals("comment")){
 			action = AsanaActions.MAKE_COMMENT;
@@ -607,12 +459,13 @@ public class StructuralDataChange {
 	}
 
 	public void setAssigneeId(String assigneeId) {
-		this.assigneeId = assigneeId;
+		this.lastAssigneeId = assigneeId;
 	}
 
 	public void setAssigneeName(String assigneeName) {
-		this.assigneeName = assigneeName;
+		this.lastAssigneeName = assigneeName;
 	}
+
 
 	public void setCircle(boolean isCircle) {
 		this.isCircle = isCircle;
@@ -620,6 +473,10 @@ public class StructuralDataChange {
 
 	public void setCircle(String circle) {
 		this.circle = circle;
+	}
+
+	public void setCircleIds(String commaSeparateIds) {
+		circleIds=""+commaSeparateIds;
 	}
 
 	public void setCompletedAt(DateTime completedAt) {
@@ -655,13 +512,13 @@ public class StructuralDataChange {
 	}
 
 	public void setNewAssignee(String newAssignee) {
-		this.newAssignee = newAssignee;
+		this.currentAssignee = newAssignee;
 	}
 
 	public void setNewAssignee(User assignee) {
 		if(assignee!=null)
-			this.assigneeId = assignee.gid;
-		this.assigneeName = assignee.name;
+			this.lastAssigneeId = assignee.gid;
+		this.lastAssigneeName = assignee.name;
 	}
 
 	public void setParentTask(String parentTask) {
@@ -729,15 +586,19 @@ public class StructuralDataChange {
 	public void setStoryId(String storyId) {
 		this.storyId = storyId;
 	}
+
 	public void setStoryType(String storyType) {
 		this.messageType = storyType;
 	}
+
 	public void setTaskCompletedAt(DateTime taskCompletedAt) {
 		this.taskCompletedAt = taskCompletedAt;
 	}
+
 	public void setTaskCreatedAt(DateTime taskCreatedAt) {
 		this.taskCreatedAt = taskCreatedAt;
 	}
+
 	public void setTaskId(String taskId) {
 		this.taskId = taskId;
 	}
@@ -753,19 +614,15 @@ public class StructuralDataChange {
 	public void setTaskNotes(String taskNotes) {
 		this.taskNotes = ""+taskNotes;
 	}
-
 	public void setTaskTags(String taskTags) {
 		this.taskTags = taskTags;
 	}
-
 	public void setTypeOfChange(int typeOfChange) {
 		this.typeOfChange = typeOfChange;
 	}
-
 	public void setTypeOfChangeDescription(String typeOfChangeDescription) {
 		this.typeOfChangeDescription = typeOfChangeDescription;
 	}
-
 	public void setWorkspaceId(String workspaceId) {
 		this.workspaceId = workspaceId;
 	}
@@ -839,6 +696,171 @@ public class StructuralDataChange {
 					" = "+AsanaActions.UNCLEAR_OR_CONFLICT_WITH_CODEBOOK);
 			return AsanaActions.UNCLEAR_OR_CONFLICT_WITH_CODEBOOK;
 		}
+	}
+
+	public static String[] csvHeader(){
+		return new String[]{
+				"timestamp",
+				"taskId",
+				"parentTaskId",
+				"taskName",
+				"rawDataText",
+				"messageType",
+				"typeOfChange",
+				"typeOfChangeDescription",
+				"isRole",
+				"taskCreatedAt", 
+				"createdByName",
+				"projectName",
+				"isCicle",
+				"createdById",
+				"currentAssignee",
+				"lastAssigneeId",
+				"lastAssigneeName",
+				"eventId",
+				"projectId",
+				"workspaceId",
+				"workspaceName",
+				"isSubtask",
+				"parentTaskName",
+				//				"pathToHere",
+				"date", 
+				"time",
+				"taskCompletedAt",
+				"taskModifiedAt",
+				"taskNotes"
+		};
+	}
+
+	public static String[] csvHeaderCircle(){
+		return new String[]{
+				"timestamp",
+				"taskId",
+				"parentTaskId",
+				"taskName",
+				"rawDataText",
+				"messageType",
+				"typeOfChange",
+				"typeOfChangeDescription",
+				"isRole",
+				"taskCreatedAt", 
+				"createdByName",
+				"projectName",
+				"isCicle",
+				"createdById",
+				"currentAssignee",
+				"lastAssigneeId",
+				"lastAssigneeName",
+				"eventId",
+				"projectId",
+				"workspaceId",
+				"workspaceName",
+				"isSubtask",
+				"parentTaskName",
+				//				"pathToHere",
+				"date", 
+				"time",
+				"taskCompletedAt",
+				"taskModifiedAt",
+				"taskNotes",
+				"circle",
+				"circleIds",
+				"migration",
+				"parentCircle"
+		};
+	}
+
+	public static StructuralDataChange fromString(String[] row){
+		StructuralDataChange sdc = new StructuralDataChange();
+
+		sdc.storyCreatedAt = DateTime.parseRfc3339(row[0].replace(' ', 'T'));
+		sdc.createdAt = DateTime.parseRfc3339(row[0].replace(' ', 'T'));
+		sdc.taskId = row[1];	
+		sdc.parentTaskId = row[2];
+		sdc.taskName = row[3];
+		sdc.rawDataText = row[4];
+		sdc.messageType = row[5];
+		sdc.typeOfChange = Integer.parseInt(row[6]);
+		sdc.typeOfChangeDescription = row[7];
+		sdc.isRole = Boolean.parseBoolean(row[8]);
+		sdc.taskCreatedAt = DateTime.parseRfc3339(row[9].replace(' ', 'T'));
+		sdc.storyCreatedByName = row[10];
+		sdc.projectName = row[11];
+		sdc.isCircle = Boolean.parseBoolean(row[12]);
+		sdc.storyCreatedById = row[13];
+		sdc.lastAssigneeId = row[14];
+		sdc.lastAssigneeName = row[15];
+		sdc.storyId = row[16];
+		sdc.projectId = row[17];				
+		sdc.workspaceId = row[18];
+		sdc.workspaceName = row[19];
+		sdc.isSubtask = Boolean.parseBoolean(row[20]);
+		sdc.parentTaskName = row[21];
+
+		return sdc;
+	}
+
+	public static String getPath(Task task) {
+		String path = "";
+		if(task.parent!=null)
+			path += getPath(task.parent) + "/" + task.parent.name + "/" + task.name;
+		return path;
+	}
+
+	public static boolean isCircle(String name) {
+		if(name.contains("☺") && name.toLowerCase().endsWith("roles"))
+			return true;
+		else 
+			return false;
+	}
+
+	public static boolean isSmiley(String parentName) {
+		return parentName.startsWith("☺");
+	}
+
+	public static boolean isYinAndYang(String taskname) {
+		if(taskname.startsWith("☯"))
+			return true;
+		return false;
+	}
+
+	public static StructuralDataChange parseFromText(Task task, Story story, String me) {
+		StructuralDataChange dataChange = new StructuralDataChange();
+		dataChange.storyCreatedAt = story.createdAt;
+		dataChange.storyId = story.gid;
+		dataChange.taskId = task.gid;
+		dataChange.taskName = task.name;
+		dataChange.taskCreatedAt = task.createdAt;
+		dataChange.taskCompletedAt = task.completedAt;
+		dataChange.taskModifiedAt = task.modifiedAt;
+		dataChange.setActionAndAssignee(story.text, story.type, me);
+		dataChange.setTaskTags(dataChange.extractTaskTags(task.tags));
+		dataChange.setTaskNotes(task.notes);
+		//		pathToHere = getPath(task);
+		dataChange.setStoryCreatedById(story.createdBy.gid);
+		dataChange.setStoryCreatedByName(story.createdBy.name);
+		if(task.assignee!=null){
+			dataChange.lastAssigneeId = task.assignee.gid;
+			dataChange.lastAssigneeName = task.assignee.name;
+		}
+		dataChange.isSubtask = (task.parent!=null);
+		if(dataChange.isSubtask){
+			dataChange.parentTaskName = task.parent.name;
+			dataChange.setParentTaskId(task.parent.gid);
+		}
+		dataChange.setRole(dataChange.taskName);
+		dataChange.isCircle = isCircle(task.name);
+		dataChange.rawDataText = story.text;
+		dataChange.messageType = story.type;
+		dataChange.typeOfChange = dataChange.typeOfChange(story.text, dataChange.messageType);
+		dataChange.typeOfChangeDescription = AsanaActions.codeToString(dataChange.typeOfChange);
+		if(story.resourceSubtype.equals("assigned")) {
+			String assignee = dataChange.parseAssignee(story.text);
+			if(assignee.equals("you"))
+				assignee = me;
+			dataChange.currentAssignee = assignee;
+		}
+		return dataChange;
 	}
 
 }

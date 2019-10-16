@@ -26,6 +26,7 @@ public class AsanaActions {
 	
 	public static final int CHANGE_ACCOUNTABILITY_PURPOSE = 1;
 	public static final int ADD_SUB_ROLE = 11;
+	public static final int CHANGE_SUB_ROLE = 111;
 	public static final int ASSIGN_TO_ACTOR = 2;
 	public static final int UNASSIGN_FROM_ACTOR = 3;
 	public static final int ADD_TO_CIRCLE = 4;
@@ -36,9 +37,10 @@ public class AsanaActions {
 	public static final int CHANGE_NAME_OF_ROLE = 9;
 	public static final int IGNORE_OR_DELETE = 0;
 	public static final int UNCLEAR_OR_CONFLICT_WITH_CODEBOOK = 99;
-	public static final int CREATE_ROLE = 12;
+	public static final int DESIGN_ROLE = 12;
 	public static final int LAST_MODIFY_ROLE = 13;
 	public static final int COMPLETE_ROLE = 14;
+	public static final int CREATE_ROLE = 15;
 	
 	
 	public static String codeToString(int code){
@@ -49,6 +51,9 @@ public class AsanaActions {
 			break;
 		case ADD_SUB_ROLE:
 			res = "ADD_SUB_ROLE";
+			break;
+		case CHANGE_SUB_ROLE:
+			res = "CHANGE_SUB_ROLE";
 			break;
 		case ASSIGN_TO_ACTOR:
 			res = "ASSIGN_TO_ACTOR";
@@ -79,6 +84,9 @@ public class AsanaActions {
 			break;
 		case CREATE_ROLE:
 			res = "CREATE_ROLE";
+			break;
+		case DESIGN_ROLE:
+			res = "DESIGN_ROLE";
 			break;
 		case COMPLETE_ROLE:
 			res = "COMPLETE_ROLE";
