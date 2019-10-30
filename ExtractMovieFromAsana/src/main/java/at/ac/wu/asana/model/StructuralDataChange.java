@@ -52,6 +52,7 @@ public class StructuralDataChange {
 	private String typeOfChangeDescription;
 	private boolean isCircle;
 	private boolean migration;
+	private boolean isRenderedAsSeparator;
 
 	private String circleIds;
 
@@ -103,12 +104,13 @@ public class StructuralDataChange {
 		}
 		isSubtask = (task.parent!=null);
 		if(isSubtask){
-			parentTaskName = task.parent.name;
+			setParentTaskName(task.parent.name);
 			setParentTaskId(task.parent.gid);
 		}
 		setRole(isRole());
 		setTaskTags(extractTaskTags(task.tags));
 		setTaskNotes(task.notes);
+		isRenderedAsSeparator=task.isRenderedAsSeparator;
 	}
 
 	/**
@@ -146,6 +148,7 @@ public class StructuralDataChange {
 		messageType = story.type;
 		typeOfChange = typeOfChange(story.text, messageType);
 		typeOfChangeDescription = AsanaActions.codeToString(typeOfChange);
+		isRenderedAsSeparator=task.isRenderedAsSeparator;
 	}
 
 	public String[] csvRow(){
@@ -172,6 +175,7 @@ public class StructuralDataChange {
 				workspaceId,
 				workspaceName,
 				isSubtask+"",
+				isRenderedAsSeparator+"",
 				parentTaskName,
 				new SimpleDateFormat("yyyy-MM-dd").format(new Date(storyCreatedAt.getValue())),
 				new SimpleDateFormat("hh:mm:ss.SSS").format(new Date(storyCreatedAt.getValue())),
@@ -203,6 +207,7 @@ public class StructuralDataChange {
 				workspaceId,
 				workspaceName,
 				isSubtask+"",
+				isRenderedAsSeparator+"",
 				parentTaskName,
 				new SimpleDateFormat("yyyy-MM-dd").format(new Date(storyCreatedAt.getValue())),
 				new SimpleDateFormat("hh:mm:ss.SSS").format(new Date(storyCreatedAt.getValue())),
@@ -722,6 +727,7 @@ public class StructuralDataChange {
 				"workspaceId",
 				"workspaceName",
 				"isSubtask",
+				"isRenderedAsSeparator",
 				"parentTaskName",
 				//				"pathToHere",
 				"date", 
@@ -756,6 +762,7 @@ public class StructuralDataChange {
 				"workspaceId",
 				"workspaceName",
 				"isSubtask",
+				"isRenderedAsSeparator",
 				"parentTaskName",
 				//				"pathToHere",
 				"date", 
@@ -856,11 +863,20 @@ public class StructuralDataChange {
 		dataChange.typeOfChangeDescription = AsanaActions.codeToString(dataChange.typeOfChange);
 		if(story.resourceSubtype.equals("assigned")) {
 			String assignee = dataChange.parseAssignee(story.text);
-			if(assignee.equals("you"))
+			if(assignee!= null && assignee.equals("you"))
 				assignee = me;
 			dataChange.currentAssignee = assignee;
 		}
+		dataChange.isRenderedAsSeparator=task.isRenderedAsSeparator;
 		return dataChange;
+	}
+
+	public boolean isRenderedAsSeparator() {
+		return isRenderedAsSeparator;
+	}
+
+	public void setRenderedAsSeparator(boolean isRenderedAsSeparator) {
+		this.isRenderedAsSeparator = isRenderedAsSeparator;
 	}
 
 }

@@ -71,7 +71,7 @@ public class AsanaActions {
 			res = "COMMENT";
 			break;
 		case DETELE_OR_MARK_COMPLETE:
-			res = "DETELE_OR_MARK_COMPLETE";
+			res = "DELETE_OR_MARK_COMPLETE";
 			break;
 		case REVIVE_OR_MARK_INCOMPLETE:
 			res = "REVIVE_OR_MARK_INCOMPLETE";

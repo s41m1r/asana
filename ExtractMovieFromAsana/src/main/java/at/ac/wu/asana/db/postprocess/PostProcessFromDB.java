@@ -1,4 +1,4 @@
-package at.ac.wu.asana.tryout;
+package at.ac.wu.asana.db.postprocess;
 
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -22,7 +22,7 @@ import at.ac.wu.asana.model.AsanaActions;
 import at.ac.wu.asana.model.StructuralDataChange;
 import at.ac.wu.asana.util.GeneralUtils;
 
-public class AddOneMoreRow {
+public class PostProcessFromDB {
 
 	static class TimestampCircle implements Comparable<TimestampCircle> {
 		DateTime timestamp;
@@ -78,7 +78,8 @@ public class AddOneMoreRow {
 			"404651189519209",
 			"560994092069672",
 			"561311958443380",
-	"824769296181501"};
+			"824769296181501",
+			"1133031362168396"};
 
 	static String[] authoritativeListNames = new String[] {
 			"☺ Sales Roles",
@@ -103,11 +104,12 @@ public class AddOneMoreRow {
 			"☺ Germany Roles",
 			"☺ People Roles",
 			"☺ Office Roles",
-	"☺ Customer Success Roles"};
+			"☺ Customer Success Roles",
+			"☺ Springest Academy Roles"};
 
 	static Map<String, String> subCirclesOf = new HashMap<String, String>();
 	static Map<String, String> mapTaskCurrentCircle = new HashMap<String, String>();
-	static Map<String, TreeSet<TimestampCircle>> circlesOfTasks = new HashMap<String, TreeSet<AddOneMoreRow.TimestampCircle>>();
+	static Map<String, TreeSet<TimestampCircle>> circlesOfTasks = new HashMap<String, TreeSet<PostProcessFromDB.TimestampCircle>>();
 
 	public static void main(String[] args) throws IOException {
 
@@ -117,11 +119,28 @@ public class AddOneMoreRow {
 		subCirclesOf.put("11555199602299", "560994092069672");
 		subCirclesOf.put("11555199602299", "561311958443380");
 		subCirclesOf.put("11347525454570", "824769296181501");
+		subCirclesOf.put("11555199602299", "1133031362168396");
 		fixCircles();
 		//		fixSubcircles()
+//		transferToFatherPurposeAndAccountability(subTasksMap, taskChanges, subtaskChanges, tasksMap);
+		
+		
+		/* FIX SUB-ROLE!!!! 
+		 * //						if(sdc.getTypeOfChange()==AsanaActions.ADD_SUB_ROLE) {
+//							Task parent = tasksMap.get(currentTask.parent.gid);
+//							StructuralDataChange sdcParent = createStoryEvent(project, workspace, story, parent, client.users.me().execute().name);
+//							sdcParent.setTypeOfChange(AsanaActions.CHANGE_SUB_ROLE);
+//							sdcParent.setTypeOfChangeDescription(AsanaActions.codeToString(AsanaActions.CHANGE_SUB_ROLE));
+//						}
+		 */
+		
 		System.out.println("Done in "+(System.currentTimeMillis()-start)/1000+" sec.");
 	}
 
+	/**
+	 * 
+	 * @throws IOException
+	 */
 	private static void fixCircles() throws IOException {
 		String sql = "SELECT * FROM `Springest` ORDER BY taskId, `timestamp`;";
 
@@ -141,20 +160,36 @@ public class AddOneMoreRow {
 		String lastTaskId = null;
 		int lastTypeOfChange = -1;
 		boolean migration = false;
-		TreeSet<TimestampCircle> treeSet = new TreeSet<AddOneMoreRow.TimestampCircle>();
+		TreeSet<TimestampCircle> treeSet = new TreeSet<PostProcessFromDB.TimestampCircle>();
 		List<String> unionCircles = new ArrayList<String>();
 		boolean becameIndependent = false;
 		int timesAddedToCircle = 0;
+		boolean assigneeFound = false;
+		boolean purpAccFound = false;
+		StructuralDataChange lastParent = events.get(0);
 
 		for (StructuralDataChange sdc : events) {
+			
+			if(sdc.isRenderedAsSeparator()) {
+				if(sdc.getTaskName().toLowerCase().startsWith("accountabilit") || 
+						sdc.getTaskName().toLowerCase().startsWith("purpose"))
+					purpAccFound = true;
+				if(sdc.getTaskName().toLowerCase().startsWith("assignee"))
+					assigneeFound = true;
+				continue;
+			}
+						
 			String currTaskId = sdc.getTaskId();
-			if(!currTaskId.equals(lastTaskId)) {
+			if(!currTaskId.equals(lastTaskId)) { //new parent
 				lastTaskId = currTaskId;
 				circles = new ArrayList<String>();
 				lastTypeOfChange = -1;
 				migration = false;
 				becameIndependent = false;
 				timesAddedToCircle = 0;
+				assigneeFound = false;
+				purpAccFound = false;
+				lastParent = sdc;
 			}
 			
 			if(sdc.getParentTaskId()!=null && !sdc.getParentTask().isEmpty()) { // this is a subtask and must inherit all fathers circles
@@ -164,6 +199,9 @@ public class AddOneMoreRow {
 				circlesFather = getCirclesAtTime(fathersHistory, sdc.getStoryCreatedAt());
 				if(!becameIndependent)
 					circles = GeneralUtils.union(circles, circlesFather);
+				
+//				 Transfer the tasks to the parent
+				
 			}
 			
 			if(sdc.getTypeOfChange()==12) { 
@@ -182,7 +220,7 @@ public class AddOneMoreRow {
 					timesAddedToCircle++;
 					if(!circles.contains(curCircle)) {
 						circles.add(curCircle);
-						TreeSet<TimestampCircle> ts = new TreeSet<AddOneMoreRow.TimestampCircle>();
+						TreeSet<TimestampCircle> ts = new TreeSet<PostProcessFromDB.TimestampCircle>();
 						List<String> copyOfCircles = new ArrayList<String>();
 						copyOfCircles.addAll(circles);		
 						ts.add(new TimestampCircle(sdc.getStoryCreatedAt(), copyOfCircles));

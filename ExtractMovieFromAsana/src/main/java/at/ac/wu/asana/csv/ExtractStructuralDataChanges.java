@@ -10,10 +10,11 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.TreeMap;
 import java.util.logging.FileHandler;
 import java.util.logging.Logger;
 import java.util.logging.SimpleFormatter;
@@ -35,13 +36,73 @@ import com.opencsv.CSVWriter;
 
 import at.ac.wu.asana.model.AsanaActions;
 import at.ac.wu.asana.model.StructuralDataChange;
-import scala.util.parsing.combinator.testing.Str;
+import javafx.scene.Parent;
 
 public class ExtractStructuralDataChanges {
 
 	static List<StructuralDataChange> structuralDataChanges = new ArrayList<StructuralDataChange>();
 	static Options opts = new Options();
 	static Logger logger = Logger.getLogger("Extraction");	
+
+	public static void main(String[] args) {
+		long start = System.currentTimeMillis();
+		FileHandler fh;
+		try {
+			fh = new FileHandler("Extraction"+ LocalDateTime.now()+".log");
+			logger.addHandler(fh);
+			SimpleFormatter formatter = new SimpleFormatter();  
+			fh.setFormatter(formatter);
+		} catch (SecurityException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}    
+
+		CommandLineParser commandLineParser = new DefaultParser();
+		Options options = initOpts();
+		CommandLine line = null;
+
+		try {
+			// parse the command line arguments
+			line = commandLineParser.parse(options, args);
+		}
+		catch(ParseException exp ) {
+			// oops, something went wrong
+			logger.warning("Parsing failed. Reason: " + exp.getMessage());
+		}
+
+		//		asanaChangesToCSV(App.PAT_SAIMIR, "InfoBiz", "");
+		String pat = line.getOptionValue("pat");
+		String ws = line.getOptionValue("ws");
+		String csv = line.getOptionValue("csv");
+		String p = line.getOptionValue("p");
+		String pid = line.getOptionValue("pid");
+		String r = line.getOptionValue("r");
+		Boolean ots = line.hasOption("ots");
+		Boolean os = line.hasOption("os");
+
+		String info = "Extraction started with parameters "+"\npat:"+pat+""
+				+ "\nws:" +ws + "," 
+				+ "\ncsv:" +csv + ","
+				+ "\np:" +p + ","
+				+ "\npid:" +pid + ","
+				+ "\nr:" +r + ","
+				+ "\nots:"+ ots
+				+ "\nos:"+ os;
+		logger.info(info); 
+
+		//		asanaChangesToCSV(pat,ws,csv,p,r,ots,os);
+		if(pid!=null)
+			extractTasksFromPID2(pat, ws, csv, pid, r, ots, os);
+
+		else{
+			parseRawDataText(pat,ws,csv,p,r,ots,os);
+		}
+
+		//		System.out.println("All done in "+ getElapsedTime(System.currentTimeMillis(), start));
+		logger.info("All done in "+ getElapsedTime(System.currentTimeMillis(), start));
+		logger.info("Output stored in:  "+ csv);
+	}
 
 	private static void extractTasksFromPID(String pat, String ws, String csv, String pid, String r, Boolean ots,
 			Boolean os) {
@@ -186,66 +247,6 @@ public class ExtractStructuralDataChanges {
 		}catch (IOException e) {
 			e.printStackTrace();
 		}
-	}
-
-	public static void main(String[] args) {
-		long start = System.currentTimeMillis();
-		FileHandler fh;
-		try {
-			fh = new FileHandler("Extraction"+ LocalDateTime.now()+".log");
-			logger.addHandler(fh);
-			SimpleFormatter formatter = new SimpleFormatter();  
-			fh.setFormatter(formatter);
-		} catch (SecurityException e) {
-			e.printStackTrace();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}    
-
-		CommandLineParser commandLineParser = new DefaultParser();
-		Options options = initOpts();
-		CommandLine line = null;
-
-		try {
-			// parse the command line arguments
-			line = commandLineParser.parse(options, args);
-		}
-		catch(ParseException exp ) {
-			// oops, something went wrong
-			logger.warning("Parsing failed. Reason: " + exp.getMessage());
-		}
-
-		//		asanaChangesToCSV(App.PAT_SAIMIR, "InfoBiz", "");
-		String pat = line.getOptionValue("pat");
-		String ws = line.getOptionValue("ws");
-		String csv = line.getOptionValue("csv");
-		String p = line.getOptionValue("p");
-		String pid = line.getOptionValue("pid");
-		String r = line.getOptionValue("r");
-		Boolean ots = line.hasOption("ots");
-		Boolean os = line.hasOption("os");
-
-		String info = "Extraction started with parameters "+"\npat:"+pat+""
-				+ "\nws:" +ws + "," 
-				+ "\ncsv:" +csv + ","
-				+ "\np:" +p + ","
-				+ "\npid:" +pid + ","
-				+ "\nr:" +r + ","
-				+ "\nots:"+ ots
-				+ "\nos:"+ os;
-		logger.info(info); 
-
-		//		asanaChangesToCSV(pat,ws,csv,p,r,ots,os);
-		if(pid!=null)
-			extractTasksFromPID2(pat, ws, csv, pid, r, ots, os);
-
-		else{
-			parseRawDataText(pat,ws,csv,p,r,ots,os);
-		}
-
-		//		System.out.println("All done in "+ getElapsedTime(System.currentTimeMillis(), start));
-		logger.info("All done in "+ getElapsedTime(System.currentTimeMillis(), start));
-		logger.info("Output stored in:  "+ csv);
 	}
 
 	private static void parseRawDataText(String pat, String ws, String csv, String p, String r, Boolean ots,
@@ -691,107 +692,129 @@ public class ExtractStructuralDataChanges {
 									"modified_at", "parent", "parent.name", 
 									"assignee", "assignee.name", "memberships", 
 									"include_archived", "resource_type",
-									"resource_subtype", "num_subtasks")).execute();
+									"resource_subtype", "num_subtasks", "is_rendered_as_separator")).execute();
 
-			Map<String, Task> tasksMap = new TreeMap<String, Task>();
-			List<StructuralDataChange> listOfChanges = new ArrayList<StructuralDataChange>();
-			Map<String, List<StructuralDataChange>> taskChanges = new TreeMap<String, List<StructuralDataChange>>();
+			Map<String, Task> tasksMap = new LinkedHashMap<String, Task>();
+			Map<String, List<StructuralDataChange>> taskChanges = new LinkedHashMap<String, List<StructuralDataChange>>();
 			for (Task task : tasksIt) {
 				tasksMap.put(task.id, task);
 			}
 
-//			listOfChanges.addAll(collectChangesOfTasksToList(tasksMap, project, workspace, client));
-//			writeListOfChangesToCSV(listOfChanges, csv);
-			
+			//			listOfChanges.addAll(collectChangesOfTasksToList(tasksMap, project, workspace, client));
+			//			writeListOfChangesToCSV(listOfChanges, csv);
+
 			taskChanges = collectChangesOfTasksToMap(tasksMap, project, workspace, client);
+
+			List<Task> tasks = new ArrayList<Task>(tasksMap.values());
+
+			Map<String, Task> subTasksMap = new LinkedHashMap<String, Task>();
+			getSubtasksRecursively(subTasksMap, tasks, tasksMap, client);
+			logger.info("Retrieving "+subTasksMap.size()+" subtasks.");
+
+			Map<String, List<StructuralDataChange>> subtaskChanges = collectChangesOfTasksToMap(subTasksMap, project, workspace, client);						
+			/* makes side effect on both parameters */
+//			transferToFatherPurposeAndAccountability(subTasksMap, taskChanges, subtaskChanges, tasksMap);
+//			System.out.println("Effective subroles found: "+subTasksMap.size());
+			
+			taskChanges.putAll(subtaskChanges);
+
 			writeMapOfChangesToCSV(taskChanges, csv);
-
-			//			OLD CODE:
-			List<Task> allTasksAndSubtasks = null;
-
-			//			if(ots){
-			//				allTasksAndSubtasks = tasks;
-			//			}
-			//			else{
-			//				allTasksAndSubtasks = getAllNestedSubtasks(client, tasks);
-			//			}
-			//
-			//			logger.info("Scanning "+project.name+ " containing "+allTasksAndSubtasks.size()+ " tasks and subtasks.");
-			//			boolean foundSection = false;
-			//			Task lastPurpose = null;
-			//			Task lastAssignee = null;
-			//			Task lastAccount = null;
-			//			for (Task task : allTasksAndSubtasks) {//find the stories and create the StructuralDataChanges
-			//				if(r!=null){
-			//					if(!task.name.contains(r))
-			//						continue;
-			//				}
-			//
-			//				if(task.resourceSubtype.equals("section")) {
-			//					if(task.name.toLowerCase().contains("purpose")) {
-			//						if(lastPurpose!=null) {
-			//							lastPurpose = task;
-			//							lastAssignee = null;
-			//							lastAccount = null;
-			//						}
-			//					}
-			//					if(task.name.toLowerCase().contains("accountabilit")) {
-			//						if(lastPurpose!=null) {
-			//							lastAccount = task;
-			//						}
-			//					}
-			//					if(task.name.toLowerCase().contains("assignee")) {
-			//						if(lastPurpose!=null) {
-			//							lastAssignee = task;
-			//						}
-			//					}
-			//				}
-			//				List<Story> stories = null;
-			//				if(!task.resourceSubtype.equals("section")) {
-			//					stories = client.stories.findByTask(task.gid).option("fields", 
-			//							Arrays.asList(
-			//									"created_at", "created_by","created_by.name",
-			//									"type", "target", "text", "resource_type",
-			//									"resource_subtype")).execute();
-			//				}
-			//				if(stories == null){
-			//					logger.severe("Stories of "+task.name+ "is "+stories);
-			//					continue;
-			//				}
-			//
-			//				logger.info("Extracting stories (events) of "+task.name);
-			//				/*
-			//				 * Here we can define a new event to be inserted about only Tasks creation. 
-			//				 * But what about the other fields?
-			//				 */	
-			//				addCSVRow(project, workspace, task, csvWriter, task.createdAt, AsanaActions.CREATE_ROLE);
-			//
-			//				for (Story story : stories) {
-			//					try{
-			//						//							StructuralDataChange change = new StructuralDataChange(task, story, me);
-			//						//							StructuralDataChange change = new StructuralDataChange(task, story);
-			//						StructuralDataChange change = StructuralDataChange.parseFromText(task,story,me);
-			//						change.setProjectId(project.gid);
-			//						change.setWorkspaceId(workspace.gid);
-			//						change.setProjectId(project.gid);
-			//						change.setProjectName(project.name);
-			//						change.setWorkspaceId(workspace.gid);
-			//						change.setWorkspaceName(workspace.name);
-			//						csvWriter.writeNext(change.csvRow());
-			//					}
-			//					catch (NullPointerException e) {
-			//						System.err.println("Story: "+story);
-			//						logger.info("Problem in Story: "+story);
-			//						e.printStackTrace();
-			//					}
-			//				}
-			//				addCSVRow(project, workspace, task, csvWriter, task.completedAt, AsanaActions.COMPLETE_ROLE);
-			//				addCSVRow(project, workspace, task, csvWriter, task.modifiedAt, AsanaActions.LAST_MODIFY_ROLE);
-			//			}
+//			writeMapOfChangesToCSV(subtaskChanges, csv+".subtasks.csv");
 
 		}catch (IOException e) {
 			e.printStackTrace();
 		}
+	}
+
+	/* makes side effect on both parameters */
+	private static void transferToFatherPurposeAndAccountability(Map<String, Task> subTasksMap,
+			Map<String, List<StructuralDataChange>> taskChanges, Map<String, List<StructuralDataChange>> subtaskChanges, Map<String, Task> tasksMap) {
+		Set<String> taskIds = new LinkedHashSet<String>(subTasksMap.keySet());
+		String lastParentId = "";
+		boolean changeAccPurFound=false;
+		boolean assigneeFound = false;
+		for (String taskId : taskIds) {
+//			if(taskId.equals("163654573139018"))
+//				System.out.println("qui");
+			boolean skip = false;
+			Task thisTask = subTasksMap.get(taskId);
+			String thisParentId = thisTask.parent.gid;
+
+			if(!lastParentId.equals(thisParentId)) { // parent changed
+				lastParentId=thisParentId;
+				changeAccPurFound=false;
+				assigneeFound=false;
+			}
+
+			if(thisTask.isRenderedAsSeparator || 
+					thisTask.name.toLowerCase().startsWith("accountabilit") ||
+					thisTask.name.toLowerCase().startsWith("purpose") ||
+					thisTask.name.toLowerCase().startsWith("assignee")) { /*
+					if we transport to father all events that pertain to account/purpose, 
+					then we are only left with "normal" subtasks */
+				subTasksMap.remove(thisTask.gid);
+				changeAccPurFound=true;
+				subtaskChanges.remove(thisTask.gid);
+				skip = true;
+				if(thisTask.name.toLowerCase().startsWith("assignee"))
+					assigneeFound=true;
+			}
+
+			if(changeAccPurFound && !skip && !assigneeFound) {
+				//move this event to its father's event list
+				List<StructuralDataChange> fathersEvents = taskChanges.get(thisParentId);
+				List<StructuralDataChange> subtaskEvents = subtaskChanges.get(thisTask.gid);
+				for (StructuralDataChange sdc : subtaskEvents) {
+//					if(!sdc.getParentTaskId().equals(thisParentId))
+//						System.out.println("Incosist!!!");
+					sdc.setTaskId(sdc.getParentTaskId());
+					sdc.setTaskName(sdc.getParentTaskName());
+					sdc.setTypeOfChange(AsanaActions.CHANGE_ACCOUNTABILITY_PURPOSE);
+					sdc.setTypeOfChangeDescription(AsanaActions.codeToString(AsanaActions.CHANGE_ACCOUNTABILITY_PURPOSE));
+					if(tasksMap.get(thisParentId).parent!=null) {
+						sdc.setParentTaskId(tasksMap.get(thisParentId).parent.gid);
+						sdc.setParentTaskName(tasksMap.get(thisParentId).parent.name);
+					}
+					else {
+						sdc.setParentTaskId(null);
+						sdc.setParentTaskName(null);
+					}
+				}
+				fathersEvents.addAll(subtaskEvents);
+				subtaskChanges.remove(thisTask.gid);
+				subTasksMap.remove(thisTask.gid);
+			}
+
+		}
+	}
+
+	private static Map<String, Task> getSubtasksRecursively(Map<String, Task> res, List<Task> tasks, Map<String, Task> tasksMap, Client client) {
+		List<Task> nextSubtasks = new ArrayList<Task>();	
+		for (Task task : tasks) {
+			try {
+				if(task.numSubtasks>0) {
+					List<Task> subTasks = client.tasks.subtasks(task.gid)
+							.option("fields",
+									Arrays.asList(
+											"created_at", "name", "completed",
+											"tags","completed_at", "notes", 
+											"modified_at", "parent", "parent.name", 
+											"assignee", "assignee.name", "memberships", 
+											"include_archived", "resource_type",
+											"resource_subtype", "num_subtasks", "is_rendered_as_separator")).execute();
+					for (Task st : subTasks) {
+						if(!tasksMap.containsKey(st.gid)) {
+							nextSubtasks.add(st);
+							res.put(st.gid, st);
+						}
+					}
+					getSubtasksRecursively(res, nextSubtasks, tasksMap, client);
+				}
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
+		return res;
 	}
 
 	private static void writeMapOfChangesToCSV(Map<String, List<StructuralDataChange>> taskChanges, String csv) {
@@ -821,7 +844,7 @@ public class ExtractStructuralDataChanges {
 
 	private static Map<String, List<StructuralDataChange>> collectChangesOfTasksToMap(Map<String, Task> tasksMap, Project project,
 			Workspace workspace, Client client) {
-		Map<String, List<StructuralDataChange>> res = new TreeMap<String, List<StructuralDataChange>>();
+		Map<String, List<StructuralDataChange>> res = new LinkedHashMap<String, List<StructuralDataChange>>();
 		Set<String> keys = tasksMap.keySet();
 		for (String k : keys) {
 			List<StructuralDataChange> list = new ArrayList<StructuralDataChange>();
@@ -835,10 +858,18 @@ public class ExtractStructuralDataChanges {
 								"type", "target", "text", "resource_type",
 								"resource_subtype")).execute();
 				if(stories!=null && currentTask.createdAt!=null) {
-//					Add first derived event
+					//					Add first derived event
 					list.add(createDerivedEvent(currentTask, project, workspace, currentTask.createdAt, AsanaActions.CREATE_ROLE)); 
 					for (Story story : stories) {
-						list.add(createStoryEvent(project, workspace, story, currentTask, client.users.me().execute().name));
+						StructuralDataChange sdc = createStoryEvent(project, workspace, story, currentTask, client.users.me().execute().name);
+						list.add(sdc);
+//						TODO: this is to be moved to the implementation after the data was stored:
+//						if(sdc.getTypeOfChange()==AsanaActions.ADD_SUB_ROLE) {
+//							Task parent = tasksMap.get(currentTask.parent.gid);
+//							StructuralDataChange sdcParent = createStoryEvent(project, workspace, story, parent, client.users.me().execute().name);
+//							sdcParent.setTypeOfChange(AsanaActions.CHANGE_SUB_ROLE);
+//							sdcParent.setTypeOfChangeDescription(AsanaActions.codeToString(AsanaActions.CHANGE_SUB_ROLE));
+//						}
 					}
 					//				Add complete and last_modify 
 					list.add(createDerivedEvent(currentTask, project, workspace, currentTask.completedAt, AsanaActions.COMPLETE_ROLE));
@@ -848,9 +879,14 @@ public class ExtractStructuralDataChanges {
 			} catch (IOException e) {
 				System.err.println("Could not retrieve stories of task "+currentTask.gid+" "+currentTask.name);
 				e.printStackTrace();
+			} catch (Exception e) {
+				e.printStackTrace();
+				Task parent = tasksMap.get(currentTask.parent.gid);
+				System.out.println("Current task is: "+currentTask.gid+" "+currentTask.name+ "and parent task is "+parent.gid+" "+parent.name);
+				System.exit(-1);;
 			}
 		}
-		
+
 		return res;
 	}
 
@@ -892,7 +928,7 @@ public class ExtractStructuralDataChanges {
 								"type", "target", "text", "resource_type",
 								"resource_subtype")).execute();
 				if(stories!=null && currentTask.createdAt!=null) {
-//					Add first derived event
+					//					Add first derived event
 					list.add(createDerivedEvent(currentTask, project, workspace, currentTask.createdAt, AsanaActions.CREATE_ROLE)); 
 					for (Story story : stories) {
 						list.add(createStoryEvent(project, workspace, story, currentTask, client.users.me().execute().name));
