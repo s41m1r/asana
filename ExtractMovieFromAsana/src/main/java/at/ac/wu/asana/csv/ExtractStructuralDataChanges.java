@@ -718,7 +718,7 @@ public class ExtractStructuralDataChanges {
 			
 			taskChanges.putAll(subtaskChanges);
 
-			writeMapOfChangesToCSV(taskChanges, csv);
+			WriteUtils.writeMapOfChangesToCSV(taskChanges, csv);
 //			writeMapOfChangesToCSV(subtaskChanges, csv+".subtasks.csv");
 
 		}catch (IOException e) {
@@ -816,32 +816,7 @@ public class ExtractStructuralDataChanges {
 		}
 		return res;
 	}
-
-	private static void writeMapOfChangesToCSV(Map<String, List<StructuralDataChange>> taskChanges, String csv) {
-		PrintWriter rolesFileWriter;
-		try {
-			rolesFileWriter = new PrintWriter(
-					new OutputStreamWriter(
-							new FileOutputStream(csv), StandardCharsets.UTF_8) );
-
-			CSVWriter csvWriter = new CSVWriter(rolesFileWriter);
-			String[] header = StructuralDataChange.csvHeader();
-			csvWriter.writeNext(header);
-			for (String taskId : taskChanges.keySet()) {
-				List<StructuralDataChange> changes = taskChanges.get(taskId);
-				for (StructuralDataChange change : changes) {
-					csvWriter.writeNext(change.csvRow());
-				}
-			}
-			csvWriter.flush();
-			csvWriter.close();
-		} catch (FileNotFoundException e) {
-			e.printStackTrace();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-	}
-
+	
 	private static Map<String, List<StructuralDataChange>> collectChangesOfTasksToMap(Map<String, Task> tasksMap, Project project,
 			Workspace workspace, Client client) {
 		Map<String, List<StructuralDataChange>> res = new LinkedHashMap<String, List<StructuralDataChange>>();
