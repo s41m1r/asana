@@ -41,4 +41,31 @@ public abstract class ReadFromDB {
 		return allEvents;
 	}
 	
+public static List<StructuralDataChange> readFromDBNoSort(String dbname, String sql){
+		
+		// read the data
+		SessionFactory sf = DatabaseConnector.getSessionFactory(dbname);
+		org.hibernate.Session session = sf.openSession();
+		
+		List<StructuralDataChange> allEvents = new ArrayList<StructuralDataChange>();
+			
+		Query queryEvents = session.createSQLQuery((sql!=null)? sql: ""
+				+ "SELECT * FROM `"+dbname+"`.SpringestRaw");
+		
+		List<Object> results = queryEvents.list();
+		
+		for (Object e : results) {
+			Object[] row = (Object[]) e;
+			String[] str = GeneralUtils.toStrObjArray(row);
+			StructuralDataChange sdc = StructuralDataChange.fromString(str);
+			allEvents.add(sdc);
+		}
+		
+		session.flush();
+		session.close();
+		sf.close();
+		
+		return allEvents;
+	}
+	
 }

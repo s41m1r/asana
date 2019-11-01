@@ -53,6 +53,7 @@ public class StructuralDataChange {
 	private boolean isCircle;
 	private boolean migration;
 	private boolean isRenderedAsSeparator;
+	private boolean isChangeAccountabilityPurpose;
 
 	private String circleIds;
 
@@ -200,6 +201,7 @@ public class StructuralDataChange {
 				projectName,
 				isCircle+"",
 				storyCreatedById,
+				currentAssignee,
 				lastAssigneeId,
 				lastAssigneeName,
 				storyId,
@@ -272,7 +274,7 @@ public class StructuralDataChange {
 	public DateTime getModifiedAt() {
 		return modifiedAt;
 	}
-	public String getNewAssignee() {
+	public String getCurrentAssignee() {
 		return currentAssignee;
 	}
 	public String getParentTask() {
@@ -439,6 +441,14 @@ public class StructuralDataChange {
 		}
 		return null;
 	}
+	
+	public String parseCurrentAssignee() {
+		if(this.rawDataText.startsWith("assigned to")){
+			String[] split = this.rawDataText.split("assigned to");
+			return split[1].trim();
+		}
+		return null;
+	}
 
 	public void setAction(String action) {
 		this.action = action;
@@ -516,7 +526,7 @@ public class StructuralDataChange {
 		this.modifiedAt = modifiedAt;
 	}
 
-	public void setNewAssignee(String newAssignee) {
+	public void setCurrentAssignee(String newAssignee) {
 		this.currentAssignee = newAssignee;
 	}
 
@@ -795,14 +805,19 @@ public class StructuralDataChange {
 		sdc.projectName = row[11];
 		sdc.isCircle = Boolean.parseBoolean(row[12]);
 		sdc.storyCreatedById = row[13];
-		sdc.lastAssigneeId = row[14];
-		sdc.lastAssigneeName = row[15];
-		sdc.storyId = row[16];
-		sdc.projectId = row[17];				
-		sdc.workspaceId = row[18];
-		sdc.workspaceName = row[19];
-		sdc.isSubtask = Boolean.parseBoolean(row[20]);
-		sdc.parentTaskName = row[21];
+		sdc.currentAssignee = row[14];
+		sdc.lastAssigneeId = row[15];
+		sdc.lastAssigneeName = row[16];
+		sdc.storyId = row[17];
+		sdc.projectId = row[18];				
+		sdc.workspaceId = row[19];
+		sdc.workspaceName = row[20];
+		sdc.isSubtask = Boolean.parseBoolean(row[21]);
+		sdc.isRenderedAsSeparator = Boolean.parseBoolean(row[22]);
+		sdc.parentTaskName = row[23];
+		sdc.taskCompletedAt = (row[26]!="")? DateTime.parseRfc3339(row[26].replace(' ', 'T')):null;
+		sdc.taskModifiedAt = DateTime.parseRfc3339(row[27].replace(' ', 'T'));
+		sdc.taskNotes = row[28];		
 
 		return sdc;
 	}
@@ -877,6 +892,14 @@ public class StructuralDataChange {
 
 	public void setRenderedAsSeparator(boolean isRenderedAsSeparator) {
 		this.isRenderedAsSeparator = isRenderedAsSeparator;
+	}
+
+	public boolean isChangeAccountabilityPurpose() {
+		return isChangeAccountabilityPurpose;
+	}
+
+	public void setChangeAccountabilityPurpose(boolean isChangeAccountabilityPurpose) {
+		this.isChangeAccountabilityPurpose = isChangeAccountabilityPurpose;
 	}
 
 }
