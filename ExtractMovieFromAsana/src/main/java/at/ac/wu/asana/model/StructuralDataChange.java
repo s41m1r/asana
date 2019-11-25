@@ -274,6 +274,11 @@ public class StructuralDataChange {
 	public DateTime getModifiedAt() {
 		return modifiedAt;
 	}
+	
+	public String getCircleIds() {
+		return circleIds;
+	}
+	
 	public String getCurrentAssignee() {
 		return currentAssignee;
 	}
@@ -815,9 +820,11 @@ public class StructuralDataChange {
 		sdc.isSubtask = Boolean.parseBoolean(row[21]);
 		sdc.isRenderedAsSeparator = Boolean.parseBoolean(row[22]);
 		sdc.parentTaskName = row[23];
-		sdc.taskCompletedAt = (row[26]!="")? DateTime.parseRfc3339(row[26].replace(' ', 'T')):null;
+		sdc.taskCompletedAt = (!row[26].equals(""))? DateTime.parseRfc3339(row[26].replace(' ', 'T')):null;
 		sdc.taskModifiedAt = DateTime.parseRfc3339(row[27].replace(' ', 'T'));
-		sdc.taskNotes = row[28];		
+		sdc.taskNotes = row[28];	
+		sdc.setCircle(row[29]);
+		sdc.setCircleIds(row[30]);
 
 		return sdc;
 	}
