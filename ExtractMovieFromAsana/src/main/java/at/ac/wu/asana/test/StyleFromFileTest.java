@@ -39,7 +39,7 @@ public class StyleFromFileTest {
         explore(graph.getNode("A"));
 	}
 	
-	public void explore(Node source) {
+	public static void explore(Node source) {
         Iterator<? extends Node> k = source.getBreadthFirstIterator();
 
         while (k.hasNext()) {
@@ -49,7 +49,7 @@ public class StyleFromFileTest {
         }
 	}
 	
-	protected void sleep() {
+	protected static void sleep() {
 		try { Thread.sleep(1000); } catch (Exception e) {}
 	}
 }

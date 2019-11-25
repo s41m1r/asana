@@ -8,7 +8,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
-import org.graphstream.algorithm.measure.Modularity;
 import org.graphstream.graph.Edge;
 import org.graphstream.graph.Graph;
 import org.graphstream.graph.Node;
@@ -65,13 +64,13 @@ public class CreateSpringestViz {
 
 	private static void addNodesStepByStep(Graph graph, Node master, Sprite s1) {
 
-		SessionFactory sf = DatabaseConnector.getSessionFactory("asana_manual2");
+		SessionFactory sf = DatabaseConnector.getSessionFactory("asana_manual5");
 		org.hibernate.Session session = sf.openSession();
 
 		addAllCircles(session, graph, master);
 
-		Query queryAllDates = session.createSQLQuery("SELECT DISTINCT date FROM `Springest` ORDER BY date");
-		Query queryEvents = session.createSQLQuery("SELECT * FROM `Springest` WHERE date =:date ORDER by timestamp ASC");
+		Query queryAllDates = session.createSQLQuery("SELECT DISTINCT date FROM `SpringestWithCircle` ORDER BY date");
+		Query queryEvents = session.createSQLQuery("SELECT * FROM `SpringestWithCircle` WHERE date =:date ORDER by timestamp ASC");
 
 		List<String> result = (List<String>) queryAllDates.list();		
 		System.out.println("Retrieved "+result.size()+ " days of history.");
@@ -227,7 +226,7 @@ public class CreateSpringestViz {
 	}
 
 	private static void addAllCircles(Session session, Graph graph, Node master) {
-		Query queryProjects = session.createSQLQuery("SELECT DISTINCT projectId, projectName FROM `Springest` WHERE 1");
+		Query queryProjects = session.createSQLQuery("SELECT DISTINCT projectId, projectName FROM `SpringestWithCircle` WHERE 1");
 		List projects = queryProjects.list();
 
 		for (Object object : projects) {

@@ -2,6 +2,7 @@ package at.ac.wu.asana.test;
 
 import org.graphstream.graph.*;
 import org.graphstream.graph.implementations.SingleGraph;
+import org.graphstream.stream.file.FileSinkDGS;
 
 
 public class GraphStreamTestTutorial1 {

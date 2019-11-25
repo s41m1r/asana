@@ -55,7 +55,7 @@ public class CreateVizFromAlignmentCircle {
 		graph.addAttribute("ui.antialias");
 
 		// reading the data
-		SessionFactory sf = DatabaseConnector.getSessionFactory("asana_manual3");
+		SessionFactory sf = DatabaseConnector.getSessionFactory("asana_manual5");
 		org.hibernate.Session session = sf.openSession();
 
 		String queryStringYinYang = "SELECT * FROM yinAndYang";
@@ -337,10 +337,10 @@ public class CreateVizFromAlignmentCircle {
 
 		Map<String, List<StructuralDataChange>> allEvents = new TreeMap<String, List<StructuralDataChange>>();
 		Query queryAllDates = session.createSQLQuery(""
-				+ "SELECT DISTINCT date FROM `Springest` "
+				+ "SELECT DISTINCT date FROM `SpringestWithCircle` "
 				+ "ORDER BY date ASC");
 		Query queryEvents = session.createSQLQuery(""
-				+ "SELECT * FROM `Springest` "
+				+ "SELECT * FROM `SpringestWithCircle` "
 				+ "WHERE date =:date "
 				+ "ORDER by date ASC");
 
