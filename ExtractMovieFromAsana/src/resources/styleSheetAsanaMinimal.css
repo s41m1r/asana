@@ -39,7 +39,7 @@ node.added {
 
 node.modified {
 	fill-color: rgba(51, 153, 255, 250);
-	text-mode: normal;
+	//text-mode: normal;
 	size: 10px;
 }
 
