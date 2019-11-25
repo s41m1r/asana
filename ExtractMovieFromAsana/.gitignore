@@ -10,3 +10,6 @@ ExtractMovieFromAsana/src/main/java/at/ac/wu/asana/tryout/TryTaskType.java
 ExtractMovieFromAsana/src/main/java/at/ac/wu/asana/tryout/DownloadAllCiclesAndSubcircles.java
 /extractChangesFromCSVList.sh
 /extractChangesInfoBiz.sh
+/autoimport-with-circles.sh
+/autoimport.sh
+/loadData.txt
