@@ -44,7 +44,7 @@ public class VisualizeBasedOnCircle {
 
 		Viewer viewer = graph.display();
 		final View view = viewer.getDefaultView();
-
+		
 		Node master = graph.addNode("864733919245"); // Springest center
 				
 		allTaskIds.add(master.getId());
@@ -68,6 +68,8 @@ public class VisualizeBasedOnCircle {
 		org.hibernate.Session session = sf.openSession();
 
 		addAllCircles(session, graph, master);
+		
+//		addSubCircles
 
 		Query queryAllDates = session.createSQLQuery("SELECT DISTINCT date "
 				+ "FROM `SpringestWithCircle` "

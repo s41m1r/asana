@@ -7,13 +7,15 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.logging.Logger;
 
+import org.apache.commons.lang3.builder.CompareToBuilder;
+
 import com.asana.models.Story;
 import com.asana.models.Tag;
 import com.asana.models.Task;
 import com.asana.models.User;
 import com.google.api.client.util.DateTime;
 
-public class StructuralDataChange {	
+public class StructuralDataChange implements Comparable<StructuralDataChange> {	
 
 	final Logger logger = Logger.getLogger(this.getClass().getName());
 
@@ -274,11 +276,11 @@ public class StructuralDataChange {
 	public DateTime getModifiedAt() {
 		return modifiedAt;
 	}
-	
+
 	public String getCircleIds() {
 		return circleIds;
 	}
-	
+
 	public String getCurrentAssignee() {
 		return currentAssignee;
 	}
@@ -446,7 +448,7 @@ public class StructuralDataChange {
 		}
 		return null;
 	}
-	
+
 	public String parseCurrentAssignee() {
 		if(this.rawDataText.startsWith("assigned to")){
 			String[] split = this.rawDataText.split("assigned to");
@@ -796,6 +798,8 @@ public class StructuralDataChange {
 		StructuralDataChange sdc = new StructuralDataChange();
 
 		sdc.storyCreatedAt = DateTime.parseRfc3339(row[0].replace(' ', 'T'));
+		if(sdc.storyCreatedAt==null)
+			System.out.println("Here!");
 		sdc.createdAt = DateTime.parseRfc3339(row[0].replace(' ', 'T'));
 		sdc.taskId = row[1];	
 		sdc.parentTaskId = row[2];
@@ -822,9 +826,13 @@ public class StructuralDataChange {
 		sdc.parentTaskName = row[23];
 		sdc.taskCompletedAt = (!row[26].equals(""))? DateTime.parseRfc3339(row[26].replace(' ', 'T')):null;
 		sdc.taskModifiedAt = DateTime.parseRfc3339(row[27].replace(' ', 'T'));
-		sdc.taskNotes = row[28];	
-		sdc.setCircle(row[29]);
-		sdc.setCircleIds(row[30]);
+		sdc.taskNotes = row[28];
+
+		if(row.length>29) {
+			//			System.out.println("Here length="+row.length);
+			sdc.setCircle(row[29]);
+			sdc.setCircleIds(row[30]);
+		}
 
 		return sdc;
 	}
@@ -908,5 +916,81 @@ public class StructuralDataChange {
 	public void setChangeAccountabilityPurpose(boolean isChangeAccountabilityPurpose) {
 		this.isChangeAccountabilityPurpose = isChangeAccountabilityPurpose;
 	}
+
+	public int compareTo(StructuralDataChange o) {
+		return this.storyCreatedAt.toStringRfc3339().compareTo(o.getStoryCreatedAt().toStringRfc3339());
+	}
+
+	public StructuralDataChange makeCopy() {
+		StructuralDataChange sdc = new StructuralDataChange();
+		sdc.storyCreatedAt = new DateTime(this.getStoryCreatedAt().getValue());
+		sdc.taskCreatedAt = new DateTime(this.getTaskCreatedAt().getValue());
+		sdc.taskModifiedAt = new DateTime(this.getTaskModifiedAt().getValue());
+		if(sdc.taskCompletedAt!=null)
+				sdc.taskCompletedAt = new DateTime(this.getTaskCompletedAt().getValue());
+		sdc.isRole = this.isRole;
+		sdc.actor = ""+ this.actor;
+		sdc.lastAssigneeId = ""+this.lastAssigneeId;
+		sdc.lastAssigneeName = ""+this.lastAssigneeName;
+		sdc.action = "" + this.action;
+		sdc.circle = this.circle +""; //location
+		sdc.pathToHere = this.pathToHere+"";
+		sdc.taskId = this.taskId +"";
+		sdc.taskName = this.taskName + "";
+		sdc.storyId = this.storyId +"";
+		sdc.workspaceId = this.workspaceId+"";
+		sdc.isSubtask = this.isSubtask;
+		sdc.workspaceName = this.workspaceName+"";
+		sdc.projectName = this.projectName + "";
+		sdc.rawDataText = this.rawDataText +"";
+		sdc.messageType = this.messageType + "";
+		sdc.currentAssignee = this.currentAssignee + "";
+		sdc.projectId = this.projectId + "";
+		sdc.createdAt = new DateTime(this.createdAt.getValue());
+		if(sdc.modifiedAt!=null)
+			sdc.modifiedAt = new DateTime(this.modifiedAt.getValue());
+		if(sdc.completedAt!=null)
+			sdc.completedAt = new DateTime(this.completedAt.getValue());
+		sdc.storyCreatedById = this.storyCreatedById + "";
+		sdc.storyCreatedByName = this.storyCreatedByName + "";
+		sdc.parentTaskId = this.parentTaskId + "";
+		sdc.taskNotes = this.taskNotes + "";
+		sdc.taskTags = this.taskTags + "";
+		sdc.typeOfChange = this.typeOfChange;
+		sdc.typeOfChangeDescription = this.typeOfChangeDescription + "";
+		sdc.isCircle = this.isCircle;
+		sdc.migration = this.migration;
+		sdc.isRenderedAsSeparator = this.isRenderedAsSeparator;
+		sdc.isChangeAccountabilityPurpose = this.isChangeAccountabilityPurpose;
+		sdc.circleIds = this.circleIds + "";
+		sdc.parentCircle = this.parentCircle + "";
+		return sdc;
+	}
+
+	@Override
+	public int hashCode() {
+		return 7*storyCreatedAt.hashCode() + 17*taskId.hashCode() + 31*rawDataText.hashCode() * 41*projectId.hashCode();
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		 // If the object is compared with itself then return true   
+        if (obj == this) { 
+            return true; 
+        } 
+  
+        /* Check if o is an instance of Complex or not 
+          "null instanceof [type]" also returns false */
+        if (!(obj instanceof StructuralDataChange)) { 
+            return false; 
+        } 
+          
+        // typecast o to Complex so that we can compare data members  
+        StructuralDataChange sdc = (StructuralDataChange) obj; 
+          
+		return this.storyCreatedAt.equals(sdc.storyCreatedAt) && this.taskId.equals(sdc.taskId);
+	}
+	
+	
 
 }

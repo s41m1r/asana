@@ -170,7 +170,7 @@ public class ExtractStructuralDataChanges {
 				allTasksAndSubtasks = getAllNestedSubtasks(client, tasks);
 			}
 
-			logger.info("Scanning "+project.name+ " containing "+allTasksAndSubtasks.size()+ " tasks and subtasks.");
+			logger.info("Scanning "+project.name+ " containing "+allTasksAndSubtasks.size()+ " tasks and subtasks1273.");
 			boolean foundSection = false;
 			Task lastPurpose = null;
 			Task lastAssignee = null;
@@ -553,7 +553,7 @@ public class ExtractStructuralDataChanges {
 			CSVWriter csvWriter, DateTime eventTimestamp, int action) {
 
 		if(eventTimestamp == null) 
-			return;
+			return;		
 		StructuralDataChange chTask = new StructuralDataChange(task, eventTimestamp, action);
 		chTask.setProjectId(project.gid);
 		chTask.setWorkspaceId(workspace.gid);
@@ -679,7 +679,6 @@ public class ExtractStructuralDataChanges {
 			}
 			Workspace workspace = client.workspaces.findById(wsid).execute();
 			Project project = client.projects.findById(pid).execute();
-
 
 			logger.info("Found project: "+project.name);
 			logger.info("Retrieving all the tasks.");
@@ -909,7 +908,8 @@ public class ExtractStructuralDataChanges {
 						list.add(createStoryEvent(project, workspace, story, currentTask, client.users.me().execute().name));
 					}
 					//				Add complete and last_modify 
-					list.add(createDerivedEvent(currentTask, project, workspace, currentTask.completedAt, AsanaActions.COMPLETE_ROLE));
+					if(currentTask.completedAt!=null)
+						list.add(createDerivedEvent(currentTask, project, workspace, currentTask.completedAt, AsanaActions.COMPLETE_ROLE));
 					list.add(createDerivedEvent(currentTask, project, workspace, currentTask.modifiedAt, AsanaActions.LAST_MODIFY_ROLE));
 				}
 			} catch (IOException e) {
@@ -934,9 +934,9 @@ public class ExtractStructuralDataChanges {
 	private static StructuralDataChange createDerivedEvent(Task task, Project project, Workspace workspace,
 			DateTime timestamp, int action) {
 		StructuralDataChange chTask = new StructuralDataChange(task, timestamp, action);
-		chTask.setStoryCreatedAt(task.createdAt);
-		chTask.setModifiedAt(task.modifiedAt);
-		chTask.setCompletedAt(task.completedAt);
+//		chTask.setStoryCreatedAt(task.createdAt);
+//		chTask.setModifiedAt(task.modifiedAt);
+//		chTask.setCompletedAt(task.completedAt);
 		chTask.setProjectId(project.gid);
 		chTask.setWorkspaceId(workspace.gid);
 		chTask.setProjectId(project.gid);
