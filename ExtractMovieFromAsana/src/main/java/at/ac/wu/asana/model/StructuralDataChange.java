@@ -923,11 +923,11 @@ public class StructuralDataChange implements Comparable<StructuralDataChange> {
 
 	public StructuralDataChange makeCopy() {
 		StructuralDataChange sdc = new StructuralDataChange();
-		sdc.storyCreatedAt = new DateTime(this.getStoryCreatedAt().getValue());
-		sdc.taskCreatedAt = new DateTime(this.getTaskCreatedAt().getValue());
-		sdc.taskModifiedAt = new DateTime(this.getTaskModifiedAt().getValue());
+		sdc.storyCreatedAt = DateTime.parseRfc3339(this.storyCreatedAt.toStringRfc3339());
+		sdc.taskCreatedAt = DateTime.parseRfc3339(this.taskCreatedAt.toStringRfc3339()); 
+		sdc.taskModifiedAt = DateTime.parseRfc3339(this.taskModifiedAt.toStringRfc3339());
 		if(sdc.taskCompletedAt!=null)
-				sdc.taskCompletedAt = new DateTime(this.getTaskCompletedAt().getValue());
+				sdc.taskCompletedAt = DateTime.parseRfc3339(this.taskCompletedAt.toStringRfc3339());
 		sdc.isRole = this.isRole;
 		sdc.actor = ""+ this.actor;
 		sdc.lastAssigneeId = ""+this.lastAssigneeId;

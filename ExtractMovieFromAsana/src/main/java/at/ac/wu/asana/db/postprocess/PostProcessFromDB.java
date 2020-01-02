@@ -7,7 +7,6 @@ import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -22,14 +21,12 @@ import java.util.TreeSet;
 import com.google.api.client.util.DateTime;
 import com.google.common.collect.Sets;
 import com.opencsv.CSVWriter;
-import com.sun.xml.internal.ws.policy.privateutil.PolicyUtils.Collections;
 
 import at.ac.wu.asana.csv.WriteUtils;
 import at.ac.wu.asana.db.io.ReadFromDB;
 import at.ac.wu.asana.model.AsanaActions;
 import at.ac.wu.asana.model.StructuralDataChange;
 import at.ac.wu.asana.util.GeneralUtils;
-import scala.util.parsing.combinator.testing.Str;
 
 public class PostProcessFromDB {
 	static String[] authoritativeList = new String[]{
@@ -66,7 +63,7 @@ public class PostProcessFromDB {
 			"☺ Marketplace Roles",
 			"☺ Demand Roles",
 			"☺ Providers Roles",
-			"☺ Smooth Ops Roles",
+			"☺ Smooth Operations Roles",
 			"☺Business Intelligence Roles",
 			"☺ Go Sales Roles",
 			"☺ Rainmakers Roles",
@@ -121,22 +118,20 @@ public class PostProcessFromDB {
 		System.out.println("Events after setCurrentAssignee " +countEvents(allEvents));
 		
 		Map<String, List<StructuralDataChange>> allEvents2 = setCurrentCircles(allEvents);
-		System.out.println("Events after setCurrentCircles " +countEvents(allEvents2));
-
-		fixCompletedAndRemoveLastModify(allEvents2);
 		
-		System.out.println("Events after fixCompletedAndRemoveLastModify " +countEvents(allEvents2));
-
+		System.out.println("Events after setCurrentCircles " +countEvents(allEvents2));
+		
+		fixCompletedAndRemoveLastModify(allEvents2);
 
 		//		checkIfNullTimestamp(allEvents);
 		Map<String, List<StructuralDataChange>> allEventsNoDup = removeDuplicateTasks(allEvents2);
-		List<StructuralDataChange> uniqueEvents = removeDups(allEvents2);
 		
+		List<StructuralDataChange> uniqueEvents = removeDups(allEvents2);	
 		System.out.println("There are unique events = "+uniqueEvents.size());
 		
 		System.out.println("Events after removeDuplicateTasks = " +countEvents(allEventsNoDup));
 
-		printHistoryOfTask("7745109865138", allEventsNoDup); 
+//		printHistoryOfTask("11555199602323", allEventsNoDup); 
 
 		String outfile = "Springest-filtered.csv";
 		WriteUtils.writeListOfChangesWithCircleToCSV(uniqueEvents, outfile);
@@ -331,6 +326,7 @@ public class PostProcessFromDB {
 		Map<String, List<StructuralDataChange>> res = new TreeMap<String, List<StructuralDataChange>>();
 		Set<String> taskIds = allEvents.keySet();
 		for (String taskId : taskIds) {
+			
 			boolean firstTimeAddedToCircle = true;
 			List<String> circles = new ArrayList<String>();
 			List<StructuralDataChange> taskHistory = new LinkedList<StructuralDataChange>(allEvents.get(taskId));
@@ -343,10 +339,7 @@ public class PostProcessFromDB {
 
 			for (StructuralDataChange sdc : taskHistory) {
 
-				StructuralDataChange sdc2 = sdc.makeCopy();
-
-				if(taskId.equals("7745109865138") && sdc2.getTypeOfChange()==1)
-					System.out.println("BUTTA");
+				StructuralDataChange sdc2 = sdc;
 
 				if(sdc2.getTypeOfChange()==AsanaActions.ADD_TO_CIRCLE) {
 					String curCircle = sdc2.getRawDataText().replaceAll("added to ", "").trim();
@@ -558,7 +551,7 @@ public class PostProcessFromDB {
 		sdc.setRawDataText("[EVENT FROM PURPOSE/ACCOUNTABILITY SUBTASK] "+sdc.getRawDataText());
 		sdc.setTypeOfChange(code);
 		sdc.setTypeOfChangeDescription(AsanaActions.codeToString(code));
-		sdc.setTaskCompletedAt(parentsEvents.get(1).getCompletedAt());
+		sdc.setTaskCompletedAt(parentsEvents.get(1).getTaskCompletedAt());
 		parentsEvents.add(sdc);
 	}
 
@@ -745,6 +738,8 @@ public class PostProcessFromDB {
 		String circleIds = "";
 		boolean hit = false;
 		for (String c : circles) {
+			if(c.equals("11555199602299"))
+				System.out.println("FOUNDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD");
 			int idx = lookup(c);
 			circleIds+=authoritativeList[idx]+",";
 			hit=true;
@@ -790,10 +785,6 @@ public class PostProcessFromDB {
 			sdc.setCircle(sdc.getProjectName());
 			sdc.setMigration(false);
 
-
-			if(sdc.getTaskId().equals("7817799957722"))
-				System.out.println("qui");
-
 			if(mapTaskCurrentCircle.containsKey(sdc.getTaskId())) { // already seen
 				lastCircle = mapTaskCurrentCircle.get(sdc.getTaskId());
 
@@ -837,6 +828,8 @@ public class PostProcessFromDB {
 				break;
 			}
 		}
+		if(currentCircleName.equals("☺ Smooth Ops Roles"))
+			return 7;
 		if(found)
 			return i;
 
