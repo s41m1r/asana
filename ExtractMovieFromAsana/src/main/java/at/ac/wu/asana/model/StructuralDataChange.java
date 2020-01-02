@@ -7,8 +7,6 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.logging.Logger;
 
-import org.apache.commons.lang3.builder.CompareToBuilder;
-
 import com.asana.models.Story;
 import com.asana.models.Tag;
 import com.asana.models.Task;
@@ -917,8 +915,9 @@ public class StructuralDataChange implements Comparable<StructuralDataChange> {
 		this.isChangeAccountabilityPurpose = isChangeAccountabilityPurpose;
 	}
 
-	public int compareTo(StructuralDataChange o) {
-		return this.storyCreatedAt.toStringRfc3339().compareTo(o.getStoryCreatedAt().toStringRfc3339());
+	public int compareTo(StructuralDataChange o) {		
+		int resNum = new Long(this.storyCreatedAt.getValue()).compareTo(new Long(o.getStoryCreatedAt().getValue()));
+		return resNum;
 	}
 
 	public StructuralDataChange makeCopy() {

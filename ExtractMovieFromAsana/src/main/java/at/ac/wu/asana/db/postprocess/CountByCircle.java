@@ -24,6 +24,7 @@ import org.hibernate.SessionFactory;
 
 import com.opencsv.CSVWriter;
 
+import at.ac.wu.asana.db.io.ReadFromDB;
 import at.ac.wu.asana.db.utils.DatabaseConnector;
 import at.ac.wu.asana.model.StructuralDataChange;
 import at.ac.wu.asana.util.GeneralUtils;
@@ -101,7 +102,7 @@ public class CountByCircle {
 		String dbname = "asana_manual5";
 		String queryAllYM = "SELECT * FROM allYM";
 
-		List<String> allYM = readAllYM(dbname, queryAllYM);
+		List<String> allYM = ReadFromDB.readAllYM(dbname, queryAllYM);
 
 		System.out.println(allYM);
 
@@ -115,7 +116,7 @@ public class CountByCircle {
 		SessionFactory sf = DatabaseConnector.getSessionFactory(dbname);
 		org.hibernate.Session session = sf.openSession();
 		for (String ym : allYM) {
-			List<StructuralDataChange> changes = readChangesByYM(session, dbname, queryAllInYM, ym);
+			List<StructuralDataChange> changes = ReadFromDB.readChangesByYM(session, dbname, queryAllInYM, ym);
 			ymChanges.put(ym, changes);
 		}
 		session.flush();
@@ -159,8 +160,6 @@ public class CountByCircle {
 		}
 		return false;
 	}
-
-
 
 	private static List<CirclePlusMinusTot> expandByPadding(List<CirclePlusMinusTot> circlePlusMinusTots, Map<String, List<YMTaskList>> mapCircleToYMandTasks) {
 		List<CirclePlusMinusTot> res = new ArrayList<CirclePlusMinusTot>();
@@ -821,46 +820,4 @@ public class CountByCircle {
 				0, 0, 0, 0, 0, 0));
 	}
 
-	private static List<StructuralDataChange> readChangesByYM(Session session, String dbname, String q, String ym) {		
-		List<StructuralDataChange> allEvents = new ArrayList<StructuralDataChange>();
-		Query qu = session.createSQLQuery(q);
-
-		qu.setString("ym", ym);
-
-		List<Object> results = qu.list();
-		List<StructuralDataChange> changeEvents = new ArrayList<StructuralDataChange>();
-
-		for (Object e : results) {
-			Object[] row = (Object[]) e;
-			String[] str = GeneralUtils.toStrObjArray(row);
-			StructuralDataChange sdc = StructuralDataChange.fromString(str);
-			allEvents.add(sdc);
-		}
-
-		return allEvents;
-	}
-
-
-	public static List<String> readAllYM(String dbname, String sql){
-
-		// read the data
-		SessionFactory sf = DatabaseConnector.getSessionFactory(dbname);
-		org.hibernate.Session session = sf.openSession();
-
-		List<String> allEvents = new ArrayList<String>();
-
-		Query queryEvents = session.createSQLQuery(sql);
-
-		List<Object> results = queryEvents.list();
-
-		for (Object e : results) {
-			allEvents.add(e.toString());
-		}
-
-		session.flush();
-		session.close();
-		sf.close();
-
-		return allEvents;
-	}
 }

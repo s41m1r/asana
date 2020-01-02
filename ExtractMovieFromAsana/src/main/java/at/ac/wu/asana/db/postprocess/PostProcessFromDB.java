@@ -14,7 +14,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.SortedSet;
 import java.util.TreeMap;
 import java.util.TreeSet;
 
@@ -111,17 +110,18 @@ public class PostProcessFromDB {
 		Map<String, List<StructuralDataChange>> allEvents = new LinkedHashMap<String, List<StructuralDataChange>>();
 		allEvents.putAll(allParents);
 		allEvents.putAll(allChildren);
-
+		
 		setDesignRole(allEvents);
 		setCurrentAssignee(allEvents);
+				
+		setCurrentCircles(allEvents);
 		
-		System.out.println("Events after setCurrentAssignee " +countEvents(allEvents));
-		
-		Map<String, List<StructuralDataChange>> allEvents2 = setCurrentCircles(allEvents);
-		
+		Map<String, List<StructuralDataChange>> allEvents2 = allEvents; 
+
 		System.out.println("Events after setCurrentCircles " +countEvents(allEvents2));
 		
 		fixCompletedAndRemoveLastModify(allEvents2);
+//		hasCode14(allEvents2);
 
 		//		checkIfNullTimestamp(allEvents);
 		Map<String, List<StructuralDataChange>> allEventsNoDup = removeDuplicateTasks(allEvents2);
@@ -135,12 +135,22 @@ public class PostProcessFromDB {
 
 		String outfile = "Springest-filtered.csv";
 		WriteUtils.writeListOfChangesWithCircleToCSV(uniqueEvents, outfile);
-//		WriteUtils.writeMapOfChangesWithCircleToCSV2(allEventsNoDup, outfile);
+		
+		//		WriteUtils.writeMapOfChangesWithCircleToCSV2(allEventsNoDup, outfile);
 
 		//		checkIfNoDesigned(allEvents);
 
 		System.out.println("Done in "+(System.currentTimeMillis()-start)/1000+" sec.");
 		System.out.println("Wrote on file "+outfile);
+	}
+
+	private static void hasCode14(Map<String, List<StructuralDataChange>> allEvents) {
+		for (String key : allEvents.keySet()) {
+			for(StructuralDataChange sdc : allEvents.get(key)) {
+				if(sdc.getTypeOfChange()==AsanaActions.COMPLETE_ROLE)
+					System.out.println("FOUND 14! "+ AsanaActions.COMPLETE_ROLE);
+			}
+		}
 	}
 
 	private static List<StructuralDataChange> removeDups(Map<String, List<StructuralDataChange>> allEvents2) {
@@ -149,7 +159,7 @@ public class PostProcessFromDB {
 		for (String tId : taskIds) {
 			uniqueEvents.addAll(allEvents2.get(tId));
 		}
-		return new ArrayList<StructuralDataChange>(uniqueEvents);
+		return new LinkedList<StructuralDataChange>(uniqueEvents);
 	}
 
 	public static String countEvents(Map<String, List<StructuralDataChange>> allEvents) {
@@ -322,11 +332,10 @@ public class PostProcessFromDB {
 		}
 	}
 
-	private static Map<String, List<StructuralDataChange>> setCurrentCircles(Map<String, List<StructuralDataChange>> allEvents) {
-		Map<String, List<StructuralDataChange>> res = new TreeMap<String, List<StructuralDataChange>>();
+	private static void setCurrentCircles(Map<String, List<StructuralDataChange>> allEvents) {
+//		Map<String, List<StructuralDataChange>> res = new TreeMap<String, List<StructuralDataChange>>();
 		Set<String> taskIds = allEvents.keySet();
 		for (String taskId : taskIds) {
-			
 			boolean firstTimeAddedToCircle = true;
 			List<String> circles = new ArrayList<String>();
 			List<StructuralDataChange> taskHistory = new LinkedList<StructuralDataChange>(allEvents.get(taskId));
@@ -335,18 +344,15 @@ public class PostProcessFromDB {
 					return o1.getStoryCreatedAt().toStringRfc3339().compareTo(o2.getStoryCreatedAt().toStringRfc3339());
 				}
 			} );
-			SortedSet<StructuralDataChange> sortedSDC = new TreeSet<StructuralDataChange>();
+//			SortedSet<StructuralDataChange> sortedSDC = new TreeSet<StructuralDataChange>();
 
 			for (StructuralDataChange sdc : taskHistory) {
-
-				StructuralDataChange sdc2 = sdc;
-
-				if(sdc2.getTypeOfChange()==AsanaActions.ADD_TO_CIRCLE) {
-					String curCircle = sdc2.getRawDataText().replaceAll("added to ", "").trim();
+				if(sdc.getTypeOfChange()==AsanaActions.ADD_TO_CIRCLE) {
+					String curCircle = sdc.getRawDataText().replaceAll("added to ", "").trim();
 					int i = lookup(curCircle); // if -1 then it is not a circle
 					if(i!=-1) {
 						if(firstTimeAddedToCircle) {
-							setChange(sdc2, AsanaActions.CREATE_ROLE);
+							setChange(sdc, AsanaActions.CREATE_ROLE);
 							circles.add(curCircle);
 						}
 						else {
@@ -358,28 +364,28 @@ public class PostProcessFromDB {
 					}
 				}
 
-				if(sdc2.getTypeOfChange()==AsanaActions.REMOVE_FROM_CIRCLE) {
-					String curCircle = sdc2.getRawDataText().replaceAll("removed from ", "").trim();
+				if(sdc.getTypeOfChange()==AsanaActions.REMOVE_FROM_CIRCLE) {
+					String curCircle = sdc.getRawDataText().replaceAll("removed from ", "").trim();
 					int i = lookup(curCircle); // if -1 then it is not a circle
 					if(i!=-1) { 
 						if(circles.contains(curCircle))
 							circles.remove(curCircle);
 						else {
-							System.err.println("This task "+sdc2.getTaskId()+" "+sdc2.getTaskName()
+							System.err.println("This task "+sdc.getTaskId()+" "+sdc.getTaskName()
 							+" was never added to "+curCircle);
 						}
 					}
 					else {
-						setChange(sdc2, AsanaActions.IGNORE_OR_DELETE);
+						setChange(sdc, AsanaActions.IGNORE_OR_DELETE);
 					}
 				}
-				sdc2.setCircle(commaSeparate(circles));
-				sdc2.setCircleIds(commaSeparateIds(circles));
-				sortedSDC.add(sdc2);
+				sdc.setCircle(commaSeparate(circles));
+				sdc.setCircleIds(commaSeparateIds(circles));
+//				sortedSDC.add(sdc);
 			}
-			res.put(taskId, new LinkedList<StructuralDataChange>(sortedSDC));
+//			res.put(taskId, new LinkedList<StructuralDataChange>(sortedSDC));
 		}
-		return res;
+//		return res;
 	}
 
 	private static void setChange(StructuralDataChange sdc, int code) {
@@ -738,8 +744,6 @@ public class PostProcessFromDB {
 		String circleIds = "";
 		boolean hit = false;
 		for (String c : circles) {
-			if(c.equals("11555199602299"))
-				System.out.println("FOUNDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD");
 			int idx = lookup(c);
 			circleIds+=authoritativeList[idx]+",";
 			hit=true;
