@@ -19,6 +19,7 @@ import org.hibernate.SessionFactory;
 import com.opencsv.CSVWriter;
 
 import at.ac.wu.asana.db.io.ReadFromDB;
+import at.ac.wu.asana.db.postprocess.datastructures.YmOveralls;
 import at.ac.wu.asana.db.utils.DatabaseConnector;
 import at.ac.wu.asana.model.StructuralDataChange;
 
@@ -85,22 +86,23 @@ public class GenerateOverallCountsMonthly {
 					}
 					taskStatus.put(taskId, 1);
 					break;
-				case 8:
-					if(taskStatus.get(taskId)!=1) {
-						overalls.births++;
-					}
-					taskStatus.put(taskId, 1);
-					break;
+//				case 8:
+//					if(taskStatus.get(taskId)!=1) {
+//						overalls.births++;
+//					}
+//					taskStatus.put(taskId, 1);
+//					break;
 				case 14:
 					if(taskStatus.get(taskId)!=-1) {
 						overalls.deaths++;
 					}
 					taskStatus.put(taskId, -1);
-				case 7:
-					if(taskStatus.get(taskId)!=-1) {
-						overalls.deaths++;
-					}
-					taskStatus.put(taskId, -1);
+//				case 7:
+//					if(taskStatus.get(taskId)!=-1) {
+//						overalls.deaths++;
+//					}
+//					taskStatus.put(taskId, -1);
+					break;
 
 				case 9:
 				case 11:

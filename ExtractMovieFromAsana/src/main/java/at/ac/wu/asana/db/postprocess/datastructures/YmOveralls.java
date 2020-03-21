@@ -1,11 +1,11 @@
-package at.ac.wu.asana.db.postprocess;
+package at.ac.wu.asana.db.postprocess.datastructures;
 
 public class YmOveralls {
 
-	String ym;
-	int births;
-	int deaths;
-	int modifications;
+	public String ym;
+	public int births;
+	public int deaths;
+	public int modifications;
 
 	public String getYm() {
 		return ym;

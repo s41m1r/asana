@@ -1,10 +1,10 @@
-package at.ac.wu.asana.db.postprocess;
+package at.ac.wu.asana.db.postprocess.datastructures;
 
 import java.util.List;
 
 public class YMTaskList implements Comparable<YMTaskList> {
-	String ym;
-	List<String> taskIds;
+	public String ym;
+	public List<String> taskIds;
 	public YMTaskList(String ym, List<String> taskIds) {
 		super();
 		this.ym = ym;

@@ -6,23 +6,25 @@ import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.SortedSet;
 import java.util.TreeMap;
 import java.util.TreeSet;
 
-import com.google.api.client.util.DateTime;
 import com.google.common.collect.Sets;
 import com.opencsv.CSVWriter;
 
 import at.ac.wu.asana.csv.WriteUtils;
 import at.ac.wu.asana.db.io.ReadFromDB;
+import at.ac.wu.asana.db.postprocess.datastructures.TimestampCircle;
 import at.ac.wu.asana.model.AsanaActions;
 import at.ac.wu.asana.model.StructuralDataChange;
 import at.ac.wu.asana.util.GeneralUtils;
@@ -111,26 +113,26 @@ public class PostProcessFromDB {
 		allEvents.putAll(allParents);
 		allEvents.putAll(allChildren);
 		
+		fixTimeShift(allEvents);// fix time shift: add 2 hours
+		setYinYangAsCircleChange(allEvents);
 		setDesignRole(allEvents);
 		setCurrentAssignee(allEvents);
-				
-		setCurrentCircles(allEvents);
-		
-		Map<String, List<StructuralDataChange>> allEvents2 = allEvents; 
+		fixCompletedAndRemoveLastModify(allEvents);
 
-		System.out.println("Events after setCurrentCircles " +countEvents(allEvents2));
+		Map<String, List<StructuralDataChange>> allEvents2 = setCurrentCircles(allEvents);
 		
-		fixCompletedAndRemoveLastModify(allEvents2);
-//		hasCode14(allEvents2);
-
 		//		checkIfNullTimestamp(allEvents);
 		Map<String, List<StructuralDataChange>> allEventsNoDup = removeDuplicateTasks(allEvents2);
+		System.out.println("Events after removeDuplicateTasks = " +countEvents(allEventsNoDup));
 		
-		List<StructuralDataChange> uniqueEvents = removeDups(allEvents2);	
+		printHistoryOfTask("44330423794233", allEventsNoDup); 
+		
+		List<StructuralDataChange> uniqueEvents = removeDups(allEventsNoDup);	
 		System.out.println("There are unique events = "+uniqueEvents.size());
 		
-		System.out.println("Events after removeDuplicateTasks = " +countEvents(allEventsNoDup));
-
+		fixChangeRoleName(uniqueEvents);
+		addCompletedEvent(uniqueEvents);
+		
 //		printHistoryOfTask("11555199602323", allEventsNoDup); 
 
 		String outfile = "Springest-filtered.csv";
@@ -144,13 +146,85 @@ public class PostProcessFromDB {
 		System.out.println("Wrote on file "+outfile);
 	}
 
+	private static Map<String, List<StructuralDataChange>> toMap(List<StructuralDataChange> uniqueEvents) {
+		Map<String, List<StructuralDataChange>> res = new HashMap<String, List<StructuralDataChange>>();
+		for (StructuralDataChange structuralDataChange : uniqueEvents) {
+			if(!res.containsKey(structuralDataChange.getTaskId()))
+				res.put(structuralDataChange.getTaskId(), new ArrayList<StructuralDataChange>());
+			res.get(structuralDataChange.getTaskId()).add(structuralDataChange);
+		}
+		return res;
+	}
+
+	private static void addCompletedEvent(List<StructuralDataChange> uniqueEvents) {
+		Map<String, List<StructuralDataChange>> uniqueEventsMap = toMap(uniqueEvents);
+		int i = 0;
+		for (String k : uniqueEventsMap.keySet()) {
+			if(k.equals("7749914219816"))
+				System.out.println("DEBUG ME");
+			boolean found = false;
+			List<StructuralDataChange> changes = uniqueEventsMap.get(k);
+			for(StructuralDataChange sdc: changes) {
+				if(sdc.getTypeOfChange()==AsanaActions.COMPLETE_ROLE) {
+					found=true;
+					break;
+				}
+			}
+			if(!found && changes.size()>0 && changes.get(0).getTaskCompletedAt()!=null) {
+				StructuralDataChange sdc = changes.get(changes.size()-1).makeCopy();
+				sdc.setStoryCreatedAt(changes.get(changes.size()-1).getTaskCompletedAt());
+				sdc.setTypeOfChange(AsanaActions.COMPLETE_ROLE);
+				sdc.setTypeOfChangeDescription(AsanaActions.codeToString(AsanaActions.COMPLETE_ROLE));
+				sdc.setMessageType("derived");
+				uniqueEvents.add(sdc);
+				i++;
+			}
+		}
+		System.out.println("Set "+i+" final events");
+	}
+
+	private static void fixChangeRoleName(List<StructuralDataChange> uniqueEvents) {
+		int eventsChanged = 0;
+		for (StructuralDataChange structuralDataChange : uniqueEvents) {
+			if(structuralDataChange.getRawDataText().equals("removed the name")) {
+				structuralDataChange.setTypeOfChange(AsanaActions.CHANGE_NAME_OF_ROLE);
+				structuralDataChange.setTypeOfChangeDescription(AsanaActions.codeToString(AsanaActions.CHANGE_NAME_OF_ROLE));
+				eventsChanged++;
+			}
+		}
+		System.out.println("Fixed problem with 'removed the name'. Events changed: "+eventsChanged);
+	}
+
+	private static void setYinYangAsCircleChange(Map<String, List<StructuralDataChange>> allEvents) {
+		for (String k : allEvents.keySet()) {
+			for(StructuralDataChange sdc: allEvents.get(k)) {
+				if(sdc.getTaskName().contains("☯")) {
+					sdc.setTypeOfChange(AsanaActions.CIRCLE_CHANGE);
+					sdc.setTypeOfChangeDescription(AsanaActions.codeToString(AsanaActions.CIRCLE_CHANGE));
+				}
+			}
+		}
+	}
+
+	private static void fixTimeShift(Map<String, List<StructuralDataChange>> allEvents) {		
+		for (String k : allEvents.keySet()) {
+			for(StructuralDataChange sdc: allEvents.get(k)) {
+				if(sdc.getTaskCompletedAt()!=null)
+					sdc.setTaskCompletedAt(sdc.getTaskCompletedAt().plusHours(2));
+				sdc.setTaskModifiedAt(sdc.getTaskModifiedAt().plusHours(2));
+			}
+		}
+	}
+
 	private static void hasCode14(Map<String, List<StructuralDataChange>> allEvents) {
+		int fourteen = 0;
 		for (String key : allEvents.keySet()) {
 			for(StructuralDataChange sdc : allEvents.get(key)) {
 				if(sdc.getTypeOfChange()==AsanaActions.COMPLETE_ROLE)
-					System.out.println("FOUND 14! "+ AsanaActions.COMPLETE_ROLE);
+					fourteen++;
 			}
 		}
+		System.out.println("There are "+fourteen+" entries with code: "+AsanaActions.COMPLETE_ROLE);
 	}
 
 	private static List<StructuralDataChange> removeDups(Map<String, List<StructuralDataChange>> allEvents2) {
@@ -163,7 +237,6 @@ public class PostProcessFromDB {
 	}
 
 	public static String countEvents(Map<String, List<StructuralDataChange>> allEvents) {
-		// TODO Auto-generated method stub
 		int tot = 0;
 		for (String key : allEvents.keySet()) {
 			for(StructuralDataChange sdc : allEvents.get(key))
@@ -173,27 +246,31 @@ public class PostProcessFromDB {
 	}
 
 	private static Map<String, List<StructuralDataChange>> removeDuplicateTasks(Map<String, List<StructuralDataChange>> allEvents2) {
-		Map<Long, StructuralDataChange> datetimeTask = new HashMap<Long, StructuralDataChange>();
+		Map<LocalDateTime, StructuralDataChange> datetimeTask = new HashMap<LocalDateTime, StructuralDataChange>();
 		Map<String, List<StructuralDataChange>> res = new TreeMap<String, List<StructuralDataChange>>();
 		int c = 0; int tot = 0;
 		for (String taskId : allEvents2.keySet()) {
+			
+			if(taskId.equals("44330423794233"))
+				System.out.println("FOUND!!!!!!!!!");
+			
 			List<StructuralDataChange> changes = allEvents2.get(taskId);
 			for (StructuralDataChange sdc : changes) {
 				tot++;
-				if(!datetimeTask.containsKey(new Long(sdc.getStoryCreatedAt().getValue())))
-					datetimeTask.put(new Long(sdc.getStoryCreatedAt().getValue()), sdc);
+				if(!datetimeTask.containsKey(sdc.getStoryCreatedAt()))
+					datetimeTask.put(sdc.getStoryCreatedAt(), sdc);
 				else {
 //					System.out.println("Found 2 events at the same time!!!");
 					c++;
-					StructuralDataChange existing = datetimeTask.get(sdc.getStoryCreatedAt().getValue());
+					StructuralDataChange existing = datetimeTask.get(sdc.getStoryCreatedAt());
 //					System.out.println("Here they are.");
 //					System.out.println(Arrays.asList(existing.csvRowCircle()));
 //					System.out.println(Arrays.asList(sdc.csvRowCircle()));
 					if(existing.getCircleIds()==null || existing.getCircleIds().isEmpty() || 
 							existing.getCircle().equals("NO CIRCLE")) {
 						//							existing = sdc;
-						datetimeTask.remove(new Long(sdc.getStoryCreatedAt().getValue()));
-						datetimeTask.put(new Long(sdc.getStoryCreatedAt().getValue()), sdc);
+//						datetimeTask.remove(new Long(sdc.getStoryCreatedAt().getValue()));
+						datetimeTask.put(sdc.getStoryCreatedAt(), sdc.makeCopy());
 //						System.out.println("Keeping "+Arrays.asList(sdc.csvRowCircle()));
 					}
 				}
@@ -206,7 +283,7 @@ public class PostProcessFromDB {
 			List<StructuralDataChange> changes = allEvents2.get(taskId);
 			List<StructuralDataChange> newChanges = new ArrayList<StructuralDataChange>();
 			for (StructuralDataChange sdc : changes) {
-				StructuralDataChange change = datetimeTask.get(sdc.getStoryCreatedAt().getValue());
+				StructuralDataChange change = datetimeTask.get(sdc.getStoryCreatedAt());
 				newChanges.add(change);
 				tot2++;
 			}
@@ -269,10 +346,6 @@ public class PostProcessFromDB {
 		}
 	}
 
-	private static void removeDuplicates(Map<String, List<StructuralDataChange>> allEvents) {
-		// TODO Auto-generated method stub
-
-	}
 
 	private static void fixCompletedAndRemoveLastModify(Map<String, List<StructuralDataChange>> allEvents) {
 		//		Map<String, List<StructuralDataChange>> map = new HashMap<String, List<StructuralDataChange>>(allEvents);
@@ -332,19 +405,17 @@ public class PostProcessFromDB {
 		}
 	}
 
-	private static void setCurrentCircles(Map<String, List<StructuralDataChange>> allEvents) {
-//		Map<String, List<StructuralDataChange>> res = new TreeMap<String, List<StructuralDataChange>>();
+	private static Map<String, List<StructuralDataChange>> setCurrentCircles(Map<String, List<StructuralDataChange>> allEvents) {
+		Map<String, List<StructuralDataChange>> res = new LinkedHashMap<String, List<StructuralDataChange>>();
 		Set<String> taskIds = allEvents.keySet();
 		for (String taskId : taskIds) {
+			if(taskId.equals("7743573631714"))
+				System.out.println("HERE!");
 			boolean firstTimeAddedToCircle = true;
 			List<String> circles = new ArrayList<String>();
 			List<StructuralDataChange> taskHistory = new LinkedList<StructuralDataChange>(allEvents.get(taskId));
-			java.util.Collections.sort(taskHistory, new Comparator<StructuralDataChange>() {
-				public int compare(StructuralDataChange o1, StructuralDataChange o2) {
-					return o1.getStoryCreatedAt().toStringRfc3339().compareTo(o2.getStoryCreatedAt().toStringRfc3339());
-				}
-			} );
-//			SortedSet<StructuralDataChange> sortedSDC = new TreeSet<StructuralDataChange>();
+			java.util.Collections.sort(taskHistory);
+			SortedSet<StructuralDataChange> sortedSDC = new TreeSet<StructuralDataChange>();
 
 			for (StructuralDataChange sdc : taskHistory) {
 				if(sdc.getTypeOfChange()==AsanaActions.ADD_TO_CIRCLE) {
@@ -361,6 +432,10 @@ public class PostProcessFromDB {
 							circles = GeneralUtils.union(circles, newCirc);
 						}
 						firstTimeAddedToCircle = false;
+					}
+					else {
+						sdc.setTypeOfChange(AsanaActions.IGNORE_OR_DELETE);
+						sdc.setTypeOfChangeDescription(AsanaActions.codeToString(AsanaActions.IGNORE_OR_DELETE));
 					}
 				}
 
@@ -381,11 +456,11 @@ public class PostProcessFromDB {
 				}
 				sdc.setCircle(commaSeparate(circles));
 				sdc.setCircleIds(commaSeparateIds(circles));
-//				sortedSDC.add(sdc);
+				sortedSDC.add(sdc.makeCopy());
 			}
-//			res.put(taskId, new LinkedList<StructuralDataChange>(sortedSDC));
+			res.put(taskId, new LinkedList<StructuralDataChange>(sortedSDC));
 		}
-//		return res;
+		return res;
 	}
 
 	private static void setChange(StructuralDataChange sdc, int code) {
@@ -557,6 +632,7 @@ public class PostProcessFromDB {
 		sdc.setRawDataText("[EVENT FROM PURPOSE/ACCOUNTABILITY SUBTASK] "+sdc.getRawDataText());
 		sdc.setTypeOfChange(code);
 		sdc.setTypeOfChangeDescription(AsanaActions.codeToString(code));
+		sdc.setTaskCreatedAt(parentsEvents.get(1).getTaskCreatedAt());
 		sdc.setTaskCompletedAt(parentsEvents.get(1).getTaskCompletedAt());
 		parentsEvents.add(sdc);
 	}
@@ -717,7 +793,7 @@ public class PostProcessFromDB {
 		csvWriter.close();
 	}
 
-	private static List<String> getCirclesAtTime(TreeSet<TimestampCircle> fathersHistory, DateTime currentTime) {
+	private static List<String> getCirclesAtTime(TreeSet<TimestampCircle> fathersHistory, LocalDateTime localDateTime) {
 		List<String> circlesAtTime = new ArrayList<String>();
 		if(fathersHistory==null)
 			return circlesAtTime;
@@ -725,8 +801,8 @@ public class PostProcessFromDB {
 		long diff = Long.MAX_VALUE;
 		long lastDiff = diff;
 		for (TimestampCircle timestampCircle : fathersHistory) {
-			diff=currentTime.getValue()-timestampCircle.timestamp.getValue();
-			if(diff>0) {
+			Duration duration = Duration.between(localDateTime, timestampCircle.timestamp);
+			if(duration.getNano()>0) {
 				fathersLastEvent = timestampCircle;
 				lastDiff=diff;
 			}

@@ -18,16 +18,17 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
 
-import org.hibernate.Query;
-import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 
 import com.opencsv.CSVWriter;
 
 import at.ac.wu.asana.db.io.ReadFromDB;
+import at.ac.wu.asana.db.postprocess.datastructures.CircleCounts;
+import at.ac.wu.asana.db.postprocess.datastructures.CircleTot;
+import at.ac.wu.asana.db.postprocess.datastructures.YMCircleList;
+import at.ac.wu.asana.db.postprocess.datastructures.YMTaskList;
 import at.ac.wu.asana.db.utils.DatabaseConnector;
 import at.ac.wu.asana.model.StructuralDataChange;
-import at.ac.wu.asana.util.GeneralUtils;
 
 public class CountByCircle {
 	static String[] authoritativeList = new String[]{
@@ -84,16 +85,23 @@ public class CountByCircle {
 			"☺ Customer Success Roles",
 	"☺ Springest Academy Roles"};
 
+	static Map<String, Integer> ymPluses = new HashMap<String, Integer>();
+	static Map<String, Integer> ymMinuses= new HashMap<String, Integer>();
+	static Map<String, Integer> ymMods = new HashMap<String, Integer>();
+	static Map<String, Integer> ymTasks = new HashMap<String, Integer>();
+	static Map<String, Integer> ymTots = new HashMap<String, Integer>();
+
+	static List<String> allYM;
+
 	public static void main(String[] args) {
 
-		List<CirclePlusMinusTot> circlePlusMinusTots = getMonthlyCountByCircle();	
-		
+		List<CirclePlusMinusTot> circlePlusMinusTots = getMonthlyCountByCircle();
+
 		printCirclesPlusMinusTot(circlePlusMinusTots, "totalsMonthlyByCirclePlusMinusTot.csv");
 
 		//		printTotalsMonthly2(mapCircleToYMandTasks, "totalsMonthlyByCircle.csv");
 
 	}
-
 
 	static List<CirclePlusMinusTot> getMonthlyCountByCircle() {
 		Map<String, List<CircleCounts>> ymCircleCounts = new TreeMap<String, List<CircleCounts>>();
@@ -104,7 +112,7 @@ public class CountByCircle {
 
 		List<String> allYM = ReadFromDB.readAllYM(dbname, queryAllYM);
 
-		System.out.println(allYM);
+//		System.out.println(allYM);
 
 		String queryAllInYM = "SELECT * FROM `SpringestWithCircle` "
 				+ "WHERE EXTRACT( YEAR_MONTH FROM `date` ) =:ym "
@@ -133,7 +141,6 @@ public class CountByCircle {
 		fillInMap(mapTaskToYMandCircles,ymChanges);
 		//				printMap(mapTaskToYMandCircles);
 
-
 		Map<String,List<YMTaskList>> mapCircleToYMandTasks = new TreeMap<String, List<YMTaskList>>();
 		fillInCircleMap(mapCircleToYMandTasks, mapTaskToYMandCircles);
 		//		printMapCircle(mapCircleToYMandTasks);
@@ -142,12 +149,11 @@ public class CountByCircle {
 		//
 		//		writeMapToCSV(ymCircleCounts, outFile);
 
-		List<CirclePlusMinusTot> circlePlusMinusTots = getListFromMap(mapCircleToYMandTasks);
+		List<CirclePlusMinusTot> circlePlusMinusTots = getListFromMap(mapCircleToYMandTasks, ymChanges);
 		circlePlusMinusTots = expandByPadding(circlePlusMinusTots, mapCircleToYMandTasks);
-		
+
 		return circlePlusMinusTots;
 	}
-
 
 	private static boolean contains(String element, Map<String, List<CircleCounts>> ymCircleCounts) {
 		for(String key: ymCircleCounts.keySet()) {
@@ -164,7 +170,7 @@ public class CountByCircle {
 	private static List<CirclePlusMinusTot> expandByPadding(List<CirclePlusMinusTot> circlePlusMinusTots, Map<String, List<YMTaskList>> mapCircleToYMandTasks) {
 		List<CirclePlusMinusTot> res = new ArrayList<CirclePlusMinusTot>();
 		List<String> circles = getAllCircles(circlePlusMinusTots);
-		List<String> allYM = getAllYM(circlePlusMinusTots);
+		allYM = getAllYM(circlePlusMinusTots);
 		Collections.sort(allYM);
 		Collections.sort(circles);
 		//		Map<String, String> yearCircle = getMapYearCircle(circlePlusMinusTots);
@@ -179,6 +185,12 @@ public class CountByCircle {
 				}
 				else {
 					cpmt = createZeroValue(circles.get(j), allYM.get(i));
+					if(i>0) {
+						CirclePlusMinusTot cpmt2 = getEntryFrom(circles.get(j), allYM.get(i-1), res);
+						if(cpmt2!=null)
+							cpmt.tot = cpmt2.tot;
+					}
+						
 				}
 				res.add(cpmt);
 			}
@@ -206,7 +218,6 @@ public class CountByCircle {
 		return false;
 	}
 
-
 	private static CirclePlusMinusTot createZeroValue(String circle, String ym) {
 		// TODO Auto-generated method stub
 		CirclePlusMinusTot circlePlusMinusTot = new CirclePlusMinusTot();
@@ -215,9 +226,14 @@ public class CountByCircle {
 		circlePlusMinusTot.setYm(ym);
 		circlePlusMinusTot.setMinus(0);
 		circlePlusMinusTot.setPlus(0);
+		if(!ym.equals(allYM.get(0))) {
+			circlePlusMinusTot.setTotAllCirclesPlusesPrevMonth(ymPluses.get(getPreviousMonth(ym, allYM)));
+			circlePlusMinusTot.setTotAllCirclesMinusesPrevMonth(ymMinuses.get(getPreviousMonth(ym, allYM)));
+			circlePlusMinusTot.setTotAllCirclesModsPrevMonth(ymMods.get(getPreviousMonth(ym, allYM)));
+			circlePlusMinusTot.setTotAllCirclesPrevMonth(ymTasks.get(getPreviousMonth(ym, allYM)));
+		}
 		return circlePlusMinusTot;
 	}
-
 
 	private static int getTotalFromPreviousYM(int i, String circleId, List<String> allYM, List<CirclePlusMinusTot> circlePlusMinusTots) {
 		int tot = 0;
@@ -235,8 +251,6 @@ public class CountByCircle {
 		}
 		return null;
 	}
-
-
 
 	private static void contains(String circleId, List<CirclePlusMinusTot> circlePlusMinusTots) {
 		// TODO Auto-generated method stub
@@ -301,7 +315,7 @@ public class CountByCircle {
 		}		
 	}
 
-	private static List<CirclePlusMinusTot> getListFromMap(Map<String, List<YMTaskList>> mapCircleToYMandTasks) {
+	private static List<CirclePlusMinusTot> getListFromMap(Map<String, List<YMTaskList>> mapCircleToYMandTasks, Map<String, List<StructuralDataChange>> ymChanges) {
 		List<CirclePlusMinusTot> res = new ArrayList<CirclePlusMinusTot>();
 		Set<String> circles = mapCircleToYMandTasks.keySet();
 		for (String circle : circles) {
@@ -312,21 +326,139 @@ public class CountByCircle {
 				circlePlusMinusTot.setCircleName(getCircleNameFromID(circle));
 				circlePlusMinusTot.setYm(ymTaskLists.get(i).ym);
 				circlePlusMinusTot.setTot(ymTaskLists.get(i).taskIds.size());
+				circlePlusMinusTot.setMods(countMods(ymTaskLists.get(i), ymChanges));
 				if(i>0) {
 					circlePlusMinusTot.setMinus(countMissing(ymTaskLists.get(i-1).taskIds,ymTaskLists.get(i).taskIds));
 					circlePlusMinusTot.setPlus(countMissing(ymTaskLists.get(i).taskIds,ymTaskLists.get(i-1).taskIds));
+					circlePlusMinusTot.setTotPlusesThisCirclePrevMonth(count(res,mapCircleToYMandTasks, ymTaskLists.get(i-1).ym, 1));
+					circlePlusMinusTot.setTotMinusesThisCirclesPrevMonth(count(res, mapCircleToYMandTasks, ymTaskLists.get(i-1).ym, 2));
+					circlePlusMinusTot.setTotModsThisCirclePrevMonth(count(res, mapCircleToYMandTasks, ymTaskLists.get(i-1).ym, 3));
+					circlePlusMinusTot.setTotThisCirclesPreviousMonth(count(res, mapCircleToYMandTasks, ymTaskLists.get(i-1).ym, 4));
 				}
 				if(i==0)
 					circlePlusMinusTot.setPlus(circlePlusMinusTot.getTot());
-					
+
 				res.add(circlePlusMinusTot);
 			}
 		}
 		Collections.sort(res);
+		List<String> allYM = new ArrayList<String>(ymChanges.keySet());
+		Collections.sort(allYM);
+		countTotPrevMonth(res, allYM);
 		return res;
 	}
 
+	private static void countTotPrevMonth(List<CirclePlusMinusTot> res, List<String> allYM) {
+		for (CirclePlusMinusTot circlePlusMinusTot : res) {
 
+			String ym = circlePlusMinusTot.ym;
+
+			if(!ymPluses.containsKey(ym)){
+				ymPluses.put(ym, 0);
+			}
+
+			if(!ymMinuses.containsKey(ym)){
+				ymMinuses.put(ym, 0);
+			}
+
+			if(!ymMods.containsKey(ym)){
+				ymMods.put(ym, 0);
+			}
+
+			if(!ymTasks.containsKey(ym)){
+				ymTasks.put(ym, 0);
+			}
+
+			ymPluses.put(ym, ymPluses.get(ym) + circlePlusMinusTot.getPlus());
+			ymMinuses.put(ym, ymMinuses.get(ym) + circlePlusMinusTot.getMinus());
+			ymMods.put(ym, ymMods.get(ym) + circlePlusMinusTot.getMods());
+			ymTasks.put(ym, ymTasks.get(ym) + circlePlusMinusTot.getTot());
+		}
+
+		for (CirclePlusMinusTot circlePlusMinusTot : res) {
+			String currentMonth = circlePlusMinusTot.ym;
+			String previousMonth = getPreviousMonth(currentMonth, allYM);
+			if(previousMonth!=null) {
+				circlePlusMinusTot.setTotAllCirclesPlusesPrevMonth(ymPluses.get(previousMonth));
+				circlePlusMinusTot.setTotAllCirclesMinusesPrevMonth(ymMinuses.get(previousMonth));
+				circlePlusMinusTot.setTotAllCirclesModsPrevMonth(ymMods.get(previousMonth));
+				circlePlusMinusTot.setTotAllCirclesPrevMonth(ymTasks.get(previousMonth));
+			}
+		}
+
+	}
+
+	private static String getPreviousMonth(String currentMonth, List<String> allYM) {
+		String prevMonth = null;
+		for (String current : allYM) {
+			if(current.equals(currentMonth))
+				break;
+			prevMonth = current;
+		}
+		return prevMonth;
+	}
+
+	private static int count(List<CirclePlusMinusTot> res, Map<String, List<YMTaskList>> mapCircleToYMandTasks, String ym, int which) {
+		int result = 0;
+		for (CirclePlusMinusTot circlePlusMinusTot : res) {
+			if(circlePlusMinusTot.ym.equals(ym)) {
+				switch (which) {
+				case 1: 
+					result+=circlePlusMinusTot.plus;
+					break;
+				case 2:
+					result+=circlePlusMinusTot.minus;
+					break;
+				case 3:
+					result+=circlePlusMinusTot.mods;
+					break;
+				case 4:
+					result+=circlePlusMinusTot.tot;
+					break;
+				default:
+					break;
+				}
+			}
+
+		}
+		return result;
+	}
+
+	private static int countMods(YMTaskList ymTaskList, Map<String, List<StructuralDataChange>> ymChanges) {
+		int res = 0;
+		List<String> taskIds = ymTaskList.taskIds;
+		String ym = ymTaskList.ym;
+
+		List<StructuralDataChange> changes = ymChanges.get(ym);
+
+		for (String task : taskIds) {
+			for(StructuralDataChange change : changes) {
+				if(change.getTaskId().equals(task))
+					res+=countTaskChanges(change);
+			}
+		}
+		return res;
+	}
+
+	private static int countTaskChanges(StructuralDataChange change) {
+		switch (change.getTypeOfChange()) {
+		case 9:
+		case 11:
+		case 111:
+		case 2:
+		case 1:
+		case 15:
+		case 3:
+		case 6:
+		case 5:
+		case 4:
+			return 1;
+
+		default:
+			break;
+		}
+		return 0;
+	}
 
 	/**
 	 * Count how many of the first set are NOT in the second

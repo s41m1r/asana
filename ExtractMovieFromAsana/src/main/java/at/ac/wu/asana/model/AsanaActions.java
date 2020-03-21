@@ -41,6 +41,7 @@ public class AsanaActions {
 	public static final int LAST_MODIFY_ROLE = 13;
 	public static final int COMPLETE_ROLE = 14;
 	public static final int CREATE_ROLE = 15;
+	public static final int CIRCLE_CHANGE = 16;
 	
 	
 	public static String codeToString(int code){
@@ -96,7 +97,10 @@ public class AsanaActions {
 			break;		
 		case UNCLEAR_OR_CONFLICT_WITH_CODEBOOK:
 			res = "UNCLEAR_OR_CONFLICT_WITH_CODEBOOK";
-			break;	
+			break;
+		case CIRCLE_CHANGE:
+			res = "CIRCLE_CHANGE";
+			break;
 		default:
 			break;
 		}

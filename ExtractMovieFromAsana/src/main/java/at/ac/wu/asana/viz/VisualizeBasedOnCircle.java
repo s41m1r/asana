@@ -3,9 +3,11 @@ package at.ac.wu.asana.viz;
 import java.sql.Date;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.graphstream.graph.Edge;
@@ -23,14 +25,22 @@ import org.hibernate.SessionFactory;
 
 import at.ac.wu.asana.db.utils.DatabaseConnector;
 import at.ac.wu.asana.model.AsanaActions;
+import at.ac.wu.asana.model.AuthoritativeList;
 import at.ac.wu.asana.model.StructuralDataChange;
 
 public class VisualizeBasedOnCircle {
 	
 	static Set<String> allTaskIds = new HashSet<String>();
-
+	static Set<String> allCircleIds = new HashSet<String>();
+	static Map<String, Boolean> circleVisibiliy = new HashMap<String, Boolean>();
+	
+	static Map<String, String> circleBirthDate = new HashMap<String, String>();
+	static Map<String, String> circleDeathDate = new HashMap<String, String>();
 	
 	public static void main(String[] args) {
+		
+		setCircleBirthsAndDeaths();
+		
 		System.setProperty("org.graphstream.ui.renderer", "org.graphstream.ui.j2dviewer.J2DGraphRenderer");
 
 		Graph graph = new SingleGraph("Asana graph");
@@ -63,17 +73,54 @@ public class VisualizeBasedOnCircle {
 		addNodesStepByStep(graph, master, s1, delay);
 	}
 
+	private static void setCircleBirthsAndDeaths() {
+		circleBirthDate.put("7963718816247", "2013-10-01"); //alignment
+		circleBirthDate.put(AuthoritativeList.authoritativeList[AuthoritativeList.lookup("☺Business Intelligence Roles")], "2014-04-14");
+		circleDeathDate.put(AuthoritativeList.authoritativeList[AuthoritativeList.lookup("☺Business Intelligence Roles")], "2015-03-24");
+		circleBirthDate.put(AuthoritativeList.authoritativeList[AuthoritativeList.lookup("☺ Demand Roles")], "2014-04-01");
+		circleDeathDate.put(AuthoritativeList.authoritativeList[AuthoritativeList.lookup("☺ Demand Roles")], "2014-09-30");
+		circleBirthDate.put(AuthoritativeList.authoritativeList[AuthoritativeList.lookup("☺ Evangelism Roles")], "2016-08-04");
+		circleBirthDate.put(AuthoritativeList.authoritativeList[AuthoritativeList.lookup("☺ Finance Roles")], "2015-09-02");
+		circleBirthDate.put(AuthoritativeList.authoritativeList[AuthoritativeList.lookup("☺ Germany Roles")], "2017-08-09");
+		circleBirthDate.put(AuthoritativeList.authoritativeList[AuthoritativeList.lookup("☺ Marketplace DE roles")], "2017-01-03");
+		circleDeathDate.put(AuthoritativeList.authoritativeList[AuthoritativeList.lookup("☺ Marketplace DE roles")], "2017-09-18");
+		circleBirthDate.put(AuthoritativeList.authoritativeList[AuthoritativeList.lookup("☺ Go Customer Roles")], "2015-03-11");
+		circleDeathDate.put(AuthoritativeList.authoritativeList[AuthoritativeList.lookup("☺ Go Customer Roles")], "2016-01-12");
+		circleBirthDate.put(AuthoritativeList.authoritativeList[AuthoritativeList.lookup("☺ Go Sales Roles")], "2014-05-22");
+		circleDeathDate.put(AuthoritativeList.authoritativeList[AuthoritativeList.lookup("☺ Go Sales Roles")], "2014-05-29");
+		circleBirthDate.put(AuthoritativeList.authoritativeList[AuthoritativeList.lookup("☺ Infrastructure Roles")], "2013-09-16");
+		circleDeathDate.put(AuthoritativeList.authoritativeList[AuthoritativeList.lookup("☺ Infrastructure Roles")], "2018-06-28");
+		circleBirthDate.put(AuthoritativeList.authoritativeList[AuthoritativeList.lookup("☺ Marketing Roles")], "2013-09-16");
+		circleBirthDate.put(AuthoritativeList.authoritativeList[AuthoritativeList.lookup("☺ Marketplace Roles")], "2014-04-01");
+		circleDeathDate.put(AuthoritativeList.authoritativeList[AuthoritativeList.lookup("☺ Marketplace Roles")], "2018-06-05");
+		circleBirthDate.put(AuthoritativeList.authoritativeList[AuthoritativeList.lookup("☺ Organisations Roles")], "2014-04-01");
+		circleBirthDate.put(AuthoritativeList.authoritativeList[AuthoritativeList.lookup("☺ Customer Success Roles")], "2018-09-17");
+		circleBirthDate.put(AuthoritativeList.authoritativeList[AuthoritativeList.lookup("☺ Product Roles")], "2015-10-29");
+		circleBirthDate.put(AuthoritativeList.authoritativeList[AuthoritativeList.lookup("☺ Providers Roles")], "2014-04-01");
+		circleDeathDate.put(AuthoritativeList.authoritativeList[AuthoritativeList.lookup("☺ Providers Roles")], "2016-01-11");
+		circleBirthDate.put(AuthoritativeList.authoritativeList[AuthoritativeList.lookup("☺ Providers roles")], "2017-07-20");
+		circleBirthDate.put(AuthoritativeList.authoritativeList[AuthoritativeList.lookup("☺ Rainmakers Roles")], "2014-06-17");
+		circleDeathDate.put(AuthoritativeList.authoritativeList[AuthoritativeList.lookup("☺ Rainmakers Roles")], "2015-06-09");
+		circleBirthDate.put(AuthoritativeList.authoritativeList[AuthoritativeList.lookup("☺ Sales Roles")], "2013-09-16");
+		circleDeathDate.put(AuthoritativeList.authoritativeList[AuthoritativeList.lookup("☺ Sales Roles")], "2014-09-01");
+		circleBirthDate.put(AuthoritativeList.authoritativeList[AuthoritativeList.lookup("☺ Smooth Operations Roles")], "2014-04-10");
+		circleBirthDate.put(AuthoritativeList.authoritativeList[AuthoritativeList.lookup("☺ Office Roles")], "2018-02-15");
+		circleDeathDate.put(AuthoritativeList.authoritativeList[AuthoritativeList.lookup("☺ Office Roles")], "2018-02-22");
+		circleBirthDate.put(AuthoritativeList.authoritativeList[AuthoritativeList.lookup("☺ People Roles")], "2018-02-15");
+		circleDeathDate.put(AuthoritativeList.authoritativeList[AuthoritativeList.lookup("☺ People Roles")], "2018-02-22");
+		circleBirthDate.put(AuthoritativeList.authoritativeList[AuthoritativeList.lookup("☺ Springest Academy Roles")], "2019-07-26");
+		circleBirthDate.put(AuthoritativeList.authoritativeList[AuthoritativeList.lookup("☺ Users Roles")], "2017-07-19");
+	}
+
 	private static void addNodesStepByStep(Graph graph, Node master, Sprite s1, int delay) {
 		SessionFactory sf = DatabaseConnector.getSessionFactory("asana_manual5");
 		org.hibernate.Session session = sf.openSession();
 
-		addAllCircles(session, graph, master);
+		addAllCirclesAndSubCircles(session, graph, master);
 		
-//		addSubCircles
-
 		Query queryAllDates = session.createSQLQuery("SELECT DISTINCT date "
 				+ "FROM `SpringestWithCircle` "
-//				+ "WHERE projectId <> '7963718816247' "
+				+ "WHERE `date` > '2013-09-30' "
 				+ "ORDER BY date");
 		Query queryEvents = session.createSQLQuery("SELECT * FROM `SpringestWithCircle` "
 				+ "WHERE date =:date "
@@ -88,6 +135,8 @@ public class VisualizeBasedOnCircle {
 		int i = 1;
 		for (String d : result) {
 			queryEvents.setDate("date", Date.valueOf(d));
+			
+//			setCircleVisibility(d, graph);
 
 			List<Object> events = queryEvents.list();
 			s1.setAttribute("ui.label", Date.valueOf(d) + ", day "+i+"/"+result.size()
@@ -104,19 +153,24 @@ public class VisualizeBasedOnCircle {
 				//				sdc.getCreatedAt()+" prjId="+sdc.getProjectId());
 			}
 			List<Node> nodesAdded = addToGraph(graph, changeEvents);
+			sleep(200);
 			for (Node n : nodesAdded) {
 				if(n.getAttribute("ui.class").equals("modified")) {
 					n.setAttribute("ui.style", "size: 10px;");
 					n.setAttribute("ui.style", "fill-color: black;");
+					n.setAttribute("ui.style", "text-mode: normal;");
 					n.setAttribute("ui.style", "stroke-mode: plain;");
-					sleep(100);            
+					n.setAttribute("ui.style", "z-index: 2;");
+					sleep(300);            
 					n.setAttribute("ui.style", "size: 3px;");
 					n.setAttribute("ui.style", "fill-color: blue;");
 					n.setAttribute("ui.style", "stroke-mode: none;");
+					n.setAttribute("ui.style", "text-mode: hidden;");
 //					sleep(500);	
 					allTaskIds.add(n.getId());
 				}
 			}
+			
 //			Collection<Node> nodes = graph.getNodeSet();
 //			for (Node n : nodes) {
 //				if(n.getInDegree() == 0)
@@ -125,6 +179,40 @@ public class VisualizeBasedOnCircle {
 //			sleep(500);
 		}
 		sf.close();
+	}
+
+
+	private static void setCircleVisibility(String d, Graph g) {
+		for (String circleId : allCircleIds) {
+			String birth = circleBirthDate.get(circleId);
+			String death = circleDeathDate.get(circleId);
+//			if(d.compareTo(birth)>=0) {
+//				Node n = g.getNode(circleId);
+//				n.removeAttribute("ui.hide");
+//				Iterable<Edge> ite = n.getEdgeSet();
+//				for (Edge edge : ite) {
+//					edge.removeAttribute("ui.hide");
+//				}
+//			}
+//			else {
+//				Node n = g.getNode(circleId);
+//				n.addAttribute("ui.hide");
+//				Iterable<Edge> ite = n.getEdgeSet();
+//				for (Edge edge : ite) {
+//					edge.addAttribute("ui.hide");
+//				}
+//			}
+			
+			if(death!=null) {
+				if(d.compareTo(death)>=0) {
+					Node n = g.getNode(circleId);
+					if(n==null)
+						continue;
+					Iterator<Node> it = n.getNeighborNodeIterator();				
+					g.removeNode(n);
+				}
+			}
+		}
 	}
 
 	private static List<Node> addToGraph(Graph graph, List<StructuralDataChange> events) {
@@ -147,6 +235,8 @@ public class VisualizeBasedOnCircle {
 						org.graphstream.graph.Edge ed =
 								graph.addEdge(circleIds[i]+e.getTaskId(), circleIds[i], e.getTaskId());
 						ed.getTargetNode().addAttribute("name", circles[i]);
+						ed.getTargetNode().removeAttribute("ui.hidden");
+//						ed.getTargetNode().setAttribute("ui.style", "text-mode: normal;");
 						nodesAdded.add(ed.getNode1());
 					}
 				}
@@ -190,7 +280,7 @@ public class VisualizeBasedOnCircle {
 //							graph.removeNode(tId);
 //				}
 				
-//				removeOrphans(graph);
+				removeOrphans(graph);
 				
 				break;
 				//			case AsanaActions.CHANGE_NAME_OF_ROLE:
@@ -204,6 +294,17 @@ public class VisualizeBasedOnCircle {
 				//				sleep(200);
 				//				n.addAttribute("ui.class", "modified");
 				//				break;
+			case 9:
+			case 11:
+			case 111:
+			case 2:
+			case 1:
+			case 3:
+			case 6:
+			case 5:
+			case 4:
+				n.addAttribute("ui.class", "modified");
+				break;
 			default:
 				//				n.addAttribute("ui.class", "deleted");
 				//				graph.removeNode(n.getId());
@@ -211,7 +312,6 @@ public class VisualizeBasedOnCircle {
 				//				sleep(200);
 				//				n.setAttribute("ui.style", "size: 10px;");
 				//				sleep(200);
-				n.addAttribute("ui.class", "modified");
 				break;
 			}
 		}
@@ -229,21 +329,42 @@ public class VisualizeBasedOnCircle {
 		return res;
 	}
 
-	private static void addAllCircles(Session session, Graph graph, Node master) {
-		Query queryProjects = session.createSQLQuery("SELECT DISTINCT projectId, projectName FROM `SpringestWithCircle` WHERE 1");
-		List projects = queryProjects.list();
-
-		for (Object object : projects) {
-			Object[] row = (Object[]) object;
-			String[] str = toStrObjArray(row);
-
-			Edge e = graph.addEdge(master.getId()+str[0], master.getId(), str[0]);
+	private static void addAllCirclesAndSubCircles(Session session, Graph graph, Node master) {
+		int i = 0;
+		for (String circleId : AuthoritativeList.authoritativeList) {
+			Edge e;
+			if(isSubcircle(circleId)) {
+				String fatherId = getFather(circleId);
+				e = graph.addEdge(fatherId+circleId, fatherId, circleId);
+			}
+			else
+				e = graph.addEdge(master.getId()+circleId, master.getId(), circleId);
 			Node n = e.getTargetNode();
 			n.addAttribute("ui.class", "circleClass");
-			n.addAttribute("ui.label", str[1]);
-
+			n.addAttribute("ui.label", AuthoritativeList.authoritativeListNames[i++]);
+//			n.addAttribute("ui.hide");
+			allCircleIds.add(n.getId());
 			allTaskIds.add(n.getId());
 		}
+	}
+
+	private static String getFather(String circleId) {
+		if(circleId.equals("1133031362168396") || circleId.equals("560994092069672")
+				|| circleId.equals("561311958443380"))
+			return "11555199602299";
+		if(circleId.equals("824769296181501"))
+			return "11347525454570";
+		if(circleId.equals("236886514207498"))
+			return "404651189519209";
+		return null;
+	}
+
+	private static boolean isSubcircle(String circleId) {
+		if(circleId.equals("1133031362168396") || circleId.equals("824769296181501") || 
+				circleId.equals("560994092069672") || circleId.equals("561311958443380") ||
+				circleId.equals("236886514207498"))
+			return true;
+		return false;
 	}
 
 	private static void sleep(int time) {

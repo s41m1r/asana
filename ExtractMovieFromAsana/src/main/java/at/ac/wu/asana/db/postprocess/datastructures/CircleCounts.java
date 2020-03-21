@@ -1,17 +1,17 @@
-package at.ac.wu.asana.db.postprocess;
+package at.ac.wu.asana.db.postprocess.datastructures;
 
 public class CircleCounts implements Comparable<CircleCounts>{
-	String circleId;
-	String circleName;
-	int births;
-	int deaths;
-	int modifications;
-	int migrations;
-	int totEvents;
-	int totDerivedEvents;
-	int totOtherEvents;
-	int totRolesInCircle;
-	long totalRolesInCircleUntilThisMonth;
+	public String circleId;
+	public String circleName;
+	public int births;
+	public int deaths;
+	public int modifications;
+	public int migrations;
+	public int totEvents;
+	public int totDerivedEvents;
+	public int totOtherEvents;
+	public int totRolesInCircle;
+	public long totalRolesInCircleUntilThisMonth;
 	
 	
 	
@@ -150,8 +150,6 @@ public class CircleCounts implements Comparable<CircleCounts>{
 	public void setTotRolesInCircle(int totRolesInCircle) {
 		this.totRolesInCircle = totRolesInCircle;
 	}
-
-	
 
 	@Override
 	public String toString() {

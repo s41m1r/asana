@@ -1,8 +1,6 @@
 package at.ac.wu.asana.db.io;
 
 import java.io.IOException;
-import java.sql.Date;
-import java.sql.Time;
 import java.sql.Timestamp;
 import java.util.HashMap;
 import java.util.List;
@@ -260,11 +258,10 @@ public class CreateDB2 {
 		
 		s.action = change.getAction();
 		s.asanaId = change.getEventId();
-		long datetimeValue = change.getDateTime().getValue();
-		s.date = new Date(datetimeValue);
-		s.time = new Time(datetimeValue);
+		s.date = java.sql.Date.valueOf(change.getDateTime().toLocalDate());
+		s.time = java.sql.Time.valueOf(change.getDateTime().toLocalTime());
 			
-		s.timestamp = new Timestamp(datetimeValue);	
+		s.timestamp = Timestamp.valueOf(change.getDateTime());		
 		s.text = change.getRawDataText();
 		s.type = change.getMessageType();
 		s.user = change.getActor();

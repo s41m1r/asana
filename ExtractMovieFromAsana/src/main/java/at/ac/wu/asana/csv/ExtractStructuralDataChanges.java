@@ -833,7 +833,7 @@ public class ExtractStructuralDataChanges {
 								"resource_subtype")).execute();
 				if(stories!=null && currentTask.createdAt!=null) {
 					//					Add first derived event
-					list.add(createDerivedEvent(currentTask, project, workspace, currentTask.createdAt, AsanaActions.CREATE_ROLE)); 
+					list.add(StructuralDataChange.createDerivedEvent(currentTask, project, workspace, currentTask.createdAt, AsanaActions.CREATE_ROLE)); 
 					for (Story story : stories) {
 						StructuralDataChange sdc = createStoryEvent(project, workspace, story, currentTask, client.users.me().execute().name);
 						list.add(sdc);
@@ -846,8 +846,9 @@ public class ExtractStructuralDataChanges {
 //						}
 					}
 					//				Add complete and last_modify 
-					list.add(createDerivedEvent(currentTask, project, workspace, currentTask.completedAt, AsanaActions.COMPLETE_ROLE));
-					list.add(createDerivedEvent(currentTask, project, workspace, currentTask.modifiedAt, AsanaActions.LAST_MODIFY_ROLE));
+					if(currentTask.completedAt!=null)
+						list.add(StructuralDataChange.createDerivedEvent(currentTask, project, workspace, currentTask.completedAt, AsanaActions.COMPLETE_ROLE));
+					list.add(StructuralDataChange.createDerivedEvent(currentTask, project, workspace, currentTask.modifiedAt, AsanaActions.LAST_MODIFY_ROLE));
 				}
 				res.put(currentTask.gid, list);
 			} catch (IOException e) {
@@ -903,14 +904,14 @@ public class ExtractStructuralDataChanges {
 								"resource_subtype")).execute();
 				if(stories!=null && currentTask.createdAt!=null) {
 					//					Add first derived event
-					list.add(createDerivedEvent(currentTask, project, workspace, currentTask.createdAt, AsanaActions.CREATE_ROLE)); 
+					list.add(StructuralDataChange.createDerivedEvent(currentTask, project, workspace, currentTask.createdAt, AsanaActions.CREATE_ROLE)); 
 					for (Story story : stories) {
 						list.add(createStoryEvent(project, workspace, story, currentTask, client.users.me().execute().name));
 					}
 					//				Add complete and last_modify 
 					if(currentTask.completedAt!=null)
-						list.add(createDerivedEvent(currentTask, project, workspace, currentTask.completedAt, AsanaActions.COMPLETE_ROLE));
-					list.add(createDerivedEvent(currentTask, project, workspace, currentTask.modifiedAt, AsanaActions.LAST_MODIFY_ROLE));
+						list.add(StructuralDataChange.createDerivedEvent(currentTask, project, workspace, currentTask.completedAt, AsanaActions.COMPLETE_ROLE));
+					list.add(StructuralDataChange.createDerivedEvent(currentTask, project, workspace, currentTask.modifiedAt, AsanaActions.LAST_MODIFY_ROLE));
 				}
 			} catch (IOException e) {
 				System.err.println("Could not retrieve stories of task "+currentTask.gid+" "+currentTask.name);
@@ -929,21 +930,5 @@ public class ExtractStructuralDataChanges {
 		change.setWorkspaceId(workspace.gid);
 		change.setWorkspaceName(workspace.name);
 		return change;
-	}
-
-	private static StructuralDataChange createDerivedEvent(Task task, Project project, Workspace workspace,
-			DateTime timestamp, int action) {
-		StructuralDataChange chTask = new StructuralDataChange(task, timestamp, action);
-//		chTask.setStoryCreatedAt(task.createdAt);
-//		chTask.setModifiedAt(task.modifiedAt);
-//		chTask.setCompletedAt(task.completedAt);
-		chTask.setProjectId(project.gid);
-		chTask.setWorkspaceId(workspace.gid);
-		chTask.setProjectId(project.gid);
-		chTask.setProjectName(project.name);
-		chTask.setWorkspaceId(workspace.gid);
-		chTask.setWorkspaceName(workspace.name);
-		chTask.setMessageType("derived");
-		return chTask;
 	}
 }

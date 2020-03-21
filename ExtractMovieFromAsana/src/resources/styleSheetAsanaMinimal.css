@@ -22,7 +22,7 @@ node.circleClass {
 }
 
 node.master {
-	shape: cross;
+	shape: diamond;
 	size: 20px, 20px;
 	text-mode: normal;
 }

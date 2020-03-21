@@ -1,12 +1,12 @@
-package at.ac.wu.asana.db.postprocess;
+package at.ac.wu.asana.db.postprocess.datastructures;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class YMCircleList {
-	String ym;
-	List<String> circleIds;
-	List<String> circles;
+	public String ym;
+	public List<String> circleIds;
+	public List<String> circles;
 	
 	public YMCircleList(String ym, List<String> circleIds, List<String> circles, String[] authoritativeList, String[] authoritativeListNames) {
 		super();

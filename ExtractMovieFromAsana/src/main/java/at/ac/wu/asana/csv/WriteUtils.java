@@ -15,7 +15,6 @@ import java.util.TreeSet;
 
 import com.opencsv.CSVWriter;
 
-import at.ac.wu.asana.db.postprocess.PostProcessFromDB;
 import at.ac.wu.asana.model.StructuralDataChange;
 
 public abstract class WriteUtils {

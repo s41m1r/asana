@@ -19,11 +19,11 @@ node.role {
 node.circleClass {
 	shape: box;
 	size: 25px, 25px;
-	text-mode: normal;
+	text-mode: hidden;
 }
 
 node.master {
-	shape: cross;
+	shape: quad;
 	size: 30px, 30px;
 }
 

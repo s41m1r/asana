@@ -35,6 +35,29 @@ public abstract class ReadFromDB {
 
 		return allEvents;
 	}
+	
+	public static List<String> readAll(String dbname, String sql){
+
+		// read the data
+		SessionFactory sf = DatabaseConnector.getSessionFactory(dbname);
+		org.hibernate.Session session = sf.openSession();
+
+		List<String> allEvents = new ArrayList<String>();
+
+		Query queryEvents = session.createSQLQuery(sql);
+
+		List<Object> results = queryEvents.list();
+
+		for (Object e : results) {
+			allEvents.add(e.toString());
+		}
+
+		session.flush();
+		session.close();
+		sf.close();
+
+		return allEvents;
+	}
 
 	public static List<StructuralDataChange> readFromDB(String dbname, String sql){
 
@@ -110,5 +133,32 @@ public abstract class ReadFromDB {
 
 		return allEvents;
 	}
+	
+	public static List<StructuralDataChange> readDailyChanges(Session session, String dbname, String q, String day) {		
+		List<StructuralDataChange> allEvents = new ArrayList<StructuralDataChange>();
+		Query qu = session.createSQLQuery(q);
+
+		qu.setString("day", day);
+
+		List<Object> results = qu.list();
+		List<StructuralDataChange> changeEvents = new ArrayList<StructuralDataChange>();
+
+		for (Object e : results) {
+			Object[] row = (Object[]) e;
+			String[] str = GeneralUtils.toStrObjArray(row);
+			StructuralDataChange sdc = StructuralDataChange.fromString(str);
+			allEvents.add(sdc);
+		}
+
+		return allEvents;
+	}
+
+
+//	public static List<String> readDates(String string, String queryAllDates) {
+//		// TODO Auto-generated method stub
+//		List<String> res = new ArrayList<String>();
+//		Query queryAllDates = session.createSQLQuery(string);
+//		return null;
+//	}
 
 }
