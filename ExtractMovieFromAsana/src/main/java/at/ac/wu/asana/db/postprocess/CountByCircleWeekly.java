@@ -7,7 +7,6 @@ import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -32,7 +31,7 @@ import at.ac.wu.asana.db.postprocess.datastructures.YMTaskList;
 import at.ac.wu.asana.db.utils.DatabaseConnector;
 import at.ac.wu.asana.model.StructuralDataChange;
 
-public class CountByCircle {
+public class CountByCircleWeekly {
 	static String[] authoritativeList = new String[]{
 			"0",
 			"7746376637805",
@@ -93,31 +92,31 @@ public class CountByCircle {
 	static Map<String, Integer> ymTasks = new HashMap<String, Integer>();
 	static Map<String, Integer> ymTots = new HashMap<String, Integer>();
 
-	static List<String> allYM;
+	static List<String> allYW;
 
 	public static void main(String[] args) {
 
-		List<CirclePlusMinusTot> circlePlusMinusTots = getMonthlyCountByCircle();
+		List<CirclePlusMinusTot> circlePlusMinusTots = getWeeklyCountByCircle();
 
-		printCirclesPlusMinusTot(circlePlusMinusTots, "totalsMonthlyByCirclePlusMinusTot.csv");
+		printCirclesPlusMinusTot(circlePlusMinusTots, "totalsWeeklyByCirclePlusMinusTot.csv");
 
 		//		printTotalsMonthly2(mapCircleToYMandTasks, "totalsMonthlyByCircle.csv");
 
 	}
 
-	static List<CirclePlusMinusTot> getMonthlyCountByCircle() {
-		Map<String, List<CircleCounts>> ymCircleCounts = new TreeMap<String, List<CircleCounts>>();
-		Map<String, List<StructuralDataChange>> ymChanges = new LinkedHashMap<String, List<StructuralDataChange>>();
+	static List<CirclePlusMinusTot> getWeeklyCountByCircle() {
+		Map<String, List<CircleCounts>> ywCircleCounts = new TreeMap<String, List<CircleCounts>>();
+		Map<String, List<StructuralDataChange>> ywChanges = new LinkedHashMap<String, List<StructuralDataChange>>();
 
 		String dbname = "asana_manual5";
-		String queryAllYM = "SELECT * FROM allYM";
+		String queryAllYW = "SELECT * FROM allYW";
 
-		List<String> allYM = ReadFromDB.readAllTimePeriod(dbname, queryAllYM);
+		List<String> allYW = ReadFromDB.readAllTimePeriod(dbname, queryAllYW);
 
 //		System.out.println(allYM);
 
-		String queryAllInYM = "SELECT * FROM `SpringestWithCircle` "
-				+ "WHERE EXTRACT( YEAR_MONTH FROM `date` ) =:ym "
+		String queryAllInYW = "SELECT * FROM `SpringestWithCircle` "
+				+ "WHERE YEARWEEK(`timestamp`) =:ym" 
 				//				+ "AND typeOfChange IN (12,4,5,14)"
 				+ "";
 		//		date =:date
@@ -125,28 +124,28 @@ public class CountByCircle {
 		// read the data
 		SessionFactory sf = DatabaseConnector.getSessionFactory(dbname);
 		org.hibernate.Session session = sf.openSession();
-		for (String ym : allYM) {
-			List<StructuralDataChange> changes = ReadFromDB.readChangesByYM(session, dbname, queryAllInYM, ym);
-			ymChanges.put(ym, changes);
+		for (String yw : allYW) {
+			List<StructuralDataChange> changes = ReadFromDB.readChangesByYM(session, dbname, queryAllInYW, yw);
+			ywChanges.put(yw, changes);
 		}
 		session.flush();
 		session.close();
 		sf.close();
 
-		Set<String> yms = ymChanges.keySet();
+		Set<String> yms = ywChanges.keySet();
 		for (String ym : yms) {
 			
-			List<CircleCounts> counts = getTotRolesInCircle(ymChanges.get(ym));
-			ymCircleCounts.put(ym, counts);
+			List<CircleCounts> counts = getTotRolesInCircle(ywChanges.get(ym));
+			ywCircleCounts.put(ym, counts);
 			
-			if(ym.equals("201404")) {
-				CircleCounts cc = counts.get(23);
-				System.out.println("DEBUG: "+Arrays.asList(cc.toCSVRow("201404")));
-			}
+//			if(ym.equals("201404")) {
+//				CircleCounts cc = counts.get(23);
+//				System.out.println("DEBUG: "+Arrays.asList(cc.toCSVRow("201404")));
+//			}
 		}		
 
 		Map<String,List<YMCircleList>> mapTaskToYMandCircles = new HashMap<String, List<YMCircleList>>();
-		fillInMap(mapTaskToYMandCircles,ymChanges);
+		fillInMap(mapTaskToYMandCircles,ywChanges);
 		//				printMap(mapTaskToYMandCircles);
 
 		Map<String,List<YMTaskList>> mapCircleToYMandTasks = new TreeMap<String, List<YMTaskList>>();
@@ -157,7 +156,7 @@ public class CountByCircle {
 		//
 		//		writeMapToCSV(ymCircleCounts, outFile);
 
-		List<CirclePlusMinusTot> circlePlusMinusTots = getListFromMap(mapCircleToYMandTasks, ymChanges);
+		List<CirclePlusMinusTot> circlePlusMinusTots = getListFromMap(mapCircleToYMandTasks, ywChanges);
 		circlePlusMinusTots = expandByPadding(circlePlusMinusTots, mapCircleToYMandTasks);
 
 		return circlePlusMinusTots;
@@ -178,23 +177,23 @@ public class CountByCircle {
 	private static List<CirclePlusMinusTot> expandByPadding(List<CirclePlusMinusTot> circlePlusMinusTots, Map<String, List<YMTaskList>> mapCircleToYMandTasks) {
 		List<CirclePlusMinusTot> res = new ArrayList<CirclePlusMinusTot>();
 		List<String> circles = getAllCircles(circlePlusMinusTots);
-		allYM = getAllYM(circlePlusMinusTots);
-		Collections.sort(allYM);
+		allYW = getAllYM(circlePlusMinusTots);
+		Collections.sort(allYW);
 		Collections.sort(circles);
 		//		Map<String, String> yearCircle = getMapYearCircle(circlePlusMinusTots);
 
 		//do the cross-product
-		for (int i = 0; i < allYM.size(); i++) {
+		for (int i = 0; i < allYW.size(); i++) {
 			for (int j = 0; j < circles.size(); j++) {
 				List<YMTaskList> ymTaskLists = mapCircleToYMandTasks.get(circles.get(j));
 				CirclePlusMinusTot cpmt = null;
-				if(containsYM(allYM.get(i), ymTaskLists)) {
-					cpmt = getEntryFrom(circles.get(j), allYM.get(i), circlePlusMinusTots);
+				if(containsYM(allYW.get(i), ymTaskLists)) {
+					cpmt = getEntryFrom(circles.get(j), allYW.get(i), circlePlusMinusTots);
 				}
 				else {
-					cpmt = createZeroValue(circles.get(j), allYM.get(i));
+					cpmt = createZeroValue(circles.get(j), allYW.get(i));
 					if(i>0) {
-						CirclePlusMinusTot cpmt2 = getEntryFrom(circles.get(j), allYM.get(i-1), res);
+						CirclePlusMinusTot cpmt2 = getEntryFrom(circles.get(j), allYW.get(i-1), res);
 						if(cpmt2!=null)
 							cpmt.tot = cpmt2.tot;
 					}
@@ -234,11 +233,11 @@ public class CountByCircle {
 		circlePlusMinusTot.setYm(ym);
 		circlePlusMinusTot.setMinus(0);
 		circlePlusMinusTot.setPlus(0);
-		if(!ym.equals(allYM.get(0))) {
-			circlePlusMinusTot.setTotAllCirclesPlusesPrevMonth(ymPluses.get(getPreviousMonth(ym, allYM)));
-			circlePlusMinusTot.setTotAllCirclesMinusesPrevMonth(ymMinuses.get(getPreviousMonth(ym, allYM)));
-			circlePlusMinusTot.setTotAllCirclesModsPrevMonth(ymMods.get(getPreviousMonth(ym, allYM)));
-			circlePlusMinusTot.setTotAllCirclesPrevMonth(ymTasks.get(getPreviousMonth(ym, allYM)));
+		if(!ym.equals(allYW.get(0))) {
+			circlePlusMinusTot.setTotAllCirclesPlusesPrevMonth(ymPluses.get(getPreviousMonth(ym, allYW)));
+			circlePlusMinusTot.setTotAllCirclesMinusesPrevMonth(ymMinuses.get(getPreviousMonth(ym, allYW)));
+			circlePlusMinusTot.setTotAllCirclesModsPrevMonth(ymMods.get(getPreviousMonth(ym, allYW)));
+			circlePlusMinusTot.setTotAllCirclesPrevMonth(ymTasks.get(getPreviousMonth(ym, allYW)));
 		}
 		return circlePlusMinusTot;
 	}
@@ -930,7 +929,7 @@ public class CountByCircle {
 							new FileOutputStream(outFile), StandardCharsets.UTF_8) );
 
 			CSVWriter csvWriter = new CSVWriter(rolesFileWriter);
-			String[] header = new String[]{"ym","circleId","circleName","births",
+			String[] header = new String[]{"yw","circleId","circleName","births",
 					"deaths", "modifications", "migrations", "totEvents", 
 					"totDerivedEvents", "totOtherEvents", "totRolesInCircle", "totalRolesInCircleUntilThisMonth"};
 			csvWriter.writeNext(header);

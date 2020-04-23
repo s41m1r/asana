@@ -1,11 +1,5 @@
 package at.ac.wu.asana.db.postprocess;
 
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.OutputStreamWriter;
-import java.io.PrintWriter;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -16,12 +10,11 @@ import java.util.TreeSet;
 
 import org.hibernate.SessionFactory;
 
-import com.opencsv.CSVWriter;
-
 import at.ac.wu.asana.db.io.ReadFromDB;
-import at.ac.wu.asana.db.postprocess.datastructures.YmOveralls;
+import at.ac.wu.asana.db.postprocess.datastructures.TimePeriodOveralls;
 import at.ac.wu.asana.db.utils.DatabaseConnector;
 import at.ac.wu.asana.model.StructuralDataChange;
+import at.ac.wu.asana.util.PrintoutUtils;
 
 public class GenerateOverallCountsMonthly {
 
@@ -29,48 +22,26 @@ public class GenerateOverallCountsMonthly {
 
 		Map<String, List<StructuralDataChange>> ymChanges = getMonthlyChanges();
 
-		List<YmOveralls> ymOveralls = getOverallCount(ymChanges);
+		List<TimePeriodOveralls> ymOveralls = getOverallCount(ymChanges);
 		String outFile = "overallsMonthly.csv";
 		
-		writeOverallsToCSV(ymOveralls, outFile);
+		PrintoutUtils.writeOverallsToCSV(ymOveralls, outFile);
 		System.out.println("Result written to "+outFile);
 
 	}
 
-	private static void writeOverallsToCSV(List<YmOveralls> ymOveralls, String outFile) {
-		PrintWriter rolesFileWriter;
-		try {
-			rolesFileWriter = new PrintWriter(
-					new OutputStreamWriter(
-							new FileOutputStream(outFile), StandardCharsets.UTF_8));
-
-			CSVWriter csvWriter = new CSVWriter(rolesFileWriter);
-			String[] header = YmOveralls.csvHeader();
-			csvWriter.writeNext(header);
-			for (YmOveralls change : ymOveralls) {
-				csvWriter.writeNext(change.toCSVRow(change.ym));
-			}
-			csvWriter.flush();
-			csvWriter.close();
-		} catch (FileNotFoundException e) {
-			e.printStackTrace();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-	}
-
-	private static List<YmOveralls> getOverallCount(Map<String, List<StructuralDataChange>> ymChanges) {
+	public static List<TimePeriodOveralls> getOverallCount(Map<String, List<StructuralDataChange>> ymChanges) {
 		/* 1 = alive; -1 = dead;  */
 		Map<String, Integer> taskStatus = new HashMap<String, Integer>(); 
 		// if it is dead, and a code 7 comes, do not count it. Likewise for code 8 and 12
 
-		List<YmOveralls> ymOveralls = new ArrayList<YmOveralls>();
+		List<TimePeriodOveralls> ymOveralls = new ArrayList<TimePeriodOveralls>();
 		Set<String> keys = new TreeSet<String>(ymChanges.keySet());
 
 		for (String ym : keys) {
 			List<StructuralDataChange> changes = ymChanges.get(ym);
-			YmOveralls overalls = new YmOveralls();
-			overalls.setYm(ym);
+			TimePeriodOveralls overalls = new TimePeriodOveralls();
+			overalls.setTimePeriod(ym);
 			for (StructuralDataChange change : changes) {
 				String taskId = change.getTaskId();
 
@@ -78,9 +49,11 @@ public class GenerateOverallCountsMonthly {
 					taskStatus.put(taskId, 0);
 
 				int toc = change.getTypeOfChange();
+				
 
 				switch (toc) {
-				case 12:
+				case 15:
+				case 4:
 					if(taskStatus.get(taskId)!=1) {
 						overalls.births++;
 					}
@@ -92,7 +65,8 @@ public class GenerateOverallCountsMonthly {
 //					}
 //					taskStatus.put(taskId, 1);
 //					break;
-				case 14:
+				case 5:
+				case 7:
 					if(taskStatus.get(taskId)!=-1) {
 						overalls.deaths++;
 					}
@@ -108,18 +82,15 @@ public class GenerateOverallCountsMonthly {
 				case 11:
 				case 2:
 				case 1:
-				case 15:
 				case 3:
 				case 6:
-				case 5:
 				case 111:
-				case 4:
 					overalls.modifications++;
 					break;
 
 				default:
 					break;
-				}
+				}				
 			}
 			ymOveralls.add(overalls);
 
@@ -133,7 +104,7 @@ public class GenerateOverallCountsMonthly {
 		String dbname = "asana_manual5";
 		String queryAllYM = "SELECT * FROM allYM";
 
-		List<String> allYM = ReadFromDB.readAllYM(dbname, queryAllYM);
+		List<String> allYM = ReadFromDB.readAllTimePeriod(dbname, queryAllYM);
 
 		String queryAllInYM = "SELECT * FROM `SpringestWithCircle` "
 				+ "WHERE EXTRACT( YEAR_MONTH FROM `date` ) =:ym "

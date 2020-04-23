@@ -1,7 +1,9 @@
 package at.ac.wu.asana.db.io;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.hibernate.Query;
 import org.hibernate.Session;
@@ -13,7 +15,62 @@ import at.ac.wu.asana.util.GeneralUtils;
 
 public abstract class ReadFromDB {
 
-	public static List<String> readAllYM(String dbname, String sql){
+	public static Map<String, List<StructuralDataChange>> getWeeklyChanges() {
+		Map<String, List<StructuralDataChange>> wkChanges = new LinkedHashMap<String, List<StructuralDataChange>>();
+	
+		String dbname = "asana_manual5";
+		String queryAllYM = "SELECT * FROM allYW";
+	
+		List<String> allYM = readAllTimePeriod(dbname, queryAllYM);
+	
+		String queryAllInYM = "SELECT * FROM `SpringestWithCircle` "
+				+ "WHERE YEARWEEK(`timestamp`) =:ym "
+				//				+ "AND typeOfChange IN (12,4,5,14)"
+				+ "";
+		//		date =:date
+	
+		// read the data
+		SessionFactory sf = DatabaseConnector.getSessionFactory(dbname);
+		org.hibernate.Session session = sf.openSession();
+		for (String wk : allYM) {
+			List<StructuralDataChange> changes = readChangesByYM(session, dbname, queryAllInYM, wk);
+			wkChanges.put(wk, changes);
+		}
+		session.flush();
+		session.close();
+		sf.close();
+	
+		return wkChanges;
+	}
+	
+	public static Map<String, List<StructuralDataChange>> getWeeklyChanges(String dbname) {
+		Map<String, List<StructuralDataChange>> wkChanges = new LinkedHashMap<String, List<StructuralDataChange>>();
+	
+		String queryAllYM = "SELECT * FROM `ayw` ORDER BY `yw`";
+	
+		List<String> allYM = readAllTimePeriod("asana_manual5", queryAllYM);
+	
+		String queryAllInYM = "SELECT * FROM `SpringestWithCircle` "
+				+ "WHERE YEARWEEK(`timestamp`) =:ym "
+				//				+ "AND typeOfChange IN (12,4,5,14)"
+				+ "";
+		//		date =:date
+	
+		// read the data
+		SessionFactory sf = DatabaseConnector.getSessionFactory(dbname);
+		org.hibernate.Session session = sf.openSession();
+		for (String wk : allYM) {
+			List<StructuralDataChange> changes = readChangesByYM(session, dbname, queryAllInYM, wk);
+			wkChanges.put(wk, changes);
+		}
+		session.flush();
+		session.close();
+		sf.close();
+	
+		return wkChanges;
+	}
+
+	public static List<String> readAllTimePeriod(String dbname, String sql){
 
 		// read the data
 		SessionFactory sf = DatabaseConnector.getSessionFactory(dbname);
@@ -152,13 +209,4 @@ public abstract class ReadFromDB {
 
 		return allEvents;
 	}
-
-
-//	public static List<String> readDates(String string, String queryAllDates) {
-//		// TODO Auto-generated method stub
-//		List<String> res = new ArrayList<String>();
-//		Query queryAllDates = session.createSQLQuery(string);
-//		return null;
-//	}
-
 }

@@ -60,6 +60,8 @@ public class StructuralDataChange implements Comparable<StructuralDataChange> {
 	private String circleIds;
 
 	private String parentCircle;
+	
+	private String accordingToCircle;
 
 	public StructuralDataChange() {
 	}
@@ -156,6 +158,15 @@ public class StructuralDataChange implements Comparable<StructuralDataChange> {
 		isRenderedAsSeparator=task.isRenderedAsSeparator;
 	}
 
+	
+	public String getAccordingToCircle() {
+		return accordingToCircle;
+	}
+
+	public void setAccordingToCircle(String accordingToCircle) {
+		this.accordingToCircle = accordingToCircle;
+	}
+
 	public String[] csvRow(){
 		return new String[]{ 
 				Timestamp.valueOf(storyCreatedAt).toString(),
@@ -189,6 +200,7 @@ public class StructuralDataChange implements Comparable<StructuralDataChange> {
 				taskNotes
 		};
 	}
+	
 	public String[] csvRowCircle(){
 		return new String[]{ 
 				Timestamp.valueOf(storyCreatedAt).toString(),
@@ -223,7 +235,8 @@ public class StructuralDataChange implements Comparable<StructuralDataChange> {
 				circle,
 				circleIds,
 				migration+"",
-				parentCircle
+				parentCircle,
+				accordingToCircle
 		};
 	}
 
@@ -793,7 +806,8 @@ public class StructuralDataChange implements Comparable<StructuralDataChange> {
 				"circle",
 				"circleIds",
 				"migration",
-				"parentCircle"
+				"parentCircle",
+				"accordingToCircle"
 		};
 	}
 
@@ -839,6 +853,8 @@ public class StructuralDataChange implements Comparable<StructuralDataChange> {
 			sdc.setCircle(row[29]);
 			sdc.setCircleIds(row[30]);
 		}
+		if(row.length>=34)
+			sdc.setAccordingToCircle(row[33]);
 
 		return sdc;
 	}

@@ -43,6 +43,33 @@ public abstract class WriteUtils {
 			e.printStackTrace();
 		}
 	}
+	
+	public static void writeListOfChangesWithCircleToCSV(List<StructuralDataChange> taskChanges, String csv, boolean extraColumnProjectName, String circleName) {
+		if(!extraColumnProjectName)
+			writeListOfChangesWithCircleToCSV(taskChanges, csv);
+		else {
+			PrintWriter rolesFileWriter;
+			try {
+				rolesFileWriter = new PrintWriter(
+						new OutputStreamWriter(
+								new FileOutputStream(csv), StandardCharsets.UTF_8));
+
+				CSVWriter csvWriter = new CSVWriter(rolesFileWriter);
+				
+				csvWriter.writeNext(StructuralDataChange.csvHeaderCircle());
+				for (StructuralDataChange change : taskChanges) {
+					change.setAccordingToCircle(circleName);
+					csvWriter.writeNext(change.csvRowCircle());
+				}
+				csvWriter.flush();
+				csvWriter.close();
+			} catch (FileNotFoundException e) {
+				e.printStackTrace();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
+	}
 
 	public static void writeListOfChangesWithCircleToCSV(List<StructuralDataChange> taskChanges, String csv) {
 		PrintWriter rolesFileWriter;
@@ -132,6 +159,37 @@ public abstract class WriteUtils {
 			e.printStackTrace();
 		}
 	}
+	
+	public static int writeMapWithCircleToCsv(Map<String, List<StructuralDataChange>> changes, String csv) {
+		int linesWritten = 0;
+		PrintWriter rolesFileWriter;
+		List<String[]> lines = new ArrayList<String[]>();
+		try {
+			rolesFileWriter = new PrintWriter(
+					new OutputStreamWriter(
+							new FileOutputStream(csv), StandardCharsets.UTF_8));
 
-
+			CSVWriter csvWriter = new CSVWriter(rolesFileWriter);
+			String[] header = StructuralDataChange.csvHeaderCircle();
+			lines.add(header);
+			Set<String> circleIds = changes.keySet();
+			for (String taskId : circleIds) {
+				TreeSet<StructuralDataChange> events = new TreeSet<StructuralDataChange>(changes.get(taskId));
+				for (StructuralDataChange sdc : events) {
+					lines.add(sdc.csvRowCircle());
+					linesWritten++;
+				}
+			}
+			csvWriter.writeAll(lines);
+			csvWriter.flush();
+			csvWriter.close();
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		return linesWritten;
+	}
+	
+	
 }

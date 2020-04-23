@@ -13,8 +13,6 @@ public class CircleCounts implements Comparable<CircleCounts>{
 	public int totRolesInCircle;
 	public long totalRolesInCircleUntilThisMonth;
 	
-	
-	
 	public CircleCounts() {
 		super();
 	}
@@ -173,4 +171,5 @@ public class CircleCounts implements Comparable<CircleCounts>{
 			return this.circleId.compareTo(o.circleId);
 		return 0;
 	}
+
 }

@@ -1,4 +1,4 @@
-package at.ac.wu.asana.db.postprocess;
+package at.ac.wu.asana.db.postprocess.datastructures;
 
 /**
  * @author saimir
@@ -6,24 +6,25 @@ package at.ac.wu.asana.db.postprocess;
  */
 public class CirclePlusMinusTot implements Comparable<CirclePlusMinusTot> {
 	
-	String circleId;
-	String circleName;
-	String ym;
-	int plus;
-	int minus;
-	int tot;
-	int mods;
-	int totPlusesThisCirclePrevMonth;
-	int totMinusesThisCirclesPrevMonth;
-	int totModsThisCirclePrevMonth;
-	int totThisCirclePreviousMonth;
-	int totAllCirclesPlusesPrevMonth;
-	int totAllCirclesMinusesPrevMonth;
-	int totAllCirclesModsPrevMonth;
-	int totAllCirclesPrevMonth;
+	public String circleId;
+	public String circleName;
+	public String ym;
+	public int plus;
+	public int minus;
+	public int tot;
+	public int mods;
+	public int totPlusesThisCirclePrevMonth;
+	public int totMinusesThisCirclesPrevMonth;
+	public int totModsThisCirclePrevMonth;
+	public int totThisCirclePreviousMonth;
+	public int totAllCirclesPlusesPrevMonth;
+	public int totAllCirclesMinusesPrevMonth;
+	public int totAllCirclesModsPrevMonth;
+	public int totAllCirclesPrevMonth;
 	
 	public CirclePlusMinusTot() {
 		super();
+		ym = "";
 	}
 	public CirclePlusMinusTot(String circleId, String circleName, String ym, int plus, int minus, int tot) {
 		super();
@@ -146,12 +147,15 @@ public class CirclePlusMinusTot implements Comparable<CirclePlusMinusTot> {
 		this.totAllCirclesModsPrevMonth = totAllCirclesModsPrevMonth;
 	}
 	public int compareTo(CirclePlusMinusTot o) {
-		return this.ym.compareTo(o.ym);
+		int res = this.ym.compareTo(o.ym);
+		if(res==0)
+			res = circleId.compareTo(o.circleId);
+		return res;
 	}
 		
 	@Override
 	public String toString() {
-		return "CirclePlusMinusTot [circleId=" + circleId + ", circleName=" + circleName + ", ym=" + ym + ", plus="
+		return "CirclePlusMinusTot [circleId=" + circleId + ", circleName=" + circleName + ", wk=" + ym + ", plus="
 				+ plus + ", minus=" + minus + ", tot=" + tot + ", mods=" + mods + ", totPlusesThisCirclePrevMonth="
 				+ totPlusesThisCirclePrevMonth + ", totMinusesThisCirclesPrevMonth=" + totMinusesThisCirclesPrevMonth
 				+ ", totModsThisCirclePrevMonth=" + totModsThisCirclePrevMonth + ", totThisCirclesPreviousMonth="

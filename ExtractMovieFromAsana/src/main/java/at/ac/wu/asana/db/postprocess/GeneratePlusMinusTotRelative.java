@@ -12,6 +12,8 @@ import java.util.TreeMap;
 
 import com.opencsv.CSVWriter;
 
+import at.ac.wu.asana.db.postprocess.datastructures.CirclePlusMinusTot;
+
 public class GeneratePlusMinusTotRelative {
 	
 	public static void main(String[] args) {
