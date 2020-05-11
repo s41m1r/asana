@@ -10,6 +10,7 @@ import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 
 import at.ac.wu.asana.db.utils.DatabaseConnector;
+import at.ac.wu.asana.model.CirclesLives;
 import at.ac.wu.asana.model.StructuralDataChange;
 import at.ac.wu.asana.util.GeneralUtils;
 
@@ -24,7 +25,7 @@ public abstract class ReadFromDB {
 		List<String> allYM = readAllTimePeriod(dbname, queryAllYM);
 	
 		String queryAllInYM = "SELECT * FROM `SpringestWithCircle` "
-				+ "WHERE YEARWEEK(`timestamp`) =:ym "
+				+ "WHERE YEARWEEK(`timestamp`,'1') =:ym "
 				//				+ "AND typeOfChange IN (12,4,5,14)"
 				+ "";
 		//		date =:date
@@ -51,7 +52,7 @@ public abstract class ReadFromDB {
 		List<String> allYM = readAllTimePeriod("asana_manual5", queryAllYM);
 	
 		String queryAllInYM = "SELECT * FROM `SpringestWithCircle` "
-				+ "WHERE YEARWEEK(`timestamp`) =:ym "
+				+ "WHERE YEARWEEK(`timestamp`,'1') =:ym "
 				//				+ "AND typeOfChange IN (12,4,5,14)"
 				+ "";
 		//		date =:date
