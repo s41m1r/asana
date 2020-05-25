@@ -2,8 +2,11 @@ package at.ac.wu.asana.db.postprocess.datastructures;
 
 public class CircleCountsWeekly extends CirclePlusMinusTot {
 	
+	private long age;
+	
 	public CircleCountsWeekly() {
 		super();
+		setAge(0);
 	}
 	
 	@Override
@@ -22,7 +25,7 @@ public class CircleCountsWeekly extends CirclePlusMinusTot {
 				"totBirthsThisCirclePrevWk", "totDeathsThisCirclesPrevWk", "totModsThisCirclePrevWk",
 				"totAllCirclesThisWk",
 				"totAllCirclesBirthsPrevWk", "totAllCirclesDeathsPrevWk", "totAllCirclesModsPrevWk",
-				"totAllCirclesPrevWk"};
+				"totAllCirclesPrevWk","age"};
 	}
 	
 	public String[] csvRow() {
@@ -30,7 +33,7 @@ public class CircleCountsWeekly extends CirclePlusMinusTot {
 				, ""+totPlusesThisCirclePrevMonth, ""+totMinusesThisCirclesPrevMonth, 
 				""+totModsThisCirclePrevMonth, ""+totThisCirclePreviousMonth,
 				""+totAllCirclesPlusesPrevMonth, ""+totAllCirclesMinusesPrevMonth, ""+totAllCirclesModsPrevMonth,
-				""+totAllCirclesPrevMonth};
+				""+totAllCirclesPrevMonth,""+age};
 	}
 	
 	public int getBirths() {
@@ -63,5 +66,13 @@ public class CircleCountsWeekly extends CirclePlusMinusTot {
 
 	public void setTotAllCirclesPreviousWeek(int currentTot) {
 		super.setTotAllCirclesPreviousMonth(currentTot);
+	}
+
+	public long getAge() {
+		return age;
+	}
+
+	public void setAge(long l) {
+		this.age = l;
 	}
 }

@@ -10,6 +10,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.time.temporal.WeekFields;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -32,6 +33,7 @@ import at.ac.wu.asana.db.postprocess.datastructures.TimePeriodOveralls;
 import at.ac.wu.asana.model.CirclesLives;
 import at.ac.wu.asana.model.StructuralDataChange;
 import at.ac.wu.asana.util.GeneralUtils;
+import at.ac.wu.asana.util.PrintoutUtils;
 
 public class GenerateWeeklyCountsByCircle {
 
@@ -53,7 +55,7 @@ public class GenerateWeeklyCountsByCircle {
 
 		List<TimePeriodOveralls> wkOveralls = GenerateOverallCountsMonthly.getOverallCount(weeklyChanges);
 		//		
-//		PrintoutUtils.writeOverallsToCSV(wkOveralls, "wkOveralls.csv", "week");
+		PrintoutUtils.writeOverallsToCSV(wkOveralls, "wkOveralls.csv", "week");
 
 		Map<String, List<CircleCountsWeekly>> circlesWeeklyCounts = getCircleCountsByWeek(weeklyChanges);
 		Map<String, List<CircleCountsWeekly>> filteredCirclesWeeklyCounts = filterWeeklyCountsByCircleLives(circlesWeeklyCounts, circlesLives);
@@ -76,7 +78,7 @@ public class GenerateWeeklyCountsByCircle {
 		Map<String, List<StructuralDataChange>> res = new LinkedHashMap<String, List<StructuralDataChange>>();
 		Set<Entry<String,List<StructuralDataChange>>> entries = weeklyChanges.entrySet();
 		
-		int weekBirth = firstBirthday.get(WeekFields.of(Locale.getDefault()).weekOfWeekBasedYear());
+		int weekBirth = firstBirthday.get(WeekFields.of(Locale.ITALY).weekOfWeekBasedYear());
 		int yearBirth = firstBirthday.getYear();
 		String firstBirthdayString = (String.valueOf(weekBirth).length()==1)? yearBirth+"0"+weekBirth : yearBirth+""+weekBirth;  
 		
@@ -103,7 +105,9 @@ public class GenerateWeeklyCountsByCircle {
 					counts.add(weeklyCount);
 					continue;
 				}
-								
+				if(cId.equals("11350833325340") && (week.equals("201602") || week.equals("201603")))
+					System.out.print("STOP!");
+				
 				if(isAliveThisWeek(cId, circlesLives, week)) {	
 					counts.add(weeklyCount);
 				}
@@ -125,6 +129,8 @@ public class GenerateWeeklyCountsByCircle {
 //			}
 			List<StructuralDataChange> filteredChanges = filterChangesBasedOnCircleLives(changes,circlesLives);
 			System.out.println("In week "+week+" removed " +(changes.size()-filteredChanges.size())+" events");
+//			changes.clear();
+//			changes.addAll(filteredChanges);
 			changes.retainAll(filteredChanges);
 		}
 	}
@@ -138,6 +144,9 @@ public class GenerateWeeklyCountsByCircle {
 			LocalDate birth = circlesLives.getBirthOf(circleId);
 			LocalDate death = circlesLives.getDeathOf(circleId);
 			LocalDateTime timeOfThisChange = change.getDateTime();
+			
+			if(change.getAccordingToCircle().equals("61971534223290"))
+				System.out.println("DEBUG ME!");
 			
 			if(!timeOfThisChange.toLocalDate().isBefore(birth)) {
 				if(death==null) {
@@ -422,6 +431,10 @@ public class GenerateWeeklyCountsByCircle {
 				cc.setCircleId(circleId);
 				cc.setCircleName(circleName);
 				cc.setWeek(week+"");
+				
+				if(circleId.equals("7963718816247"))
+					System.out.println("DEBUG");
+				cc.setAge(computeAge(circleId, lives, week));
 
 				if(contains(ccs, circleId)) {
 					cc = get(circleId, ccs); 
@@ -448,6 +461,7 @@ public class GenerateWeeklyCountsByCircle {
 				cc.setCircleId(circleIds[i]);
 				cc.setCircleName(circleNames[i]);
 				cc.setWeek(week);
+				cc.setAge(computeAge(circleIds[i], lives, week));
 				ccs.add(cc);
 			}
 		}
@@ -456,11 +470,15 @@ public class GenerateWeeklyCountsByCircle {
 	private static boolean isAliveThisWeek(String circleId, CirclesLives lives, String week) {
 		if(circleId.equals("0"))
 			return true;
+		
+		if(circleId.equals("11350833325340") && week.equals("201602"))
+			System.out.print("STOP!");
+		
 		LocalDate birthThisCircle = lives.getBirthOf(circleId);
 		LocalDate deathThisCircle = lives.getDeathOf(circleId);
-		int weekBirth = birthThisCircle.get(WeekFields.of(Locale.getDefault()).weekOfWeekBasedYear());
+		int weekBirth = birthThisCircle.get(WeekFields.of(Locale.ITALY).weekOfWeekBasedYear());
 		int yearBirth = birthThisCircle.getYear();
-		int weekDeath = (deathThisCircle==null)? 53 : deathThisCircle.get(WeekFields.of(Locale.getDefault()).weekOfWeekBasedYear());
+		int weekDeath = (deathThisCircle==null)? 53 : deathThisCircle.get(WeekFields.of(Locale.ITALY).weekOfWeekBasedYear());
 		int yearDeath = (deathThisCircle==null)? 2022: deathThisCircle.getYear();
 		
 		int thisWeek = Integer.parseInt(week);
@@ -614,6 +632,22 @@ public class GenerateWeeklyCountsByCircle {
 			}
 		}
 		return circlesWeeklyCounts;
+	}
+	
+	public static long computeAge(String circleId, CirclesLives circlesLives, String week) {
+
+		WeekFields weekFields = WeekFields.of(Locale.ITALY);
+		LocalDate thisWeekDate = LocalDate.now().withYear(Integer.valueOf(week.substring(0,4)))
+				.with(weekFields.weekOfYear(),Integer.valueOf(week.substring(4,6)))
+				.with(weekFields.dayOfWeek(), 2);
+		
+		if(!circlesLives.isInit())
+			circlesLives.init();
+		
+		LocalDate birth = circlesLives.getBirthOf(circleId);
+		LocalDate birthWeek = birth.with(weekFields.dayOfWeek(),2);
+
+		return ChronoUnit.WEEKS.between(birthWeek, thisWeekDate);
 	}
 
 }

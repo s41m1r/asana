@@ -16,7 +16,10 @@ public final class CirclesLives {
 	public void init() {
 		this.isInit = true;
 		
-		DateRange range = new DateRange(LocalDate.parse("2013-10-01"), null);
+		DateRange range = new DateRange(LocalDate.parse("2013-09-16"), null);
+		lifeOf.put("0", range); //NO CIRCLE
+		
+		range = new DateRange(LocalDate.parse("2013-10-01"), null);
 		lifeOf.put("7963718816247", range); //Alignment
 		
 		range = new DateRange(LocalDate.parse("2014-04-14"), LocalDate.parse("2015-03-24"));
@@ -71,7 +74,7 @@ public final class CirclesLives {
 		lifeOf.put("389549960603898", range); //Product
 		
 		range = new DateRange(LocalDate.parse("2017-07-20"), null);
-		lifeOf.put("61971534223290", range); //Providers
+		lifeOf.put("389549960603898", range); //Providers
 		
 		range = new DateRange(LocalDate.parse("2014-06-17"), LocalDate.parse("2015-06-09"));
 		lifeOf.put("13169100426325", range); //Rainmakers
