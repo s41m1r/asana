@@ -6,6 +6,8 @@ public class TimePeriodOveralls implements Comparable<TimePeriodOveralls> {
 	public int births;
 	public int deaths;
 	public int modifications;
+	public int delta;
+	public int tot;
 
 	public String getTimePeriod() {
 		return timePeriod;
@@ -38,6 +40,21 @@ public class TimePeriodOveralls implements Comparable<TimePeriodOveralls> {
 		this.modifications = modifications;
 	}
 
+	public int getDelta() {
+		return delta;
+	}
+
+	public void setDelta(int delta) {
+		this.delta = delta;
+	}
+
+	public int getTot() {
+		return tot;
+	}
+
+	public void setTot(int tot) {
+		this.tot = tot;
+	}
 
 	@Override
 	public String toString() {
@@ -46,15 +63,15 @@ public class TimePeriodOveralls implements Comparable<TimePeriodOveralls> {
 	}
 	
 	public String[] toCSVRow(String timePeriod) {
-		return new String[] {timePeriod, ""+births,""+deaths , ""+modifications};
+		return new String[] {timePeriod, ""+births,""+deaths , ""+modifications, ""+delta, ""+tot};
 	}
 	
 	public static String[] csvHeader() {
-		return new String[] {"ym", "births","deaths" , "modifications"};
+		return new String[] {"ym", "births","deaths" , "modifications", "delta", "tot"};
 	}
 	
 	public static String[] csvHeader(String timePeriod) {
-		return new String[] {timePeriod, "births","deaths" , "modifications"};
+		return new String[] {timePeriod, "births","deaths" , "modifications", "delta", "tot"};
 	}
 
 	public int compareTo(TimePeriodOveralls o) {

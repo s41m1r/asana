@@ -83,7 +83,7 @@ public class CirclePlusMinusTot implements Comparable<CirclePlusMinusTot> {
 		return totThisCirclePreviousMonth;
 	}
 	public void setTotAllCirclesPreviousMonth(int totAllCirclesPreviousMonth) {
-		this.totThisCirclePreviousMonth = totAllCirclesPreviousMonth;
+		this.totAllCirclesPrevMonth = totAllCirclesPreviousMonth;
 	}
 	public int getTotPlusesAllCirclesPrevMonth() {
 		return totPlusesThisCirclePrevMonth;

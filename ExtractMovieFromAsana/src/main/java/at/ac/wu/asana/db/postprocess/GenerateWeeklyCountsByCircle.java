@@ -41,8 +41,7 @@ public class GenerateWeeklyCountsByCircle {
 
 		Instant start = Instant.now();
 		String outFile = "circlesWKCounts.csv";
-		
-		
+				
 		Map<String, List<StructuralDataChange>> weeklyChanges = ReadFromDB.getWeeklyChanges("asana_manual6");
 		CirclesLives circlesLives = new CirclesLives();
 		circlesLives.init();
@@ -63,7 +62,6 @@ public class GenerateWeeklyCountsByCircle {
 		System.out.println("Before: "+GeneralUtils.countEntriesMap(circlesWeeklyCounts)+
 				" after: "+GeneralUtils.countEntriesMap(filteredCirclesWeeklyCounts));
 
-		
 		setTotWeekly(filteredCirclesWeeklyCounts, wkOveralls);
 		setTotCircleWeekly(filteredCirclesWeeklyCounts);
 		
@@ -105,8 +103,6 @@ public class GenerateWeeklyCountsByCircle {
 					counts.add(weeklyCount);
 					continue;
 				}
-				if(cId.equals("11350833325340") && (week.equals("201602") || week.equals("201603")))
-					System.out.print("STOP!");
 				
 				if(isAliveThisWeek(cId, circlesLives, week)) {	
 					counts.add(weeklyCount);
@@ -145,9 +141,6 @@ public class GenerateWeeklyCountsByCircle {
 			LocalDate death = circlesLives.getDeathOf(circleId);
 			LocalDateTime timeOfThisChange = change.getDateTime();
 			
-			if(change.getAccordingToCircle().equals("61971534223290"))
-				System.out.println("DEBUG ME!");
-			
 			if(!timeOfThisChange.toLocalDate().isBefore(birth)) {
 				if(death==null) {
 					res.add(change);
@@ -169,10 +162,10 @@ public class GenerateWeeklyCountsByCircle {
 			List<CircleCountsWeekly> circleCountsWeeklies = circlesWeeklyCounts.get(wk);
 			for (CircleCountsWeekly countsThisWk : circleCountsWeeklies) {
 				countsThisWk.setTot(countUntilWeek(countsThisWk.circleId, wk, circlesWeeklyCounts, 0));
+				countsThisWk.setTotThisCirclesPreviousMonth(countUntilWeek(countsThisWk.circleId, prevWeek, circlesWeeklyCounts, 0));
 				countsThisWk.setTotPlusesThisCirclePrevMonth(countWeek(countsThisWk.circleId, prevWeek, circlesWeeklyCounts,1));
 				countsThisWk.setTotMinusesThisCirclesPrevMonth(countWeek(countsThisWk.circleId, prevWeek, circlesWeeklyCounts,2));
 				countsThisWk.setTotModsThisCirclePrevMonth(countWeek(countsThisWk.circleId, prevWeek, circlesWeeklyCounts,3));
-				countsThisWk.setTotAllCirclesPrevMonth(countUntilWeek(prevWeek, circlesWeeklyCounts,0));
 				countsThisWk.setTotAllCirclesPlusesPrevMonth(countWeek(prevWeek, circlesWeeklyCounts,1));
 				countsThisWk.setTotAllCirclesMinusesPrevMonth(countWeek(prevWeek, circlesWeeklyCounts,2));
 				countsThisWk.setTotAllCirclesModsPrevMonth(countWeek(prevWeek, circlesWeeklyCounts,3));
@@ -351,12 +344,17 @@ public class GenerateWeeklyCountsByCircle {
 	private static void setTotWeekly(Map<String, List<CircleCountsWeekly>> circlesWeeklyCounts,
 			List<TimePeriodOveralls> wkOveralls) {
 		Map<String, TimePeriodOveralls> weeklyOveralls = toMap(wkOveralls);
-		for(String week: circlesWeeklyCounts.keySet()) {
-			List<CircleCountsWeekly> thisWeek = circlesWeeklyCounts.get(week);
-			for (CircleCountsWeekly circleCountsWeekly : thisWeek) {
-				int currentTot = sumUntilWeek(weeklyOveralls, week);
-				circleCountsWeekly.setTotAllCirclesPreviousWeek(currentTot);
+		Set<String> weeks = new TreeSet<String>(circlesWeeklyCounts.keySet());
+		java.util.Iterator<String> iterator = weeks.iterator();
+		String prevWeek = iterator.next();
+		while(iterator.hasNext()) {
+			String thisWeek = iterator.next();
+//			TimePeriodOveralls overallsPrevWeek = weeklyOveralls.get(prevWeek);
+			List<CircleCountsWeekly> circleCountsWeeklies = circlesWeeklyCounts.get(thisWeek);
+			for (CircleCountsWeekly circleCountsWeekly : circleCountsWeeklies) {
+				circleCountsWeekly.setTotAllCirclesPreviousWeek(sumUntilWeek(weeklyOveralls, prevWeek));
 			}
+			prevWeek=thisWeek;
 		}
 	}
 
@@ -432,8 +430,6 @@ public class GenerateWeeklyCountsByCircle {
 				cc.setCircleName(circleName);
 				cc.setWeek(week+"");
 				
-				if(circleId.equals("7963718816247"))
-					System.out.println("DEBUG");
 				cc.setAge(computeAge(circleId, lives, week));
 
 				if(contains(ccs, circleId)) {
@@ -470,9 +466,6 @@ public class GenerateWeeklyCountsByCircle {
 	private static boolean isAliveThisWeek(String circleId, CirclesLives lives, String week) {
 		if(circleId.equals("0"))
 			return true;
-		
-		if(circleId.equals("11350833325340") && week.equals("201602"))
-			System.out.print("STOP!");
 		
 		LocalDate birthThisCircle = lives.getBirthOf(circleId);
 		LocalDate deathThisCircle = lives.getDeathOf(circleId);
@@ -513,7 +506,7 @@ public class GenerateWeeklyCountsByCircle {
 		case 2:
 		case 1:
 		case 3:
-		case 6:
+//		case 6:
 		case 111:
 			cc.setModifications(cc.getModifications()+1);
 			break;
@@ -618,7 +611,7 @@ public class GenerateWeeklyCountsByCircle {
 				case 2:
 				case 1:
 				case 3:
-				case 6:
+//				case 6:
 				case 111:
 					circleCountsThisWeek.get(circle).setModifications(circleCountsThisWeek.get(circle).getModifications()+1);
 					break;

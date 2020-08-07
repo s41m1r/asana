@@ -17,9 +17,7 @@ public class GenerateOverallsWeekly {
 		String outFile = "overallsWeekly.csv";
 		
 		PrintoutUtils.writeOverallsToCSV(wkOveralls, outFile);
-		System.out.println("Result written to "+outFile);
-		
-		 
+		System.out.println("Result written to "+outFile); 
 	}
 
 }

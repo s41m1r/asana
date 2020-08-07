@@ -23,7 +23,7 @@ public class CircleCountsWeekly extends CirclePlusMinusTot {
 	public static String[] csvHeader() {
 		return new String[] {"circleId", "circleName", "ym", "births", "deaths", "tot", "modifications",
 				"totBirthsThisCirclePrevWk", "totDeathsThisCirclesPrevWk", "totModsThisCirclePrevWk",
-				"totAllCirclesThisWk",
+				"totThisCirclePrevWk",
 				"totAllCirclesBirthsPrevWk", "totAllCirclesDeathsPrevWk", "totAllCirclesModsPrevWk",
 				"totAllCirclesPrevWk","age"};
 	}

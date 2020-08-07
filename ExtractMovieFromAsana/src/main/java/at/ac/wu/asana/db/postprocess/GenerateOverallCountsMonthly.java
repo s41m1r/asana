@@ -1,6 +1,7 @@
 package at.ac.wu.asana.db.postprocess;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -50,7 +51,6 @@ public class GenerateOverallCountsMonthly {
 
 				int toc = change.getTypeOfChange();
 				
-
 				switch (toc) {
 				case 15:
 				case 4:
@@ -83,7 +83,7 @@ public class GenerateOverallCountsMonthly {
 				case 2:
 				case 1:
 				case 3:
-				case 6:
+//				case 6:
 				case 111:
 					overalls.modifications++;
 					break;
@@ -93,8 +93,23 @@ public class GenerateOverallCountsMonthly {
 				}				
 			}
 			ymOveralls.add(overalls);
-
 		}
+		
+		Collections.sort(ymOveralls);
+		
+		for (TimePeriodOveralls timePeriodOveralls : ymOveralls) {
+			timePeriodOveralls.delta = timePeriodOveralls.births-timePeriodOveralls.deaths;
+		}
+		
+		for (int i=0; i<ymOveralls.size();i++) {			
+			TimePeriodOveralls periodCount = ymOveralls.get(i);
+			int tot = 0;
+			for (int j = 0; j <= i; j++) {
+				tot+=ymOveralls.get(j).getDelta();
+			}
+			periodCount.setTot(tot);
+		}
+		
 		return ymOveralls;
 	}
 
