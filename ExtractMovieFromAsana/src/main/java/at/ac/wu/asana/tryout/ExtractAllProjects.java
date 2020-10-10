@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
 
@@ -111,6 +112,107 @@ public class ExtractAllProjects {
 						);
 				
 				System.out.println(project.id+" "+project.name);
+				writer.writeNext(row);
+			}
+			
+			writer.flush();
+			writer.close();
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	
+	/**
+	 * @param args
+	 */
+	public static void extractProjects(String[] args, String fromDate) {
+		CommandLineParser lineParser = new DefaultParser();
+		CommandLine cmd = null;
+		Options opts = new Options();
+		opts.addOption(new Option("csv", true, "the output file produced"))
+				.addOption(new Option("pat", true, "the personal access token"))
+				.addOption(new Option("ws", true, "the workspace"));
+
+		try {
+			cmd = lineParser.parse(opts, args);
+		} catch (ParseException e) {
+			e.printStackTrace();
+		}
+		
+		Client client = Client.accessToken(cmd.getOptionValue("pat"));
+		Workspace workspace = null;
+
+		Iterable<Workspace> workspaces = null;
+		try {
+			workspaces = client.workspaces.findAll().execute();
+		} catch (IOException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+
+		for (Workspace wspace : workspaces) {
+			if (wspace.name.equals(cmd.getOptionValue("ws"))) {
+				workspace = wspace;
+				break;
+			}
+		}
+
+		System.out.println("Workspace id:"+workspace.gid+ " name:"+ workspace.name);
+
+		Iterable<Project> projects = null;
+		projects = client.projects.findByWorkspace(workspace.gid).option("fields",
+				Arrays.asList(
+						"created_at", "name", "completed",
+						"tags","completed_at", 
+						"modified_at",
+						"include_archived", "resource_type",
+						"resource_subtype"));
+		String filename = cmd.getOptionValue("csv");
+		CSVWriter writer = null;
+		try {
+			writer = new CSVWriter(new PrintWriter(new OutputStreamWriter(
+					new FileOutputStream(filename), StandardCharsets.UTF_8)));
+			String[] header = new String[]{
+					"id",
+					"color",
+					"createdAt",
+					"customFieldSettings",
+					"followers",
+					"isArchived",
+					"isPublic",
+					"members",
+					"modifiedAt",
+					"name",
+					"notes",
+					"owner",
+					"team",
+					"workspace"
+					};
+			
+			writer.writeNext(header);
+
+			for (Project project : projects) {
+				String[] row = getCSVRow(
+						project.gid,
+						project.color,
+						project.createdAt,
+						project.customFieldSettings,
+						project.followers,
+						project.isArchived,
+						project.isPublic,
+						project.members,
+						project.modifiedAt,
+						project.name,
+						project.notes,
+						project.owner,
+						project.team,
+						project.workspace
+						);
+				
+//				System.out.println(project.gid+" "+project.name);
 				writer.writeNext(row);
 			}
 			

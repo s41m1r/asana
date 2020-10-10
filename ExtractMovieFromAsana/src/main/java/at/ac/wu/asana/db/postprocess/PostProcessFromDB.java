@@ -24,64 +24,14 @@ import com.opencsv.CSVWriter;
 
 import at.ac.wu.asana.csv.WriteUtils;
 import at.ac.wu.asana.db.io.ReadFromDB;
+import at.ac.wu.asana.db.postprocess.datastructures.AuthoritativeList;
 import at.ac.wu.asana.db.postprocess.datastructures.TimestampCircle;
 import at.ac.wu.asana.model.AsanaActions;
 import at.ac.wu.asana.model.StructuralDataChange;
 import at.ac.wu.asana.util.GeneralUtils;
 
 public class PostProcessFromDB {
-	static String[] authoritativeList = new String[]{
-			"7746376637805",
-			"7749914219827",
-			"7963718816247",
-			"11347525454570",
-			"11348115733592",
-			"11348115733601",
-			"11350833325340",
-			"11555199602299",
-			"11626921109046",
-			"12530878841888",
-			"13169100426325",
-			"29007443412107",
-			"47872397062455",
-			"61971534223290",
-			"79667185218012",
-			"163654573139013",
-			"236886514207498",
-			"388515769387194",
-			"389549960603898",
-			"404651189519209",
-			"560994092069672",
-			"561311958443380",
-			"824769296181501",
-	"1133031362168396"};
-
-	static String[] authoritativeListNames = new String[] {
-			"☺ Sales Roles",
-			"☺ Infrastructure Roles",
-			"☺ Alignment Roles",
-			"☺ Organisations Roles",
-			"☺ Marketplace Roles",
-			"☺ Demand Roles",
-			"☺ Providers Roles",
-			"☺ Smooth Operations Roles",
-			"☺Business Intelligence Roles",
-			"☺ Go Sales Roles",
-			"☺ Rainmakers Roles",
-			"☺ Go Customer Roles",
-			"☺ Finance Roles",
-			"☺ Product Roles",
-			"☺ Marketing Roles",
-			"☺ Evangelism Roles",
-			"☺ Marketplace DE roles",
-			"☺ Users Roles",
-			"☺ Providers roles",
-			"☺ Germany Roles",
-			"☺ People Roles",
-			"☺ Office Roles",
-			"☺ Customer Success Roles",
-	"☺ Springest Academy Roles"};
-
+	
 	static Map<String, String> subCirclesOf = new HashMap<String, String>();
 	static Map<String, String> mapTaskCurrentCircle = new HashMap<String, String>();
 	static Map<String, TreeSet<TimestampCircle>> circlesOfTasks = new HashMap<String, TreeSet<TimestampCircle>>();
@@ -125,7 +75,7 @@ public class PostProcessFromDB {
 		Map<String, List<StructuralDataChange>> allEventsNoDup = removeDuplicateTasks(allEvents2);
 		System.out.println("Events after removeDuplicateTasks = " +countEvents(allEventsNoDup));
 		
-		printHistoryOfTask("44330423794233", allEventsNoDup); 
+//		printHistoryOfTask("44330423794233", allEventsNoDup); 
 		
 		List<StructuralDataChange> uniqueEvents = removeDups(allEventsNoDup);	
 		System.out.println("There are unique events = "+uniqueEvents.size());
@@ -656,7 +606,7 @@ public class PostProcessFromDB {
 
 	private static Map<String, List<StructuralDataChange>> getFromDB(String sql,
 			Map<String, List<StructuralDataChange>> parents) {
-		List<StructuralDataChange> events = ReadFromDB.readFromDBNoSort("asana_manual5", sql);
+		List<StructuralDataChange> events = ReadFromDB.readFromDBNoSort("asana_manual7", sql);
 
 		for (StructuralDataChange sdc : events) {
 			if(parents.containsKey(sdc.getTaskId())) {
@@ -821,7 +771,7 @@ public class PostProcessFromDB {
 		boolean hit = false;
 		for (String c : circles) {
 			int idx = lookup(c);
-			circleIds+=authoritativeList[idx]+",";
+			circleIds+=AuthoritativeList.authoritativeList[idx]+",";
 			hit=true;
 		}
 		if(hit)
@@ -842,7 +792,7 @@ public class PostProcessFromDB {
 	}
 
 	private static void addTwoMoreRows() throws FileNotFoundException, IOException {
-		Set<String> authListNames = Sets.newHashSet(authoritativeListNames);
+		Set<String> authListNames = Sets.newHashSet(AuthoritativeList.authoritativeListNames);
 
 		List<StructuralDataChange> events = ReadFromDB.readFromDB("asana_manual4", null);
 		System.out.println("Read "+events.size()+" events.");		
@@ -877,7 +827,7 @@ public class PostProcessFromDB {
 					int i = lookup(currentCircleName); // if -1 then it is not a circle
 
 					if(i!=-1)
-						currentCircleId = authoritativeList[i];
+						currentCircleId = AuthoritativeList.authoritativeList[i];
 
 					if(!lastCircle.equals(currentCircleId) && i!=-1) {
 						sdc.setMigration(true);
@@ -902,8 +852,8 @@ public class PostProcessFromDB {
 	private static int lookup(String currentCircleName) {
 		boolean found = false;
 		int i = 0;
-		for (; i < authoritativeListNames.length; i++) {
-			if(currentCircleName.equals(authoritativeListNames[i])) {
+		for (; i < AuthoritativeList.authoritativeListNames.length; i++) {
+			if(currentCircleName.equals(AuthoritativeList.authoritativeListNames[i])) {
 				found = true;
 				break;
 			}

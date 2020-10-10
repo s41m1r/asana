@@ -60,7 +60,7 @@ public class StructuralDataChange implements Comparable<StructuralDataChange> {
 	private String circleIds;
 
 	private String parentCircle;
-	
+
 	private String accordingToCircle;
 
 	public StructuralDataChange() {
@@ -88,12 +88,13 @@ public class StructuralDataChange implements Comparable<StructuralDataChange> {
 	//	}
 
 	public StructuralDataChange(Task task, DateTime eventTimestamp, int typeOfChange) {
-		DateTimeFormatter formatter = DateTimeFormatter.ISO_INSTANT;
+		DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSX");
 		storyCreatedAt = LocalDateTime.parse(eventTimestamp.toString(), formatter);
 		taskId = task.gid;
 		taskName = task.name;
 		taskCreatedAt = LocalDateTime.parse(task.createdAt.toString(), formatter);
-		taskCompletedAt = LocalDateTime.parse(task.completedAt.toString(), formatter);
+		if(task.completedAt!=null) 
+			taskCompletedAt = LocalDateTime.parse(task.completedAt.toString(), formatter);
 		taskModifiedAt = LocalDateTime.parse(task.modifiedAt.toString(), formatter);
 		createdAt=taskCreatedAt;
 		completedAt=taskCompletedAt;
@@ -158,7 +159,7 @@ public class StructuralDataChange implements Comparable<StructuralDataChange> {
 		isRenderedAsSeparator=task.isRenderedAsSeparator;
 	}
 
-	
+
 	public String getAccordingToCircle() {
 		return accordingToCircle;
 	}
@@ -179,7 +180,7 @@ public class StructuralDataChange implements Comparable<StructuralDataChange> {
 				typeOfChangeDescription,
 				isRole+"",
 				taskCreatedAt.toString(),
-				storyCreatedByName,				
+				(storyCreatedByName==null)? "":storyCreatedByName,				
 				projectName,
 				isCircle+"",
 				storyCreatedById,
@@ -200,7 +201,7 @@ public class StructuralDataChange implements Comparable<StructuralDataChange> {
 				taskNotes
 		};
 	}
-	
+
 	public String[] csvRowCircle(){
 		return new String[]{ 
 				Timestamp.valueOf(storyCreatedAt).toString(),
@@ -670,7 +671,10 @@ public class StructuralDataChange implements Comparable<StructuralDataChange> {
 
 	private int typeOfChangeFromCodingScheme(String text, String messageType) {
 
-		if(text.startsWith("added subtask to task"))
+		if (text==null)
+			return AsanaActions.UNCLEAR_OR_CONFLICT_WITH_CODEBOOK;
+
+		else if(text.startsWith("added subtask to task"))
 			return AsanaActions.ADD_SUB_ROLE;
 
 		else if(text.startsWith("assigned to") ||
@@ -689,7 +693,7 @@ public class StructuralDataChange implements Comparable<StructuralDataChange> {
 				text.toLowerCase().endsWith("roles"))
 			return AsanaActions.REMOVE_FROM_CIRCLE;
 
-		else if(text.startsWith("liked") || 
+		else if(text.startsWith("liked") ||
 				messageType.equals("comment"))
 			return AsanaActions.COMMENT;
 
@@ -901,20 +905,25 @@ public class StructuralDataChange implements Comparable<StructuralDataChange> {
 
 	public static StructuralDataChange parseFromText(Task task, Story story, String me) {
 		StructuralDataChange dataChange = new StructuralDataChange();
-		DateTimeFormatter formatter = DateTimeFormatter.ISO_INSTANT;
+		//		DateTimeFormatter formatter = DateTimeFormatter.ISO_INSTANT;
+		DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSX");
 		dataChange.storyCreatedAt = LocalDateTime.parse(story.createdAt.toString(), formatter);
 		dataChange.storyId = story.gid;
 		dataChange.taskId = task.gid;
 		dataChange.taskName = task.name;
 		dataChange.taskCreatedAt = LocalDateTime.parse(task.createdAt.toString(), formatter);
-		dataChange.taskCompletedAt = LocalDateTime.parse(task.completedAt.toString(), formatter);
+		if(task.completedAt!=null)
+			dataChange.taskCompletedAt = LocalDateTime.parse(task.completedAt.toString(), formatter);
 		dataChange.taskModifiedAt = LocalDateTime.parse(task.modifiedAt.toString(), formatter);
 		dataChange.setActionAndAssignee(story.text, story.type, me);
 		dataChange.setTaskTags(dataChange.extractTaskTags(task.tags));
 		dataChange.setTaskNotes(task.notes);
 		//		pathToHere = getPath(task);
-		dataChange.setStoryCreatedById(story.createdBy.gid);
-		dataChange.setStoryCreatedByName(story.createdBy.name);
+		//		HERE!!!!!!!!!!!!!!!!!!
+		if(story.createdBy != null) {
+			dataChange.setStoryCreatedById(story.createdBy.gid);
+			dataChange.setStoryCreatedByName(story.createdBy.name);
+		}
 		if(task.assignee!=null){
 			dataChange.lastAssigneeId = task.assignee.gid;
 			dataChange.lastAssigneeName = task.assignee.name;
@@ -966,7 +975,7 @@ public class StructuralDataChange implements Comparable<StructuralDataChange> {
 		sdc.taskCreatedAt = LocalDateTime.from(this.taskCreatedAt); 
 		sdc.taskModifiedAt = LocalDateTime.from(this.taskModifiedAt);
 		if(this.taskCompletedAt!=null)
-				sdc.taskCompletedAt = LocalDateTime.from(this.taskCompletedAt);
+			sdc.taskCompletedAt = LocalDateTime.from(this.taskCompletedAt);
 		sdc.isRole = this.isRole;
 		sdc.actor = ""+ this.actor;
 		sdc.lastAssigneeId = ""+this.lastAssigneeId;
@@ -1013,20 +1022,20 @@ public class StructuralDataChange implements Comparable<StructuralDataChange> {
 
 	@Override
 	public boolean equals(Object obj) {
-		 // If the object is compared with itself then return true   
-        if (obj == this) { 
-            return true; 
-        } 
-  
-        /* Check if o is an instance of Complex or not 
+		// If the object is compared with itself then return true   
+		if (obj == this) { 
+			return true; 
+		} 
+
+		/* Check if o is an instance of Complex or not 
           "null instanceof [type]" also returns false */
-        if (!(obj instanceof StructuralDataChange)) { 
-            return false; 
-        } 
-          
-        // typecast o to Complex so that we can compare data members  
-        StructuralDataChange sdc = (StructuralDataChange) obj; 
-          
+		if (!(obj instanceof StructuralDataChange)) { 
+			return false; 
+		} 
+
+		// typecast o to Complex so that we can compare data members  
+		StructuralDataChange sdc = (StructuralDataChange) obj; 
+
 		return this.storyCreatedAt.equals(sdc.storyCreatedAt) && this.taskId.equals(sdc.taskId) 
 				&& this.typeOfChange == sdc.typeOfChange
 				;
@@ -1044,7 +1053,7 @@ public class StructuralDataChange implements Comparable<StructuralDataChange> {
 		chTask.setMessageType("derived");
 		return chTask;
 	}
-	
-	
+
+
 
 }

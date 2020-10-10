@@ -47,7 +47,7 @@ for filename in *.csv; do
     use=$(echo "USE $DATABASE;")
 
     if [[ "$var" =~ $re ]]; then
-        tablename=${projId}"_"$projName
+        tablename=${projId}"_"${projName:0:3}
     else 
         echo tablename=${projId}"_";
     fi
@@ -58,30 +58,32 @@ for filename in *.csv; do
    \`timestamp\`  varchar(23) CHARACTER SET utf8 DEFAULT NULL,
    \`taskId\`  bigint(16) DEFAULT NULL,
    \`parentTaskId\`  varchar(16) CHARACTER SET utf8 DEFAULT NULL,
-   \`taskName\`  varchar(563) CHARACTER SET utf8 DEFAULT NULL,
-   \`rawDataText\`  varchar(1145) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-   \`messageType\`  varchar(7) CHARACTER SET utf8 DEFAULT NULL,
+   \`taskName\`  varchar(1000) CHARACTER SET utf8 DEFAULT NULL,
+   \`rawDataText\`  varchar(1200) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+   \`messageType\`  varchar(10) CHARACTER SET utf8 DEFAULT NULL,
    \`typeOfChange\`  int(2) DEFAULT NULL,
-   \`typeOfChangeDescription\`  varchar(33) CHARACTER SET utf8 DEFAULT NULL,
+   \`typeOfChangeDescription\`  varchar(40) CHARACTER SET utf8 DEFAULT NULL,
    \`isRole\`  varchar(5) CHARACTER SET utf8 DEFAULT NULL,
    \`taskCreatedAt\`  varchar(23) CHARACTER SET utf8 DEFAULT NULL,
-   \`createdByName\`  varchar(22) CHARACTER SET utf8 DEFAULT NULL,
-   \`projectName\`  varchar(17) CHARACTER SET utf8 DEFAULT NULL,
+   \`createdByName\`  varchar(30) CHARACTER SET utf8 DEFAULT NULL,
+   \`projectName\`  varchar(50) CHARACTER SET utf8 DEFAULT NULL,
    \`isCicle\`  varchar(5) CHARACTER SET utf8 DEFAULT NULL,
    \`createdById\`  varchar(16) CHARACTER SET utf8 DEFAULT NULL,
-   \`assigneeId\`  varchar(15) CHARACTER SET utf8 DEFAULT NULL,
-   \`assigneeName\`  varchar(13) CHARACTER SET utf8 DEFAULT NULL,
+   \`currentAssignee\`  varchar(30) CHARACTER SET utf8 DEFAULT NULL, 
+   \`lastAssigneeId\`  varchar(15) CHARACTER SET utf8 DEFAULT NULL,
+   \`lastAssigneeName\`  varchar(30) CHARACTER SET utf8 DEFAULT NULL,
    \`eventId\`  varchar(16) CHARACTER SET utf8 DEFAULT NULL,
    \`projectId\`  bigint(13) DEFAULT NULL,
    \`workspaceId\`  bigint(12) DEFAULT NULL,
    \`workspaceName\`  varchar(9) CHARACTER SET utf8 DEFAULT NULL,
    \`isSubtask\`  varchar(5) CHARACTER SET utf8 DEFAULT NULL,
+   \`isRenderedAsSeparator\`  varchar(5) CHARACTER SET utf8 DEFAULT NULL,
    \`parentTaskName\`  varchar(36) CHARACTER SET utf8 DEFAULT NULL,
    \`date\`  varchar(10) CHARACTER SET utf8 DEFAULT NULL,
    \`time\`  varchar(12) CHARACTER SET utf8 DEFAULT NULL,
    \`taskCompletedAt\`  varchar(24) CHARACTER SET utf8 DEFAULT NULL,
    \`taskModifiedAt\`  varchar(24) CHARACTER SET utf8 DEFAULT NULL,
-   \`taskNotes\`  varchar(540) CHARACTER SET utf8 DEFAULT NULL
+   \`taskNotes\`  varchar(700) CHARACTER SET utf8 DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;")
 
     load=$(echo "LOAD DATA LOCAL INFILE '$filename' 
@@ -92,7 +94,7 @@ for filename in *.csv; do
 
     #printf  "%s\n"   "$use" "$create" "$load"
     #echo "$use" "$create" "$load"
-    mysql -u"$USER" -p"$PASSWORD" -e"$use""$create""$load"
+    mysql --local_infile=1 -u"$USER" -p"$PASSWORD" -e"$use""$create""$load"
 
 done
 end=`date +%s`
@@ -100,7 +102,6 @@ end=`date +%s`
 runtime=$((end-start))
 
 echo "All done in $runtime seconds."
-
 
 
 

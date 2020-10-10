@@ -494,11 +494,15 @@ public class GenerateWeeklyCountsByCircle {
 		switch (toc) {
 		case 15:
 		case 4:
-			cc.setBirths(cc.getBirths()+1);
+			if(concernsThisCircle(change,cc))
+				cc.setBirths(cc.getBirths()+1);
 			break;
 		case 5:
+			if(concernsThisCircle(change,cc))
+				cc.setDeaths(cc.getDeaths()+1); // removed from circle
+			break;
 		case 7:
-			cc.setDeaths(cc.getDeaths()+1);
+			cc.setDeaths(cc.getDeaths()+1);	 // completed this task		
 			break;
 
 		case 9:
@@ -514,6 +518,12 @@ public class GenerateWeeklyCountsByCircle {
 		default:
 			break;
 		}
+	}
+
+	private static boolean concernsThisCircle(StructuralDataChange change, CircleCountsWeekly cc) {
+		if(change.getRawDataText().contains(cc.getCircleName()))
+			return true;
+		return false;
 	}
 
 	private static CircleCountsWeekly get(String circleId, List<CircleCountsWeekly> ccs) {

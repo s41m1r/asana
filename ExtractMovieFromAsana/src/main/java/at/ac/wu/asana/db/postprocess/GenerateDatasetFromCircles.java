@@ -7,8 +7,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
+import org.apache.commons.lang3.ArrayUtils;
+
 import at.ac.wu.asana.csv.WriteUtils;
 import at.ac.wu.asana.db.io.ReadFromDB;
+import at.ac.wu.asana.db.postprocess.datastructures.AuthoritativeList;
 import at.ac.wu.asana.model.StructuralDataChange;
 
 public class GenerateDatasetFromCircles {
@@ -23,7 +26,7 @@ public class GenerateDatasetFromCircles {
 		Instant start = Instant.now();
 		
 		List<StructuralDataChange> allChanges = ReadFromDB.readFromDBNoSort(
-				"asana_manual5", 
+				"asana_manual7", 
 				"SELECT * FROM SpringestWithCircle"
 				);
 		Instant dataRead = Instant.now();
@@ -68,60 +71,13 @@ public class GenerateDatasetFromCircles {
 	}
 
 	public static String[] initCircleIds() {
-		return new String[]{
-				"0",
-				"7746376637805",
-				"7749914219827",
-				"7963718816247",
-				"11347525454570",
-				"11348115733592",
-				"11348115733601",
-				"11350833325340",
-				"11555199602299",
-				"11626921109046",
-				"12530878841888",
-				"13169100426325",
-				"29007443412107",
-				"47872397062455",
-				"61971534223290",
-				"79667185218012",
-				"163654573139013",
-				"236886514207498",
-				"388515769387194",
-				"389549960603898",
-				"404651189519209",
-				"560994092069672",
-				"561311958443380",
-				"824769296181501",
-		"1133031362168396"};
+		String[] addZero = ArrayUtils.addAll(new String[] {"0"}, AuthoritativeList.authoritativeList);
+		return addZero;
 	}
 
 	public static String[] initCircleNames() {
-		return new String[] {
-				"NO CIRCLE",
-				"☺ Sales Roles",
-				"☺ Infrastructure Roles",
-				"☺ Alignment Roles",
-				"☺ Organisations Roles",
-				"☺ Marketplace Roles",
-				"☺ Demand Roles",
-				"☺ Providers Roles",
-				"☺ Smooth Operations Roles",
-				"☺Business Intelligence Roles",
-				"☺ Go Sales Roles",
-				"☺ Rainmakers Roles",
-				"☺ Go Customer Roles",
-				"☺ Finance Roles",
-				"☺ Product Roles",
-				"☺ Marketing Roles",
-				"☺ Evangelism Roles",
-				"☺ Marketplace DE roles",
-				"☺ Users Roles",
-				"☺ Providers roles",
-				"☺ Germany Roles",
-				"☺ People Roles",
-				"☺ Office Roles",
-				"☺ Customer Success Roles",
-		"☺ Springest Academy Roles"};
+		String[] addZero = ArrayUtils.addAll(new String[] {"NO CIRCLE"}, AuthoritativeList.authoritativeListNames);
+		return addZero;
 	}
+		
 }

@@ -36,7 +36,6 @@ import com.opencsv.CSVWriter;
 
 import at.ac.wu.asana.model.AsanaActions;
 import at.ac.wu.asana.model.StructuralDataChange;
-import javafx.scene.Parent;
 
 public class ExtractStructuralDataChanges {
 
@@ -686,7 +685,7 @@ public class ExtractStructuralDataChanges {
 			List<Task> tasksIt = client.tasks.findByProject(project.gid).
 					option("fields",
 							Arrays.asList(
-									"created_at", "name", "completed",
+									"created_at", "created_by", "name", "completed",
 									"tags","completed_at", "notes", 
 									"modified_at", "parent", "parent.name", 
 									"assignee", "assignee.name", "memberships", 
@@ -696,7 +695,7 @@ public class ExtractStructuralDataChanges {
 			Map<String, Task> tasksMap = new LinkedHashMap<String, Task>();
 			Map<String, List<StructuralDataChange>> taskChanges = new LinkedHashMap<String, List<StructuralDataChange>>();
 			for (Task task : tasksIt) {
-				tasksMap.put(task.id, task);
+				tasksMap.put(task.gid, task);
 			}
 
 			//			listOfChanges.addAll(collectChangesOfTasksToList(tasksMap, project, workspace, client));
