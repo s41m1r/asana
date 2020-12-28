@@ -79,10 +79,10 @@ public abstract class WriteUtils {
 							new FileOutputStream(csv), StandardCharsets.UTF_8));
 
 			CSVWriter csvWriter = new CSVWriter(rolesFileWriter);
-			String[] header = StructuralDataChange.csvHeaderCircle();
+			String[] header = StructuralDataChange.csvHeaderCircleSecondDegree();
 			csvWriter.writeNext(header);
 			for (StructuralDataChange change : taskChanges) {
-				csvWriter.writeNext(change.csvRowCircle());
+				csvWriter.writeNext(change.csvRowCircleSecondDegree());
 			}
 			csvWriter.flush();
 			csvWriter.close();

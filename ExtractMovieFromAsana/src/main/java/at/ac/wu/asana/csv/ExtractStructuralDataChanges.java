@@ -823,6 +823,8 @@ public class ExtractStructuralDataChanges {
 			List<StructuralDataChange> list = new ArrayList<StructuralDataChange>();
 			Task currentTask = tasksMap.get(k);
 			//			loop through its history
+			if(currentTask.gid.contains("11378875694427") || currentTask.gid.contains("1146881212702800"))
+				System.out.println("**********     FOUND !!!!");
 			List<Story> stories = null;
 			try {
 				stories = client.stories.findByTask(currentTask.gid).option("fields", 

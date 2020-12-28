@@ -62,6 +62,9 @@ public class StructuralDataChange implements Comparable<StructuralDataChange> {
 	private String parentCircle;
 
 	private String accordingToCircle;
+	
+	private String secondDegreeCircleRelationshipId;
+	private String secondDegreeCircleRelationshipName;
 
 	public StructuralDataChange() {
 	}
@@ -241,6 +244,47 @@ public class StructuralDataChange implements Comparable<StructuralDataChange> {
 		};
 	}
 
+	public String[] csvRowCircleSecondDegree(){
+		return new String[]{ 
+				Timestamp.valueOf(storyCreatedAt).toString(),
+				taskId,
+				parentTaskId,
+				taskName,
+				rawDataText,
+				messageType,
+				typeOfChange+"",
+				typeOfChangeDescription,
+				isRole+"",
+				Timestamp.valueOf(taskCreatedAt).toString(),
+				storyCreatedByName,				
+				projectName,
+				isCircle+"",
+				storyCreatedById,
+				currentAssignee,
+				lastAssigneeId,
+				lastAssigneeName,
+				storyId,
+				projectId,				
+				workspaceId,
+				workspaceName,
+				isSubtask+"",
+				isRenderedAsSeparator+"",
+				parentTaskName,
+				storyCreatedAt.toLocalDate().toString(),
+				storyCreatedAt.toLocalTime().toString(),
+				((taskCompletedAt!= null)? taskCompletedAt.toString():""),
+				((taskModifiedAt != null)? taskModifiedAt.toString(): ""),
+				taskNotes,
+				circle,
+				circleIds,
+				migration+"",
+				parentCircle,
+				accordingToCircle,
+				secondDegreeCircleRelationshipId,
+				secondDegreeCircleRelationshipName
+		};
+	}
+
 	private String extractTaskTags(Collection<Tag> tags) {
 		String res = "";
 		if(tags!=null) {
@@ -390,6 +434,22 @@ public class StructuralDataChange implements Comparable<StructuralDataChange> {
 
 	public String getWorkspaceName() {
 		return workspaceName;
+	}
+
+	public String getSecondDegreeCircleRelationshipId() {
+		return secondDegreeCircleRelationshipId;
+	}
+
+	public void setSecondDegreeCircleRelationshipId(String secondDegreeCircleRelationshipId) {
+		this.secondDegreeCircleRelationshipId = secondDegreeCircleRelationshipId;
+	}
+
+	public String getSecondDegreeCircleRelationshipName() {
+		return secondDegreeCircleRelationshipName;
+	}
+
+	public void setSecondDegreeCircleRelationshipName(String secondDegreeCircleRelationshipName) {
+		this.secondDegreeCircleRelationshipName = secondDegreeCircleRelationshipName;
 	}
 
 	/**
@@ -812,6 +872,48 @@ public class StructuralDataChange implements Comparable<StructuralDataChange> {
 				"migration",
 				"parentCircle",
 				"accordingToCircle"
+		};
+	}
+	
+	public static String[] csvHeaderCircleSecondDegree(){
+		return new String[]{
+				"timestamp",
+				"taskId",
+				"parentTaskId",
+				"taskName",
+				"rawDataText",
+				"messageType",
+				"typeOfChange",
+				"typeOfChangeDescription",
+				"isRole",
+				"taskCreatedAt", 
+				"createdByName",
+				"projectName",
+				"isCicle",
+				"createdById",
+				"currentAssignee",
+				"lastAssigneeId",
+				"lastAssigneeName",
+				"eventId",
+				"projectId",
+				"workspaceId",
+				"workspaceName",
+				"isSubtask",
+				"isRenderedAsSeparator",
+				"parentTaskName",
+				//				"pathToHere",
+				"date", 
+				"time",
+				"taskCompletedAt",
+				"taskModifiedAt",
+				"taskNotes",
+				"circle",
+				"circleIds",
+				"migration",
+				"parentCircle",
+				"accordingToCircle",
+				"secondDegreeCircleRelationshipId",
+				"secondDegreeCircleRelationshipName"
 		};
 	}
 

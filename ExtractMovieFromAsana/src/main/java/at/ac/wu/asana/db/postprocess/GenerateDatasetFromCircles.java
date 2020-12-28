@@ -26,8 +26,8 @@ public class GenerateDatasetFromCircles {
 		Instant start = Instant.now();
 		
 		List<StructuralDataChange> allChanges = ReadFromDB.readFromDBNoSort(
-				"asana_manual7", 
-				"SELECT * FROM SpringestWithCircle"
+				"asana_manual9", 
+				"SELECT * FROM SpringestRaw"
 				);
 		Instant dataRead = Instant.now();
 		
