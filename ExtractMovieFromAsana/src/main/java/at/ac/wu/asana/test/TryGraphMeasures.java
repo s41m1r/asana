@@ -20,8 +20,6 @@ import org.graphstream.graph.Graph;
 import org.graphstream.graph.Node;
 import org.graphstream.graph.implementations.SingleGraph;
 
-import antlr.build.Tool;
-
 public class TryGraphMeasures {
 	public static void main(String[] args) {
 		Graph graph = new SingleGraph("Graph measures");

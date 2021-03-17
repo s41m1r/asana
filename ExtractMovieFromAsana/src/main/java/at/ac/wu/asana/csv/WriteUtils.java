@@ -96,7 +96,6 @@ public abstract class WriteUtils {
 	public static void writeMapOfChangesWithCircleToCSV(Map<String, List<StructuralDataChange>> taskChanges, String csv) {
 		PrintWriter rolesFileWriter;
 		//		PostProcessFromDB.printHistoryOfTask("7745109865138", taskChanges); 
-		int count=0;
 		try {
 			rolesFileWriter = new PrintWriter(
 					new OutputStreamWriter(
@@ -108,14 +107,11 @@ public abstract class WriteUtils {
 			for (String taskId : taskChanges.keySet()) {
 				List<StructuralDataChange> changes = taskChanges.get(taskId);
 				for (StructuralDataChange change : changes) {
-					if(change.getTaskId().equals("7745109865138"))
-						count++;
 					csvWriter.writeNext(change.csvRowCircle());
 				}
 			}
 			csvWriter.flush();
 			csvWriter.close();
-			System.out.println("Wrote "+count+" about task 7745109865138");
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
 		} catch (IOException e) {
@@ -126,7 +122,6 @@ public abstract class WriteUtils {
 	public static void writeMapOfChangesWithCircleToCSV2(Map<String, List<StructuralDataChange>> taskChanges, String csv) {
 		PrintWriter rolesFileWriter;
 		//		PostProcessFromDB.printHistoryOfTask("7745109865138", taskChanges); 
-		int count=0;
 		List<String[]> lines = new ArrayList<String[]>();
 		try {
 			rolesFileWriter = new PrintWriter(
@@ -139,20 +134,13 @@ public abstract class WriteUtils {
 			Set<String> tasks = taskChanges.keySet();
 			for (String taskId : tasks) {
 				TreeSet<StructuralDataChange> changes = new TreeSet<StructuralDataChange>(taskChanges.get(taskId));
-				if(taskId.equals("7745109865138"))
-					System.out.println("taskId has history size "+changes.size());
 				for (StructuralDataChange sdc : changes) {
-					if(sdc.getTaskId().equals("7745109865138")) {
-						count++;
-						System.out.println("Writing (under taskId="+taskId+"): "+Arrays.asList(sdc.csvRowCircle()));
-					}
 					lines.add(sdc.csvRowCircle());
 				}
 			}
 			csvWriter.writeAll(lines);
 			csvWriter.flush();
 			csvWriter.close();
-			System.out.println("Wrote "+count+" about task 7745109865138");
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
 		} catch (IOException e) {
@@ -177,6 +165,37 @@ public abstract class WriteUtils {
 				TreeSet<StructuralDataChange> events = new TreeSet<StructuralDataChange>(changes.get(taskId));
 				for (StructuralDataChange sdc : events) {
 					lines.add(sdc.csvRowCircle());
+					linesWritten++;
+				}
+			}
+			csvWriter.writeAll(lines);
+			csvWriter.flush();
+			csvWriter.close();
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		return linesWritten;
+	}
+	
+	public static int writeMapWithDynamic(Map<String, List<StructuralDataChange>> changes, String csv) {
+		int linesWritten = 0;
+		PrintWriter rolesFileWriter;
+		List<String[]> lines = new ArrayList<String[]>();
+		try {
+			rolesFileWriter = new PrintWriter(
+					new OutputStreamWriter(
+							new FileOutputStream(csv), StandardCharsets.UTF_8));
+
+			CSVWriter csvWriter = new CSVWriter(rolesFileWriter);
+			String[] header = StructuralDataChange.csvHeaderDynamic();
+			lines.add(header);
+			Set<String> circleIds = changes.keySet();
+			for (String taskId : circleIds) {
+				List<StructuralDataChange> events = changes.get(taskId);
+				for (StructuralDataChange sdc : events) {
+					lines.add(sdc.csvRowDynamic());
 					linesWritten++;
 				}
 			}

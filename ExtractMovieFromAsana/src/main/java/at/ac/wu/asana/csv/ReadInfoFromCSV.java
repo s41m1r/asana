@@ -17,16 +17,15 @@ import com.opencsv.CSVReader;
 import at.ac.wu.asana.db.postprocess.datastructures.AuthoritativeList;
 import at.ac.wu.asana.db.postprocess.datastructures.CircleTimeRange;
 
-public abstract class ReadCircleParentLocations {
+public abstract class ReadInfoFromCSV {
 	
-	public static Map<String, List<CircleTimeRange>> readFromFile(String fileName){
+	public static Map<String, List<CircleTimeRange>> readParentLocations(String fileName){
 		Map<String, List<CircleTimeRange>> map = new HashMap<String, List<CircleTimeRange>>();
 
 		try {
 			CSVReader reader = new CSVReader(new FileReader(fileName));
 			reader.readNext();
 			List<String[]> rows = reader.readAll();
-			System.out.println("Read "+reader.getLinesRead()+" lines.");
 			
 			map = createCircleTimeRangeObjects(rows); 
 			
@@ -39,6 +38,46 @@ public abstract class ReadCircleParentLocations {
 		return map;
 	}
 	
+	public static List<CircleTimeRange> readCircleLives(String fileName){
+		
+		List<CircleTimeRange> res = new ArrayList<CircleTimeRange>();
+
+		try {
+			CSVReader reader = new CSVReader(new FileReader(fileName));
+			reader.readNext(); //skip header
+			List<String[]> rows = reader.readAll();
+			res = createListOfCirclesLives(rows); 
+			
+			reader.close();
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		return res;
+	}
+	
+	private static List<CircleTimeRange> createListOfCirclesLives(List<String[]> rows) {
+		List<CircleTimeRange> res = new ArrayList<CircleTimeRange>();
+		for (String[] row : rows) {
+			String circleId = row[0];
+			String circleName = row[1];
+			String startR = row[2];
+			String endR = row[3];
+
+			DateTimeFormatter dtf = DateTimeFormatter.ofPattern("M/d/yyyy");
+
+			LocalDateTime start = LocalDate.parse(startR, dtf).atStartOfDay();
+			LocalDateTime end = endR.equals("")? null: LocalDate.parse(endR, dtf).atStartOfDay();
+			
+			CircleTimeRange range = new CircleTimeRange(circleId, circleName, start, end);
+			
+			res.add(range);
+					
+		}
+		return res;
+	}
+
 	private static Map<String, List<CircleTimeRange>> createCircleTimeRangeObjects(List<String[]> rows) {
 		Map<String, List<CircleTimeRange>> map = new HashMap<String, List<CircleTimeRange>>();
 		
@@ -55,11 +94,6 @@ public abstract class ReadCircleParentLocations {
 			
 			if(map.containsKey(circleId)) {
 				ranges = map.get(circleId);
-//				ctr = ranges.get(ranges.size()-1);
-				//get the event about father
-				if (circleId.equals("47872397062455")) {
-					System.out.println("Butta!");
-				}
 				ctr = getFather(ranges, parentId); // find last father  
 				
 				if(ctr == null || ctr.getEnd()!=null) {

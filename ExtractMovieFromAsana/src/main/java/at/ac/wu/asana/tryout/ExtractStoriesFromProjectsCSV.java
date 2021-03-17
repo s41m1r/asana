@@ -13,10 +13,6 @@ import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 
-import com.asana.Client;
-import com.asana.models.Project;
-import com.asana.models.Workspace;
-
 import at.ac.wu.asana.csv.ExtractStructuralDataChanges;
 
 public class ExtractStoriesFromProjectsCSV {

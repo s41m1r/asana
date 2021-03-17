@@ -56,15 +56,19 @@ public class StructuralDataChange implements Comparable<StructuralDataChange> {
 	private boolean migration;
 	private boolean isRenderedAsSeparator;
 	private boolean isChangeAccountabilityPurpose;
+	private String roleType;
 
 	private String circleIds;
 
 	private String parentCircle;
 
 	private String accordingToCircle;
-	
+
 	private String secondDegreeCircleRelationshipId;
 	private String secondDegreeCircleRelationshipName;
+
+	private String dynamicHierarchy;
+	private String dynamicParentName;
 
 	public StructuralDataChange() {
 	}
@@ -184,24 +188,24 @@ public class StructuralDataChange implements Comparable<StructuralDataChange> {
 				isRole+"",
 				taskCreatedAt.toString(),
 				(storyCreatedByName==null)? "":storyCreatedByName,				
-				projectName,
-				isCircle+"",
-				storyCreatedById,
-				currentAssignee,
-				lastAssigneeId,
-				lastAssigneeName,
-				storyId,
-				projectId,				
-				workspaceId,
-				workspaceName,
-				isSubtask+"",
-				isRenderedAsSeparator+"",
-				parentTaskName,
-				storyCreatedAt.toLocalDate().toString(),
-				storyCreatedAt.toLocalTime().toString(),
-				((taskCompletedAt!= null)? taskCompletedAt.toString():""),
-				((taskModifiedAt != null)? taskModifiedAt.toString(): ""),
-				taskNotes
+						projectName,
+						isCircle+"",
+						storyCreatedById,
+						currentAssignee,
+						lastAssigneeId,
+						lastAssigneeName,
+						storyId,
+						projectId,				
+						workspaceId,
+						workspaceName,
+						isSubtask+"",
+						isRenderedAsSeparator+"",
+						parentTaskName,
+						storyCreatedAt.toLocalDate().toString(),
+						storyCreatedAt.toLocalTime().toString(),
+						((taskCompletedAt!= null)? taskCompletedAt.toString():""),
+						((taskModifiedAt != null)? taskModifiedAt.toString(): ""),
+						taskNotes
 		};
 	}
 
@@ -254,11 +258,9 @@ public class StructuralDataChange implements Comparable<StructuralDataChange> {
 				messageType,
 				typeOfChange+"",
 				typeOfChangeDescription,
-				isRole+"",
 				Timestamp.valueOf(taskCreatedAt).toString(),
 				storyCreatedByName,				
 				projectName,
-				isCircle+"",
 				storyCreatedById,
 				currentAssignee,
 				lastAssigneeId,
@@ -267,8 +269,6 @@ public class StructuralDataChange implements Comparable<StructuralDataChange> {
 				projectId,				
 				workspaceId,
 				workspaceName,
-				isSubtask+"",
-				isRenderedAsSeparator+"",
 				parentTaskName,
 				storyCreatedAt.toLocalDate().toString(),
 				storyCreatedAt.toLocalTime().toString(),
@@ -277,11 +277,11 @@ public class StructuralDataChange implements Comparable<StructuralDataChange> {
 				taskNotes,
 				circle,
 				circleIds,
-				migration+"",
 				parentCircle,
 				accordingToCircle,
 				secondDegreeCircleRelationshipId,
-				secondDegreeCircleRelationshipName
+				secondDegreeCircleRelationshipName, 
+				roleType
 		};
 	}
 
@@ -319,7 +319,7 @@ public class StructuralDataChange implements Comparable<StructuralDataChange> {
 		return createdAt;
 	}
 	public String getDate(){
-		return DateFormat.getInstance().format(storyCreatedAt);
+		return DateFormat.getInstance().format(storyCreatedAt.toLocalDate().toString());
 	}
 	public LocalDateTime getDateTime() {
 		return storyCreatedAt;
@@ -651,10 +651,6 @@ public class StructuralDataChange implements Comparable<StructuralDataChange> {
 		this.isRole = isRole;
 	}
 
-	public void setRole(Boolean role) {
-		this.isRole = role;
-	}
-
 	private void setRole(String taskName2) {
 		if(messageType == null)
 			return;
@@ -667,6 +663,30 @@ public class StructuralDataChange implements Comparable<StructuralDataChange> {
 			this.isRole = false;
 
 		else this.isRole = true;
+	}
+
+	public String getRoleType() {
+		return roleType;
+	}
+
+	public String getDynamicHierarchy() {
+		return dynamicHierarchy;
+	}
+
+	public void setDynamicHierarchy(String dynamicHierarchy) {
+		this.dynamicHierarchy = dynamicHierarchy;
+	}
+
+	public String getDynamicParentName() {
+		return dynamicParentName;
+	}
+
+	public void setDynamicParentName(String dynamicParentName) {
+		this.dynamicParentName = dynamicParentName;
+	}
+
+	public void setRoleType(String roleType) {
+		this.roleType = roleType;
 	}
 
 	public void setStoryCreatedAt(LocalDateTime storyCreatedAt) {
@@ -814,7 +834,7 @@ public class StructuralDataChange implements Comparable<StructuralDataChange> {
 				"taskCreatedAt", 
 				"createdByName",
 				"projectName",
-				"isCicle",
+				"isCircle",
 				"createdById",
 				"currentAssignee",
 				"lastAssigneeId",
@@ -849,7 +869,7 @@ public class StructuralDataChange implements Comparable<StructuralDataChange> {
 				"taskCreatedAt", 
 				"createdByName",
 				"projectName",
-				"isCicle",
+				"isCircle",
 				"createdById",
 				"currentAssignee",
 				"lastAssigneeId",
@@ -874,7 +894,7 @@ public class StructuralDataChange implements Comparable<StructuralDataChange> {
 				"accordingToCircle"
 		};
 	}
-	
+
 	public static String[] csvHeaderCircleSecondDegree(){
 		return new String[]{
 				"timestamp",
@@ -885,11 +905,9 @@ public class StructuralDataChange implements Comparable<StructuralDataChange> {
 				"messageType",
 				"typeOfChange",
 				"typeOfChangeDescription",
-				"isRole",
 				"taskCreatedAt", 
 				"createdByName",
 				"projectName",
-				"isCicle",
 				"createdById",
 				"currentAssignee",
 				"lastAssigneeId",
@@ -898,8 +916,6 @@ public class StructuralDataChange implements Comparable<StructuralDataChange> {
 				"projectId",
 				"workspaceId",
 				"workspaceName",
-				"isSubtask",
-				"isRenderedAsSeparator",
 				"parentTaskName",
 				//				"pathToHere",
 				"date", 
@@ -909,11 +925,11 @@ public class StructuralDataChange implements Comparable<StructuralDataChange> {
 				"taskNotes",
 				"circle",
 				"circleIds",
-				"migration",
 				"parentCircle",
 				"accordingToCircle",
 				"secondDegreeCircleRelationshipId",
-				"secondDegreeCircleRelationshipName"
+				"secondDegreeCircleRelationshipName",
+				"roleType"
 		};
 	}
 
@@ -1114,6 +1130,8 @@ public class StructuralDataChange implements Comparable<StructuralDataChange> {
 		sdc.isChangeAccountabilityPurpose = this.isChangeAccountabilityPurpose;
 		sdc.circleIds = this.circleIds + "";
 		sdc.parentCircle = this.parentCircle + "";
+		sdc.roleType = this.roleType + "";
+		sdc.setEventId(this.getEventId());
 		return sdc;
 	}
 
@@ -1154,6 +1172,79 @@ public class StructuralDataChange implements Comparable<StructuralDataChange> {
 		chTask.setWorkspaceName(workspace.name);
 		chTask.setMessageType("derived");
 		return chTask;
+	}
+
+	public static String[] csvHeaderDynamic() {
+		return new String[]{
+				"timestamp",
+				"taskId",
+				"parentTaskId",
+				"taskName",
+				"rawDataText",
+				"hierarchy",
+				"parentNameDerived",
+				"messageType",
+				"typeOfChange",
+				"typeOfChangeDescription",
+				"isRole",
+				"taskCreatedAt", 
+				"createdByName",
+				"projectName",
+				"isCircle",
+				"createdById",
+				"currentAssignee",
+				"lastAssigneeId",
+				"lastAssigneeName",
+				"eventId",
+				"projectId",
+				"workspaceId",
+				"workspaceName",
+				"isSubtask",
+				"isRenderedAsSeparator",
+				"parentTaskName",
+				//				"pathToHere",
+				"date", 
+				"time",
+				"taskCompletedAt",
+				"taskModifiedAt",
+				"taskNotes"
+		};
+	}
+
+	public String[] csvRowDynamic() {
+			return new String[]{ 
+					Timestamp.valueOf(storyCreatedAt).toString(),
+					taskId,
+					parentTaskId,
+					taskName,
+					rawDataText,
+					dynamicHierarchy,
+					dynamicParentName,
+					messageType,
+					typeOfChange+"",
+					typeOfChangeDescription,
+					isRole+"",
+					taskCreatedAt.toString(),
+					(storyCreatedByName==null)? "":storyCreatedByName,				
+							projectName,
+							isCircle+"",
+							storyCreatedById,
+							currentAssignee,
+							lastAssigneeId,
+							lastAssigneeName,
+							storyId,
+							projectId,				
+							workspaceId,
+							workspaceName,
+							isSubtask+"",
+							isRenderedAsSeparator+"",
+							parentTaskName,
+							storyCreatedAt.toLocalDate().toString(),
+							storyCreatedAt.toLocalTime().toString(),
+							((taskCompletedAt!= null)? taskCompletedAt.toString():""),
+							((taskModifiedAt != null)? taskModifiedAt.toString(): ""),
+							taskNotes
+			};
 	}
 
 

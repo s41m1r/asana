@@ -915,7 +915,7 @@ public class CountByCircleWeekly {
 
 	private static CircleCounts lookup(CircleCounts cc, List<CircleCounts> res) {
 		for (CircleCounts c : res) {
-			if(cc.getCircleId().equals(c))
+			if(cc.getCircleId().equals(c.getCircleId()))
 				return c;
 		}
 		return null;

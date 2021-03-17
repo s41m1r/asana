@@ -6,8 +6,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import at.ac.wu.asana.model.StructuralDataChange;
-
 public abstract class GeneralUtils {
 	
 	public static String[] toStrObjArray(Object[] row) {

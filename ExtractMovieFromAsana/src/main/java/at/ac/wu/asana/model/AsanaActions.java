@@ -42,6 +42,11 @@ public class AsanaActions {
 	public static final int COMPLETE_ROLE = 14;
 	public static final int CREATE_ROLE = 15;
 	public static final int CIRCLE_CHANGE = 16;
+	public static final int ROLE_EXTRACTION = 17;
+	public static final int ROLE_INTEGRATION = 18;
+	public static final int CREATE_CIRCLE = 19;
+	public static final int DESIGN_CIRCLE = 20;
+	public static final int DELETE_CIRCLE = 21;
 	
 	
 	public static String codeToString(int code){
@@ -100,6 +105,21 @@ public class AsanaActions {
 			break;
 		case CIRCLE_CHANGE:
 			res = "CIRCLE_CHANGE";
+			break;
+		case ROLE_EXTRACTION:
+			res = "ROLE_EXTRACTION";
+			break;
+		case ROLE_INTEGRATION:
+			res = "ROLE_INTEGRATION";
+			break;
+		case DESIGN_CIRCLE:
+			res = "DESIGN_CIRCLE";
+			break;
+		case CREATE_CIRCLE:
+			res = "CREATE_CIRCLE";
+			break;
+		case DELETE_CIRCLE:
+			res = "DELETE_CIRCLE";
 			break;
 		default:
 			break;
