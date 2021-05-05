@@ -1895,7 +1895,7 @@ public class PostProcessFromDB {
 				}
 
 				if(sdc.getTypeOfChange()==AsanaActions.REMOVE_FROM_CIRCLE) {
-					String curCircle = sdc.getRawDataText().replaceAll("removed from ", "").trim();
+					String curCircle = sdc.getRawDataText().replaceAll("\\[EVENT FROM SUB-TASK\\]","").replaceAll("removed from ", "").trim();
 					int i = lookup(curCircle); // if -1 then it is not a circle
 					if(i!=-1) { 
 						if(circles.contains(curCircle))
