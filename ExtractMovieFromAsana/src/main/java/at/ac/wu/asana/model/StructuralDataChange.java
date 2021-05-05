@@ -80,6 +80,8 @@ public class StructuralDataChange implements Comparable<StructuralDataChange> {
 	
 	private String grandChildId;
 	private String grandChildName;
+	
+	private String aliveStatus;
 
 
 	public StructuralDataChange() {
@@ -301,7 +303,8 @@ public class StructuralDataChange implements Comparable<StructuralDataChange> {
 				grandChildId,
 				childId,
 				grandChildName,
-				childName
+				childName,
+				aliveStatus
 		};
 	}
 
@@ -1033,7 +1036,9 @@ public class StructuralDataChange implements Comparable<StructuralDataChange> {
 				"grandChildId",
 				"childId",
 				"grandChildName",
-				"childName"
+				"childName",
+				"aliveStatus"
+				
 		};
 	}
 
@@ -1244,6 +1249,7 @@ public class StructuralDataChange implements Comparable<StructuralDataChange> {
 		sdc.setChildName(this.childName);
 		sdc.setGrandChildId(this.grandChildId);
 		sdc.setGrandChildName(this.grandChildName);
+		sdc.setAliveStatus(this.aliveStatus);
 		return sdc;
 	}
 
@@ -1374,6 +1380,14 @@ public class StructuralDataChange implements Comparable<StructuralDataChange> {
 
 	public void setTypeOfChangeDescriptionNew(String typeOfChangeDescriptionNew) {
 		this.typeOfChangeDescriptionNew = typeOfChangeDescriptionNew;
+	}
+
+	public String getAliveStatus() {
+		return aliveStatus;
+	}
+
+	public void setAliveStatus(String aliveStatus) {
+		this.aliveStatus = aliveStatus;
 	}
 
 

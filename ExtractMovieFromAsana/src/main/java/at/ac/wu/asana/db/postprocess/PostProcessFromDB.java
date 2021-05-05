@@ -106,6 +106,7 @@ public class PostProcessFromDB {
 //		setRoleType(allChildren);
 //		setRoleType(allParents);
 		setRoleType(all);
+		setAliveStatus(all);
 		Set<String> forceToChild = getListOfTasksForcedToChild();
 		setDynamicHierarchy(all, allOrphanIds, forceToChild);
 		//		fillDownDynamicHierarchy(all);
@@ -166,11 +167,11 @@ public class PostProcessFromDB {
 //		fixUnassigned(allEvents);
 		//		isPresent("1197817592950968", allEvents.keySet());
 		
-		System.out.println(getEventAt(allEvents,"2020-02-06 11:12:18.351"));
+//		System.out.println(getEventAt(allEvents,"2020-02-06 11:12:18.351"));
 
 		Map<String, List<StructuralDataChange>> allEvents2 = setCurrentCircles(allEvents);
 		
-		System.out.println(getEventAt(allEvents,"2020-02-06 11:12:18.351"));
+//		System.out.println(getEventAt(allEvents,"2020-02-06 11:12:18.351"));
 		
 		fixRoleIntegrationExtraction(allEvents2); // has to be after setCurrentCircles
 
@@ -190,8 +191,7 @@ public class PostProcessFromDB {
 		addSecondDegreeCircle(uniqueEvents, circleEvents);
 
 		//		printHistoryOfTask("11555199602323", allEventsNoDup);
-
-
+		
 		String outfile = "Springest-filtered.csv";
 		WriteUtils.writeListOfChangesWithCircleToCSV(uniqueEvents, outfile);
 
@@ -201,6 +201,23 @@ public class PostProcessFromDB {
 
 		System.out.println("Done in "+(System.currentTimeMillis()-start)/1000+" sec.");
 		System.out.println("Wrote on file "+outfile);
+	}
+
+	private static void setAliveStatus(Map<String, List<StructuralDataChange>> all) {
+		for(String k: all.keySet()) {
+			List<StructuralDataChange> taskHistory = new LinkedList<StructuralDataChange>(all.get(k));
+			java.util.Collections.sort(taskHistory);
+			String status = "alive";
+			for (StructuralDataChange sdc : taskHistory) {
+				if(sdc.getTypeOfChange() == AsanaActions.DETELE_OR_MARK_COMPLETE) {
+					status = ""+"dead";
+				}
+				if(sdc.getTypeOfChange() == AsanaActions.REVIVE_OR_MARK_INCOMPLETE) {
+					status = "alive";
+				}
+				sdc.setAliveStatus(status);
+			}
+		}
 	}
 
 	private static String getEventAt(Map<String, List<StructuralDataChange>> allEvents, String searchTS) {
@@ -235,12 +252,7 @@ public class PostProcessFromDB {
 
 		Map<String, List<StructuralDataChange>> grandChildren = getGrandChildren(allChildrenDynamic);
 		
-		removeOverlappingKeys(grandChildren, allChildrenDynamic);
-			
-		assignHierarchy(grandChildren, "grandchild");
-		assignHierarchy(allChildrenDynamic, "child");
-		assignHierarchy(allChildrenDynamic, "parent");
-		
+		removeOverlappingKeys(grandChildren, allChildrenDynamic);		
 		int gcB = grandChildren.size();
 		int chB = allChildrenDynamic.size();
 		int pB = allParentsDynamic.size();
@@ -250,7 +262,10 @@ public class PostProcessFromDB {
 		WriteUtils.writeMapWithDynamic(grandChildren, "grandchildren.csv");
 		
 		System.out.println("grandChildren -> allChildrenDynamic");
+		assignHierarchy(grandChildren, "grandchild");
 		moveToDynamicParent(grandChildren, allChildrenDynamic);
+		assignHierarchy(allChildrenDynamic, "child");
+//		assignHierarchy(allChildrenDynamic, "parent");
 //		System.out.println("grandChildren -> allParentsDynamic");
 //		moveToDynamicParent(grandChildren, allParentsDynamic); //because we promoted the orphans
 		System.out.println("allChildrenDynamic -> allParentsDynamic");
