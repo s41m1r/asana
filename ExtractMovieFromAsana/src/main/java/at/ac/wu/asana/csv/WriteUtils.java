@@ -7,7 +7,6 @@ import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -208,6 +207,73 @@ public abstract class WriteUtils {
 			e.printStackTrace();
 		}
 		return linesWritten;
+	}
+
+	public static void writeMap(Map<String, String> matched, String csv) {
+		PrintWriter writer = null;	
+		try {
+			writer = new PrintWriter(
+					new OutputStreamWriter(
+							new FileOutputStream(csv), StandardCharsets.UTF_8));
+			CSVWriter csvWriter = new CSVWriter(writer);
+//			e.getTaskId(), e.getTaskName(), e.getParentTaskId(), e.getDynamicParentName(), moreParents.get(e.getDynamicParentName().trim())
+			csvWriter.writeNext(new String[] {"taskId","taskName","matchedParentId", "matchedParentName","possibleParentIds"});
+			List<String[]> lines = new ArrayList<String[]>();
+			for (Map.Entry<String, String> entry : matched.entrySet()) {
+			    lines.add(new String[] {entry.getKey(),entry.getValue()});
+			}
+			csvWriter.writeAll(lines);
+			csvWriter.flush();
+			csvWriter.close();
+		}
+		catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+
+	public static void writeList(List<String[]> matched, String csv) {
+		PrintWriter writer = null;	
+		try {
+			writer = new PrintWriter(
+					new OutputStreamWriter(
+							new FileOutputStream(csv), StandardCharsets.UTF_8));
+			CSVWriter csvWriter = new CSVWriter(writer);
+			csvWriter.writeNext(new String[] {"taskId","taskName","matchedParentId", "matchedParentName","possibleParentIds"});
+			csvWriter.writeAll(matched);
+			csvWriter.flush();
+			csvWriter.close();
+		}
+		catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+
+	public static void writeMapStringList(Map<String, List<String>> moreParents, String csv) {
+
+		PrintWriter rolesFileWriter;
+		String ids = "";
+		try {
+			rolesFileWriter = new PrintWriter(
+					new OutputStreamWriter(
+							new FileOutputStream(csv), StandardCharsets.UTF_8));
+
+			CSVWriter csvWriter = new CSVWriter(rolesFileWriter);
+			String[] header = new String[] {"c1","c2"};
+			Set<String> circleIds = moreParents.keySet();
+			for (String taskId : circleIds) {
+				List<String> events = moreParents.get(taskId);
+				for (String e : events) {
+					ids+=","+e;
+				}
+				csvWriter.writeNext(new String[] {taskId, ids.substring(1)});
+			}
+			csvWriter.flush();
+			csvWriter.close();
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 	}
 	
 	

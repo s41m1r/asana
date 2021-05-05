@@ -151,4 +151,46 @@ public abstract class ReadInfoFromCSV {
 
 		return null;
 	}
+	
+	public static List<String> getColumn(int columnNR, String filename){
+		List<String> res = new ArrayList<String>();
+		System.out.println("Reading file "+filename);
+		try {
+			CSVReader reader = new CSVReader(new FileReader(filename));
+			reader.readNext(); //skip header
+			List<String[]> allrows = reader.readAll();
+			reader.close();
+			
+			for (String[] row : allrows) {
+				res.add(row[columnNR].trim());
+			}
+			
+			WriteUtils.writeList(allrows, "projs.csv");
+			
+			System.out.println("Read "+allrows.size()+" lines");
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		return res;
+	}
+	
+	public static List<String[]> readAll(String filename){
+		List<String[]> res = new ArrayList<String[]>();
+		System.out.println("Reading file "+filename);
+		try {
+			CSVReader reader = new CSVReader(new FileReader(filename));
+			reader.readNext(); //skip header
+			res = reader.readAll();
+			reader.close();
+			System.out.println("Read "+res.size()+" lines");
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		return res;
+	}
+	
 }

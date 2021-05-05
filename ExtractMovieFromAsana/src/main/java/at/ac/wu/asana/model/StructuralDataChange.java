@@ -50,8 +50,13 @@ public class StructuralDataChange implements Comparable<StructuralDataChange> {
 	private String parentTaskId;
 	private String taskNotes;
 	private String taskTags;
-	private int typeOfChange;
-	private String typeOfChangeDescription;
+	
+	private int typeOfChangeOriginal;
+	private String typeOfChangeDescriptionOriginal;
+	
+	private int typeOfChangeNew;
+	private String typeOfChangeDescriptionNew;
+	
 	private boolean isCircle;
 	private boolean migration;
 	private boolean isRenderedAsSeparator;
@@ -69,6 +74,13 @@ public class StructuralDataChange implements Comparable<StructuralDataChange> {
 
 	private String dynamicHierarchy;
 	private String dynamicParentName;
+	
+	private String childId;
+	private String childName;
+	
+	private String grandChildId;
+	private String grandChildName;
+
 
 	public StructuralDataChange() {
 	}
@@ -109,8 +121,8 @@ public class StructuralDataChange implements Comparable<StructuralDataChange> {
 		//		pathToHere = getPath(task);
 
 		// at some point also set action
-		this.typeOfChange = typeOfChange;
-		this.typeOfChangeDescription = AsanaActions.codeToString(typeOfChange);
+		this.typeOfChangeOriginal = typeOfChange;
+		this.typeOfChangeDescriptionOriginal = AsanaActions.codeToString(typeOfChange);
 
 		if(task.assignee!=null){
 			lastAssigneeId = task.assignee.gid;
@@ -161,8 +173,8 @@ public class StructuralDataChange implements Comparable<StructuralDataChange> {
 		this.isCircle = isCircle(task.name);
 		rawDataText = story.text;
 		messageType = story.type;
-		typeOfChange = typeOfChangeFromCodingScheme(story.text, messageType);
-		typeOfChangeDescription = AsanaActions.codeToString(typeOfChange);
+		typeOfChangeOriginal = typeOfChangeFromCodingScheme(story.text, messageType);
+		typeOfChangeDescriptionOriginal = AsanaActions.codeToString(typeOfChangeOriginal);
 		isRenderedAsSeparator=task.isRenderedAsSeparator;
 	}
 
@@ -183,8 +195,8 @@ public class StructuralDataChange implements Comparable<StructuralDataChange> {
 				taskName,
 				rawDataText,
 				messageType,
-				typeOfChange+"",
-				typeOfChangeDescription,
+				typeOfChangeOriginal+"",
+				typeOfChangeDescriptionOriginal,
 				isRole+"",
 				taskCreatedAt.toString(),
 				(storyCreatedByName==null)? "":storyCreatedByName,				
@@ -217,8 +229,8 @@ public class StructuralDataChange implements Comparable<StructuralDataChange> {
 				taskName,
 				rawDataText,
 				messageType,
-				typeOfChange+"",
-				typeOfChangeDescription,
+				typeOfChangeOriginal+"",
+				typeOfChangeDescriptionOriginal,
 				isRole+"",
 				Timestamp.valueOf(taskCreatedAt).toString(),
 				storyCreatedByName,				
@@ -255,9 +267,13 @@ public class StructuralDataChange implements Comparable<StructuralDataChange> {
 				parentTaskId,
 				taskName,
 				rawDataText,
+				dynamicHierarchy,
+				dynamicParentName,
 				messageType,
-				typeOfChange+"",
-				typeOfChangeDescription,
+				typeOfChangeOriginal+"",
+				typeOfChangeDescriptionOriginal,
+				typeOfChangeNew+"",
+				typeOfChangeDescriptionNew,
 				Timestamp.valueOf(taskCreatedAt).toString(),
 				storyCreatedByName,				
 				projectName,
@@ -281,7 +297,11 @@ public class StructuralDataChange implements Comparable<StructuralDataChange> {
 				accordingToCircle,
 				secondDegreeCircleRelationshipId,
 				secondDegreeCircleRelationshipName, 
-				roleType
+				roleType,
+				grandChildId,
+				childId,
+				grandChildName,
+				childName
 		};
 	}
 
@@ -421,11 +441,11 @@ public class StructuralDataChange implements Comparable<StructuralDataChange> {
 	}
 
 	public int getTypeOfChange() {
-		return typeOfChange;
+		return typeOfChangeOriginal;
 	}
 
 	public String getTypeOfChangeDescription() {
-		return typeOfChangeDescription;
+		return typeOfChangeDescriptionOriginal;
 	}
 
 	public String getWorkspaceId() {
@@ -450,6 +470,82 @@ public class StructuralDataChange implements Comparable<StructuralDataChange> {
 
 	public void setSecondDegreeCircleRelationshipName(String secondDegreeCircleRelationshipName) {
 		this.secondDegreeCircleRelationshipName = secondDegreeCircleRelationshipName;
+	}
+
+	public String getLastAssigneeId() {
+		return lastAssigneeId;
+	}
+
+	public void setLastAssigneeId(String lastAssigneeId) {
+		this.lastAssigneeId = lastAssigneeId;
+	}
+
+	public String getLastAssigneeName() {
+		return lastAssigneeName;
+	}
+
+	public void setLastAssigneeName(String lastAssigneeName) {
+		this.lastAssigneeName = lastAssigneeName;
+	}
+
+	public int getTypeOfChangeOriginal() {
+		return typeOfChangeOriginal;
+	}
+
+	public void setTypeOfChangeOriginal(int typeOfChangeOriginal) {
+		this.typeOfChangeOriginal = typeOfChangeOriginal;
+	}
+
+	public String getTypeOfChangeDescriptionOriginal() {
+		return typeOfChangeDescriptionOriginal;
+	}
+
+	public void setTypeOfChangeDescriptionOriginal(String typeOfChangeDescriptionOriginal) {
+		this.typeOfChangeDescriptionOriginal = typeOfChangeDescriptionOriginal;
+	}
+
+	public String getParentCircle() {
+		return parentCircle;
+	}
+
+	public void setParentCircle(String parentCircle) {
+		this.parentCircle = parentCircle;
+	}
+
+	public String getChildId() {
+		return childId;
+	}
+
+	public void setChildId(String childId) {
+		this.childId = childId;
+	}
+
+	public String getChildName() {
+		return childName;
+	}
+
+	public void setChildName(String childName) {
+		this.childName = childName;
+	}
+
+	public String getGrandChildId() {
+		return grandChildId;
+	}
+
+	public void setGrandChildId(String grandChildId) {
+		this.grandChildId = grandChildId;
+	}
+
+	public String getGrandChildName() {
+		return grandChildName;
+	}
+
+	public void setGrandChildName(String grandChildName) {
+		this.grandChildName = grandChildName;
+	}
+
+	public void setSubtask(boolean isSubtask) {
+		this.isSubtask = isSubtask;
 	}
 
 	/**
@@ -640,7 +736,7 @@ public class StructuralDataChange implements Comparable<StructuralDataChange> {
 	}
 
 	public void setProjectName(String projectName) {
-		this.projectName = projectName;
+		this.projectName = projectName.trim();
 	}
 
 	public void setRawDataText(String rawDataText) {
@@ -736,10 +832,10 @@ public class StructuralDataChange implements Comparable<StructuralDataChange> {
 		this.taskTags = taskTags;
 	}
 	public void setTypeOfChange(int typeOfChange) {
-		this.typeOfChange = typeOfChange;
+		this.typeOfChangeOriginal = typeOfChange;
 	}
 	public void setTypeOfChangeDescription(String typeOfChangeDescription) {
-		this.typeOfChangeDescription = typeOfChangeDescription;
+		this.typeOfChangeDescriptionOriginal = typeOfChangeDescription;
 	}
 	public void setWorkspaceId(String workspaceId) {
 		this.workspaceId = workspaceId;
@@ -902,9 +998,13 @@ public class StructuralDataChange implements Comparable<StructuralDataChange> {
 				"parentTaskId",
 				"taskName",
 				"rawDataText",
+				"dynamicHierarchy",
+				"dynamicParentName",
 				"messageType",
-				"typeOfChange",
-				"typeOfChangeDescription",
+				"typeOfChangeOrignal",
+				"typeOfChangeDescriptionOriginal",
+				"typeOfChangeNew",
+				"typeOfChangeDescriptionNew",
 				"taskCreatedAt", 
 				"createdByName",
 				"projectName",
@@ -929,7 +1029,11 @@ public class StructuralDataChange implements Comparable<StructuralDataChange> {
 				"accordingToCircle",
 				"secondDegreeCircleRelationshipId",
 				"secondDegreeCircleRelationshipName",
-				"roleType"
+				"roleType",
+				"grandChildId",
+				"childId",
+				"grandChildName",
+				"childName"
 		};
 	}
 
@@ -943,29 +1047,29 @@ public class StructuralDataChange implements Comparable<StructuralDataChange> {
 			timestamp+="00";
 		sdc.storyCreatedAt = LocalDateTime.parse(timestamp, formatter);
 		sdc.createdAt = LocalDateTime.parse(timestamp, formatter);
-		sdc.taskId = row[1];	
-		sdc.parentTaskId = row[2];
-		sdc.taskName = row[3];
-		sdc.rawDataText = row[4];
-		sdc.messageType = row[5];
-		sdc.typeOfChange = Integer.parseInt(row[6]);
-		sdc.typeOfChangeDescription = row[7];
+		sdc.taskId = row[1].trim();	
+		sdc.parentTaskId = row[2].trim();
+		sdc.taskName = row[3].trim();
+		sdc.rawDataText = row[4].trim();
+		sdc.messageType = row[5].trim();
+		sdc.typeOfChangeOriginal = Integer.parseInt(row[6]);
+		sdc.typeOfChangeDescriptionOriginal = row[7];
 		sdc.isRole = Boolean.parseBoolean(row[8]);
 		sdc.taskCreatedAt = LocalDateTime.parse(timestamp, formatter);
-		sdc.storyCreatedByName = row[10];
-		sdc.projectName = row[11];
+		sdc.storyCreatedByName = row[10].trim();
+		sdc.projectName = row[11].trim();
 		sdc.isCircle = Boolean.parseBoolean(row[12]);
-		sdc.storyCreatedById = row[13];
-		sdc.currentAssignee = row[14];
+		sdc.storyCreatedById = row[13].trim();
+		sdc.currentAssignee = row[14].trim();
 		sdc.lastAssigneeId = row[15];
 		sdc.lastAssigneeName = row[16];
 		sdc.storyId = row[17];
-		sdc.projectId = row[18];				
+		sdc.projectId = row[18].trim();				
 		sdc.workspaceId = row[19];
 		sdc.workspaceName = row[20];
 		sdc.isSubtask = Boolean.parseBoolean(row[21]);
 		sdc.isRenderedAsSeparator = Boolean.parseBoolean(row[22]);
-		sdc.parentTaskName = row[23];
+		sdc.parentTaskName = row[23].trim();
 		sdc.taskCompletedAt = (!row[26].equals(""))? parseDateTime(row[26]):null;
 		sdc.taskModifiedAt = parseDateTime(row[27]);
 		sdc.taskNotes = row[28];
@@ -976,7 +1080,7 @@ public class StructuralDataChange implements Comparable<StructuralDataChange> {
 			sdc.setCircleIds(row[30]);
 		}
 		if(row.length>=34)
-			sdc.setAccordingToCircle(row[33]);
+			sdc.setAccordingToCircle(row[33].trim());
 
 		return sdc;
 	}
@@ -1055,8 +1159,8 @@ public class StructuralDataChange implements Comparable<StructuralDataChange> {
 		dataChange.isCircle = isCircle(task.name);
 		dataChange.rawDataText = story.text;
 		dataChange.messageType = story.type;
-		dataChange.typeOfChange = dataChange.typeOfChangeFromCodingScheme(story.text, dataChange.messageType);
-		dataChange.typeOfChangeDescription = AsanaActions.codeToString(dataChange.typeOfChange);
+		dataChange.typeOfChangeOriginal = dataChange.typeOfChangeFromCodingScheme(story.text, dataChange.messageType);
+		dataChange.typeOfChangeDescriptionOriginal = AsanaActions.codeToString(dataChange.typeOfChangeOriginal);
 		if(story.resourceSubtype.equals("assigned")) {
 			String assignee = dataChange.parseAssignee(story.text);
 			if(assignee!= null && assignee.equals("you"))
@@ -1122,8 +1226,10 @@ public class StructuralDataChange implements Comparable<StructuralDataChange> {
 		sdc.parentTaskId = this.parentTaskId + "";
 		sdc.taskNotes = this.taskNotes + "";
 		sdc.taskTags = this.taskTags + "";
-		sdc.typeOfChange = this.typeOfChange;
-		sdc.typeOfChangeDescription = this.typeOfChangeDescription + "";
+		sdc.typeOfChangeOriginal = this.typeOfChangeOriginal;
+		sdc.typeOfChangeDescriptionOriginal = this.typeOfChangeDescriptionOriginal + "";
+		sdc.typeOfChangeNew = this.typeOfChangeNew;
+		sdc.typeOfChangeDescriptionNew = this.typeOfChangeDescriptionNew;
 		sdc.isCircle = this.isCircle;
 		sdc.migration = this.migration;
 		sdc.isRenderedAsSeparator = this.isRenderedAsSeparator;
@@ -1132,6 +1238,12 @@ public class StructuralDataChange implements Comparable<StructuralDataChange> {
 		sdc.parentCircle = this.parentCircle + "";
 		sdc.roleType = this.roleType + "";
 		sdc.setEventId(this.getEventId());
+		sdc.setDynamicHierarchy(this.getDynamicHierarchy());
+		sdc.setDynamicParentName(this.getDynamicParentName());
+		sdc.setChildId(this.childId);
+		sdc.setChildName(this.childName);
+		sdc.setGrandChildId(this.grandChildId);
+		sdc.setGrandChildName(this.grandChildName);
 		return sdc;
 	}
 
@@ -1157,8 +1269,7 @@ public class StructuralDataChange implements Comparable<StructuralDataChange> {
 		StructuralDataChange sdc = (StructuralDataChange) obj; 
 
 		return this.storyCreatedAt.equals(sdc.storyCreatedAt) && this.taskId.equals(sdc.taskId) 
-				&& this.typeOfChange == sdc.typeOfChange
-				;
+				&& this.typeOfChangeOriginal == sdc.typeOfChangeOriginal;
 	}
 
 	public static StructuralDataChange createDerivedEvent(Task task, Project project, Workspace workspace,
@@ -1183,6 +1294,7 @@ public class StructuralDataChange implements Comparable<StructuralDataChange> {
 				"rawDataText",
 				"hierarchy",
 				"parentNameDerived",
+				"roleType",
 				"messageType",
 				"typeOfChange",
 				"typeOfChangeDescription",
@@ -1220,9 +1332,10 @@ public class StructuralDataChange implements Comparable<StructuralDataChange> {
 					rawDataText,
 					dynamicHierarchy,
 					dynamicParentName,
+					roleType,
 					messageType,
-					typeOfChange+"",
-					typeOfChangeDescription,
+					typeOfChangeOriginal+"",
+					typeOfChangeDescriptionOriginal,
 					isRole+"",
 					taskCreatedAt.toString(),
 					(storyCreatedByName==null)? "":storyCreatedByName,				
@@ -1245,6 +1358,22 @@ public class StructuralDataChange implements Comparable<StructuralDataChange> {
 							((taskModifiedAt != null)? taskModifiedAt.toString(): ""),
 							taskNotes
 			};
+	}
+
+	public int getTypeOfChangeNew() {
+		return typeOfChangeNew;
+	}
+
+	public void setTypeOfChangeNew(int typeOfChangeNew) {
+		this.typeOfChangeNew = typeOfChangeNew;
+	}
+
+	public String getTypeOfChangeDescriptionNew() {
+		return typeOfChangeDescriptionNew;
+	}
+
+	public void setTypeOfChangeDescriptionNew(String typeOfChangeDescriptionNew) {
+		this.typeOfChangeDescriptionNew = typeOfChangeDescriptionNew;
 	}
 
 

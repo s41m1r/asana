@@ -66,9 +66,9 @@ public class ExtractAllProjects {
 			}
 		}
 
-		System.out.println("Workspace id:"+workspace.id+ " name:"+ workspace.name);
+		System.out.println("Workspace id:"+workspace.gid+ " name:"+ workspace.name);
 
-		Iterable<Project> projects = client.projects.findByWorkspace(workspace.id);
+		Iterable<Project> projects = client.projects.findByWorkspace(workspace.gid);
 		String filename = cmd.getOptionValue("csv");
 		CSVWriter writer = null;
 		try {
@@ -95,7 +95,7 @@ public class ExtractAllProjects {
 
 			for (Project project : projects) {
 				String[] row = getCSVRow(
-						project.id,
+						project.gid,
 						project.color,
 						project.createdAt,
 						project.customFieldSettings,
@@ -111,7 +111,7 @@ public class ExtractAllProjects {
 						project.workspace
 						);
 				
-				System.out.println(project.id+" "+project.name);
+				System.out.println(project.gid+" "+project.name);
 				writer.writeNext(row);
 			}
 			
@@ -245,8 +245,8 @@ public class ExtractAllProjects {
 		result[9] = name+"";
 		result[10] = notes+"";
 		result[11] = toStringUser(owner);
-		result[12] = (team==null)? null : "["+ team.id+"—"+team.name+"]";
-		result[13] = (workspace==null)? null : "["+ workspace.id+"—"+workspace.name+"]";
+		result[12] = (team==null)? null : "["+ team.gid+"—"+team.name+"]";
+		result[13] = (workspace==null)? null : "["+ workspace.gid+"—"+workspace.name+"]";
 				
 		return result;
 	}
@@ -254,7 +254,7 @@ public class ExtractAllProjects {
 	private static String toStringUser(User owner) {
 		if(owner == null)
 			return null;
-		return "["+ owner.id+"—"+owner.name+"]";
+		return "["+ owner.gid+"—"+owner.name+"]";
 	}
 
 	private static String toStringUsersColletion(Collection<User> followers) {
@@ -266,7 +266,7 @@ public class ExtractAllProjects {
 		for (User user : followers) {
 			if(user == null)
 				return null;
-			res += user.id + sep + user.name;
+			res += user.gid + sep + user.name;
 			res += seprow;
 		}
 		return res+"]";
@@ -281,7 +281,7 @@ public class ExtractAllProjects {
 		for (CustomFieldSetting customFieldSetting : customFieldSettings) {
 			if(customFieldSetting==null)
 				return null;
-			res += customFieldSetting.id + sep + customFieldSetting.isImportant;
+			res += customFieldSetting.gid + sep + customFieldSetting.isImportant;
 			res += seprow;
 		}
 		return res+"]";
