@@ -42,10 +42,10 @@ public class GenerateWeeklyCountsByCircle {
 		Instant start = Instant.now();
 		String outFile = "circlesWKCounts.csv";
 				
-		Map<String, List<StructuralDataChange>> weeklyChanges = ReadFromDB.getWeeklyChanges("asana_manual6");
+		Map<String, List<StructuralDataChange>> weeklyChanges = ReadFromDB.getWeeklyChanges("asana_manual901");
 		CirclesLives circlesLives = new CirclesLives();
 		circlesLives.init();
-		
+				
 		weeklyChanges = cutFromBirthOn(weeklyChanges, circlesLives.firstBirthday());
 		
 		System.out.println("Before: "+GeneralUtils.countEntriesMap(weeklyChanges));
@@ -55,7 +55,7 @@ public class GenerateWeeklyCountsByCircle {
 		List<TimePeriodOveralls> wkOveralls = GenerateOverallCountsMonthly.getOverallCount(weeklyChanges);
 		//		
 		PrintoutUtils.writeOverallsToCSV(wkOveralls, "wkOveralls.csv", "week");
-
+		
 		Map<String, List<CircleCountsWeekly>> circlesWeeklyCounts = getCircleCountsByWeek(weeklyChanges);
 		Map<String, List<CircleCountsWeekly>> filteredCirclesWeeklyCounts = filterWeeklyCountsByCircleLives(circlesWeeklyCounts, circlesLives);
 		

@@ -91,6 +91,28 @@ public abstract class WriteUtils {
 			e.printStackTrace();
 		}
 	}
+	
+	public static void writeMappeToCSV(List<StructuralDataChange> taskChanges, String csv) {
+		PrintWriter rolesFileWriter;
+		try {
+			rolesFileWriter = new PrintWriter(
+					new OutputStreamWriter(
+							new FileOutputStream(csv), StandardCharsets.UTF_8));
+
+			CSVWriter csvWriter = new CSVWriter(rolesFileWriter);
+			String[] header = StructuralDataChange.csvHeaderMappe1();
+			csvWriter.writeNext(header);
+			for (StructuralDataChange change : taskChanges) {
+				csvWriter.writeNext(change.csvRowMappe1());
+			}
+			csvWriter.flush();
+			csvWriter.close();
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
 
 	public static void writeMapOfChangesWithCircleToCSV(Map<String, List<StructuralDataChange>> taskChanges, String csv) {
 		PrintWriter rolesFileWriter;

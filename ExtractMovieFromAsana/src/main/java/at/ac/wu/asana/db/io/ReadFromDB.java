@@ -10,7 +10,6 @@ import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 
 import at.ac.wu.asana.db.utils.DatabaseConnector;
-import at.ac.wu.asana.model.CirclesLives;
 import at.ac.wu.asana.model.StructuralDataChange;
 import at.ac.wu.asana.util.GeneralUtils;
 
@@ -47,9 +46,10 @@ public abstract class ReadFromDB {
 	public static Map<String, List<StructuralDataChange>> getWeeklyChanges(String dbname) {
 		Map<String, List<StructuralDataChange>> wkChanges = new LinkedHashMap<String, List<StructuralDataChange>>();
 	
-		String queryAllYM = "SELECT * FROM `ayw` ORDER BY `yw`";
+		String queryAllYW = "SELECT DISTINCT YEARWEEK(`timestamp`,'1') as yw FROM SpringestWithCircle ORDER BY yw";
+		
 	
-		List<String> allYM = readAllTimePeriod("asana_manual5", queryAllYM);
+		List<String> allYM = readAllTimePeriod("asana_manual901", queryAllYW);
 	
 		String queryAllInYM = "SELECT * FROM `SpringestWithCircle` "
 				+ "WHERE YEARWEEK(`timestamp`,'1') =:ym "
@@ -162,7 +162,7 @@ public abstract class ReadFromDB {
 		for (Object e : results) {
 			Object[] row = (Object[]) e;
 			String[] str = GeneralUtils.toStrObjArray(row);
-			StructuralDataChange sdc = StructuralDataChange.fromString(str);
+			StructuralDataChange sdc = StructuralDataChange.fromDBString(str);
 			allEvents.add(sdc);
 		}
 
@@ -185,7 +185,7 @@ public abstract class ReadFromDB {
 		for (Object e : results) {
 			Object[] row = (Object[]) e;
 			String[] str = GeneralUtils.toStrObjArray(row);
-			StructuralDataChange sdc = StructuralDataChange.fromString(str);
+			StructuralDataChange sdc = StructuralDataChange.fromDBString(str);
 			allEvents.add(sdc);
 		}
 

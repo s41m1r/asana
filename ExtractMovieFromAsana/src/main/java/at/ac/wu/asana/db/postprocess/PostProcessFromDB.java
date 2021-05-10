@@ -103,13 +103,10 @@ public class PostProcessFromDB {
 		List<String> downgradedRolesEvents = getIdsOfChildrenOlderThanFather(allParents,allChildren);		
 
 		fixDowngradedRoles(allParents, allChildren, downgradedRolesEvents);	
-//		setRoleType(allChildren);
-//		setRoleType(allParents);
 		setRoleType(all);
 		setAliveStatus(all);
 		Set<String> forceToChild = getListOfTasksForcedToChild();
 		setDynamicHierarchy(all, allOrphanIds, forceToChild);
-		//		fillDownDynamicHierarchy(all);
 
 		setDynamicHierarchyDuplicated(all, forceToChild);
 
@@ -153,8 +150,6 @@ public class PostProcessFromDB {
 		WriteUtils.writeList(new ArrayList<String[]>(m), "/home/saimir/ownCloud/PhD/Collaborations/" + 
 				"Waldemar/Springest/Data/Data Extracted from DB/Dataset with Manually Extracted Users/" + 
 				"testing/matched-tasks"+VERSION+".csv");
-		
-//		fixParentNames(allChildren,dictionary);
 			
 		Map<String,List<StructuralDataChange>> allEvents = dynamicChildToParent(all);
 
@@ -193,7 +188,9 @@ public class PostProcessFromDB {
 		//		printHistoryOfTask("11555199602323", allEventsNoDup);
 		
 		String outfile = "Springest-filtered.csv";
-		WriteUtils.writeListOfChangesWithCircleToCSV(uniqueEvents, outfile);
+//		WriteUtils.writeListOfChangesWithCircleToCSV(uniqueEvents, outfile);
+		
+		WriteUtils.writeMappeToCSV(uniqueEvents, outfile);
 
 		//		WriteUtils.writeMapOfChangesWithCircleToCSV2(allEventsNoDup, outfile);
 
@@ -2226,7 +2223,7 @@ public class PostProcessFromDB {
 
 	private static Map<String, List<StructuralDataChange>> getFromDB(String sql,
 			Map<String, List<StructuralDataChange>> parents) {
-		List<StructuralDataChange> events = ReadFromDB.readFromDBNoSort("asana_manual900", sql);
+		List<StructuralDataChange> events = ReadFromDB.readFromDBNoSort("asana_manual901", sql);
 
 		for (StructuralDataChange sdc : events) {
 			if(parents.containsKey(sdc.getTaskId())) {

@@ -307,6 +307,45 @@ public class StructuralDataChange implements Comparable<StructuralDataChange> {
 				aliveStatus
 		};
 	}
+	
+	public String[] csvRowMappe1(){
+		return new String[]{ 
+				Timestamp.valueOf(storyCreatedAt).toString(),
+				taskId,
+				childId,
+				grandChildId,
+				taskName,
+				rawDataText,
+				(typeOfChangeDescriptionNew==null || typeOfChangeDescriptionNew.isEmpty())?"":typeOfChangeNew+"",
+				typeOfChangeDescriptionNew,
+				typeOfChangeOriginal+"",
+				typeOfChangeDescriptionOriginal,
+				(storyCreatedByName==null)? "":storyCreatedByName,				
+				storyCreatedById,
+				currentAssignee,
+				childName,
+				grandChildName,
+				circle,
+				circleIds,
+				aliveStatus,
+				messageType,
+				storyCreatedAt.toLocalDate().toString(),
+				storyCreatedAt.toLocalTime().toString(),
+				((taskCompletedAt!= null)? taskCompletedAt.toString():""),
+				((taskModifiedAt != null)? taskModifiedAt.toString(): ""),
+				taskNotes,
+				parentCircle,
+				accordingToCircle,
+				secondDegreeCircleRelationshipId,
+				secondDegreeCircleRelationshipName,
+				roleType,
+				storyId,
+				projectId,
+				workspaceId,
+				workspaceName,
+				projectName	
+		};
+	}
 
 	private String extractTaskTags(Collection<Tag> tags) {
 		String res = "";
@@ -993,6 +1032,47 @@ public class StructuralDataChange implements Comparable<StructuralDataChange> {
 				"accordingToCircle"
 		};
 	}
+	
+	public static String[] csvHeaderMappe1() {
+		return new String[] {
+				"timestamp",
+				"taskId",
+				"childID",
+				"grandChildID",
+				"taskName",
+				"rawDataText",
+				"typeOfChangeNew",
+				"typeOfChangeDescriptionNew",
+				"typeOfChangeOrignal",
+				"typeOfChangeDescriptionOriginal",
+				"createdByName",
+				"createdById",
+				"currentAssignee",
+				"childName",
+				"grandChildName",
+				"circles",
+				"circleIds",
+				"aliveStatus",
+				"messageType",
+				"date",
+				"time",
+				"taskCompletedAt",
+				"taskModifiedAt",
+				"taskNotes",
+				"parentCircle",
+				"accordingToCircle",
+				"secondDegreeCircleRelationshipId",
+				"secondDegreeCircleRelationshipName",
+				"roleType",
+				"eventId",
+				"projectId",
+				"workspaceId",
+				"workspaceName",
+				"projectName"	
+		};
+	}
+	
+	
 
 	public static String[] csvHeaderCircleSecondDegree(){
 		return new String[]{
@@ -1089,6 +1169,63 @@ public class StructuralDataChange implements Comparable<StructuralDataChange> {
 
 		return sdc;
 	}
+	
+	public static StructuralDataChange fromDBString(String[] row){
+		StructuralDataChange sdc = new StructuralDataChange();
+		DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS");
+		String timestamp = row[0];
+		if(row[0].length()==22)
+			timestamp+="0";
+		if(row[0].length()==21)
+			timestamp+="00";
+		sdc.storyCreatedAt = LocalDateTime.parse(timestamp, formatter);
+		sdc.createdAt = LocalDateTime.parse(timestamp, formatter);
+		sdc.taskId = row[1].trim();	
+		sdc.parentTaskId = row[2].trim();
+		sdc.taskName = row[3].trim();
+		sdc.rawDataText = row[4].trim();
+		sdc.dynamicHierarchy = row[5].trim();
+		sdc.dynamicParentName = row[6].trim();
+		sdc.messageType = row[7].trim();
+		sdc.typeOfChangeOriginal = Integer.parseInt(row[8]);
+		sdc.typeOfChangeDescriptionOriginal = row[9];
+		sdc.typeOfChangeNew = Integer.parseInt(row[10]);
+		sdc.typeOfChangeDescriptionNew = row[11];
+		sdc.taskCreatedAt = LocalDateTime.parse(row[12].replace(" ","T").trim());
+		sdc.storyCreatedByName = row[13].trim();
+		sdc.projectName = row[14].trim();
+		sdc.storyCreatedById = row[15].trim();
+		sdc.currentAssignee = row[16].trim();
+		sdc.lastAssigneeId = row[17].trim();
+		sdc.lastAssigneeName = row[18].trim();
+		sdc.storyId = row[19];
+		sdc.projectId = row[20].trim();				
+		sdc.workspaceId = row[21];
+		sdc.workspaceName = row[22];
+		sdc.parentTaskName = row[23].trim();
+		sdc.taskCompletedAt = (!row[26].equals(""))? parseDateTime(row[26]):null;
+		sdc.taskModifiedAt = parseDateTime(row[27]);
+		sdc.taskNotes = row[28];
+
+		if(row.length>29) {
+			//			System.out.println("Here length="+row.length);
+			sdc.setCircle(row[29]);
+			sdc.setCircleIds(row[30]);
+		}
+		if(row.length>=34) {
+			sdc.setAccordingToCircle(row[32].trim());
+			sdc.setSecondDegreeCircleRelationshipId(row[33].trim());
+			sdc.setSecondDegreeCircleRelationshipName(row[34].trim());
+			sdc.setRoleType(row[35].trim());
+			sdc.setGrandChildId(row[36].trim());
+			sdc.setChildId(row[37].trim());
+			sdc.setGrandChildName(row[38].trim());
+			sdc.setChildName(row[39].trim());
+		}
+
+		return sdc;
+	}
+
 
 	private static LocalDateTime parseDateTime(String string) {
 		DateTimeFormatter formatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME;
@@ -1345,24 +1482,24 @@ public class StructuralDataChange implements Comparable<StructuralDataChange> {
 					isRole+"",
 					taskCreatedAt.toString(),
 					(storyCreatedByName==null)? "":storyCreatedByName,				
-							projectName,
-							isCircle+"",
-							storyCreatedById,
-							currentAssignee,
-							lastAssigneeId,
-							lastAssigneeName,
-							storyId,
-							projectId,				
-							workspaceId,
-							workspaceName,
-							isSubtask+"",
-							isRenderedAsSeparator+"",
-							parentTaskName,
-							storyCreatedAt.toLocalDate().toString(),
-							storyCreatedAt.toLocalTime().toString(),
-							((taskCompletedAt!= null)? taskCompletedAt.toString():""),
-							((taskModifiedAt != null)? taskModifiedAt.toString(): ""),
-							taskNotes
+					projectName,
+					isCircle+"",
+					storyCreatedById,
+					currentAssignee,
+					lastAssigneeId,
+					lastAssigneeName,
+					storyId,
+					projectId,				
+					workspaceId,
+					workspaceName,
+					isSubtask+"",
+					isRenderedAsSeparator+"",
+					parentTaskName,
+					storyCreatedAt.toLocalDate().toString(),
+					storyCreatedAt.toLocalTime().toString(),
+					((taskCompletedAt!= null)? taskCompletedAt.toString():""),
+					((taskModifiedAt != null)? taskModifiedAt.toString(): ""),
+					taskNotes
 			};
 	}
 
