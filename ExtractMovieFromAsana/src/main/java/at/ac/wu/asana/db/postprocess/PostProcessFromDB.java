@@ -180,6 +180,8 @@ public class PostProcessFromDB {
 
 		fixChangeRoleName(uniqueEvents);
 		addCompletedEvent(uniqueEvents);
+		
+		fillTypeOfChangeNew(uniqueEvents);
 
 		String circleEvents = "/home/saimir/ownCloud/PhD/Collaborations/Waldemar/Springest/Data/Data Extracted from DB/circleDependencies/"
 				+ "circleParents-3.csv";
@@ -188,9 +190,9 @@ public class PostProcessFromDB {
 		//		printHistoryOfTask("11555199602323", allEventsNoDup);
 		
 		String outfile = "Springest-filtered.csv";
-//		WriteUtils.writeListOfChangesWithCircleToCSV(uniqueEvents, outfile);
+		WriteUtils.writeListOfChangesWithCircleToCSV(uniqueEvents, outfile);
 		
-		WriteUtils.writeMappeToCSV(uniqueEvents, outfile);
+//		WriteUtils.writeMappeToCSV(uniqueEvents, outfile.replace("filtered", "Mappe1"));
 
 		//		WriteUtils.writeMapOfChangesWithCircleToCSV2(allEventsNoDup, outfile);
 
@@ -198,6 +200,13 @@ public class PostProcessFromDB {
 
 		System.out.println("Done in "+(System.currentTimeMillis()-start)/1000+" sec.");
 		System.out.println("Wrote on file "+outfile);
+	}
+
+	private static void fillTypeOfChangeNew(List<StructuralDataChange> uniqueEvents) {
+		uniqueEvents.stream().filter(e -> e.getTypeOfChangeDescriptionNew()==null).forEach(e -> {
+			e.setTypeOfChangeDescriptionNew(e.getTypeOfChangeDescriptionOriginal());
+			e.setTypeOfChangeNew(e.getTypeOfChangeOriginal());
+		});
 	}
 
 	private static void setAliveStatus(Map<String, List<StructuralDataChange>> all) {
@@ -2223,7 +2232,7 @@ public class PostProcessFromDB {
 
 	private static Map<String, List<StructuralDataChange>> getFromDB(String sql,
 			Map<String, List<StructuralDataChange>> parents) {
-		List<StructuralDataChange> events = ReadFromDB.readFromDBNoSort("asana_manual901", sql);
+		List<StructuralDataChange> events = ReadFromDB.readFromDBNoSortSimple("asana_manual901", sql);
 
 		for (StructuralDataChange sdc : events) {
 			if(parents.containsKey(sdc.getTaskId())) {

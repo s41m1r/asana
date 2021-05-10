@@ -55,10 +55,10 @@ public abstract class WriteUtils {
 
 				CSVWriter csvWriter = new CSVWriter(rolesFileWriter);
 				
-				csvWriter.writeNext(StructuralDataChange.csvHeaderCircle());
+				csvWriter.writeNext(StructuralDataChange.csvHeaderCircleSecondDegree());
 				for (StructuralDataChange change : taskChanges) {
 					change.setAccordingToCircle(circleName);
-					csvWriter.writeNext(change.csvRowCircle());
+					csvWriter.writeNext(change.csvRowCircleSecondDegree());
 				}
 				csvWriter.flush();
 				csvWriter.close();

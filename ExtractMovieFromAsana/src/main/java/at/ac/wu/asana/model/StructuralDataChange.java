@@ -1118,7 +1118,6 @@ public class StructuralDataChange implements Comparable<StructuralDataChange> {
 				"grandChildName",
 				"childName",
 				"aliveStatus"
-				
 		};
 	}
 
@@ -1221,6 +1220,7 @@ public class StructuralDataChange implements Comparable<StructuralDataChange> {
 			sdc.setChildId(row[37].trim());
 			sdc.setGrandChildName(row[38].trim());
 			sdc.setChildName(row[39].trim());
+			sdc.setAliveStatus(row[40].trim());
 		}
 
 		return sdc;
