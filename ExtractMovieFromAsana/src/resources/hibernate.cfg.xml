@@ -3,25 +3,26 @@
 "-//Hibernate/Hibernate Configuration DTD 3.0//EN"
 "http://hibernate.sourceforge.net/hibernate-configuration-3.0.dtd">
 <hibernate-configuration>
- <session-factory>
-  <property name="hibernate.connection.driver_class">com.mysql.jdbc.Driver</property>
-<!--   <property name="hibernate.connection.url">jdbc:mysql://localhost:3306/asana</property> -->
-  <property name="hibernate.connection.username">pmuser</property>
-  <property name="hibernate.connection.password">pmpass</property>
-  <property name="hibernate.dialect">org.hibernate.dialect.MySQLDialect</property>
-  <!--  property name="hibernate.default_schema">jabref</property> -->
-  <property name="show_sql">false</property>
-  <property name="hibernate.check_nullability">false</property>
-  <property name="hibernate.hbm2ddl.auto">update</property>
-  <property name="hibernate.jdbc.batch_size">100000</property>
-  <property name="connection.pool_size">1</property>
-  <!-- <property name="hibernate.cache.use_second_level_cache">false</property> -->
-<!--
-  <mapping resource="com/mkyong/user/DBUser.hbm.xml"></mapping>
--->
-  <mapping class="at.ac.wu.asana.db.model.Project"></mapping>
-  <mapping class="at.ac.wu.asana.db.model.Story"></mapping>
-  <mapping class="at.ac.wu.asana.db.model.Task"></mapping>
-    
-</session-factory>
+	<session-factory>
+		<property name="hibernate.connection.driver_class">com.mysql.jdbc.Driver</property>
+		<!-- <property name="hibernate.connection.url">jdbc:mysql://localhost:3306/asana</property> -->
+		<property name="hibernate.connection.username">pmuser</property>
+		<property name="hibernate.connection.password">pmpass</property>
+		<property name="hibernate.dialect">org.hibernate.dialect.MySQLDialect</property>
+		<!-- property name="hibernate.default_schema">jabref</property> -->
+		<property name="hibernate.connection.CharSet">utf8</property>
+		<property name="hibernate.connection.characterEncoding">utf8</property>
+		<property name="hibernate.connection.useUnicode">true</property>
+		<property name="show_sql">false</property>
+		<property name="hibernate.check_nullability">false</property>
+		<property name="hibernate.hbm2ddl.auto">update</property>
+		<property name="hibernate.jdbc.batch_size">100000</property>
+		<property name="connection.pool_size">1</property>
+		<!-- <property name="hibernate.cache.use_second_level_cache">false</property> -->
+		<!-- <mapping resource="com/mkyong/user/DBUser.hbm.xml"></mapping> -->
+		<mapping class="at.ac.wu.asana.db.model.Project"></mapping>
+		<mapping class="at.ac.wu.asana.db.model.Story"></mapping>
+		<mapping class="at.ac.wu.asana.db.model.Task"></mapping>
+
+	</session-factory>
 </hibernate-configuration>

@@ -27,13 +27,14 @@ public class AsanaActions {
 	public static final int CHANGE_ACCOUNTABILITY_PURPOSE = 1;
 	public static final int ADD_SUB_ROLE = 11;
 	public static final int CHANGE_SUB_ROLE = 111;
+	public static final int REMOVE_SUB_ROLE = 112;
 	public static final int ASSIGN_TO_ACTOR = 2;
 	public static final int UNASSIGN_FROM_ACTOR = 3;
 	public static final int ADD_TO_CIRCLE = 4;
 	public static final int REMOVE_FROM_CIRCLE = 5;
 	public static final int COMMENT = 6;
 	public static final int DETELE_OR_MARK_COMPLETE = 7;
-	public static final int REVIVE_OR_MARK_INCOMPLETE =8;
+	public static final int REVIVE_OR_MARK_INCOMPLETE = 8;
 	public static final int CHANGE_NAME_OF_ROLE = 9;
 	public static final int IGNORE_OR_DELETE = 0;
 	public static final int UNCLEAR_OR_CONFLICT_WITH_CODEBOOK = 99;
@@ -120,6 +121,9 @@ public class AsanaActions {
 			break;
 		case DELETE_CIRCLE:
 			res = "DELETE_CIRCLE";
+			break;
+		case REMOVE_SUB_ROLE:
+			res = "REMOVE_SUB_ROLE";
 			break;
 		default:
 			break;

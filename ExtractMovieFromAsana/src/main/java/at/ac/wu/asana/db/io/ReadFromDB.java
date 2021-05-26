@@ -1,5 +1,6 @@
 package at.ac.wu.asana.db.io;
 
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -188,7 +189,7 @@ public abstract class ReadFromDB {
 
 		for (Object e : results) {
 			Object[] row = (Object[]) e;
-			String[] str = GeneralUtils.toStrObjArray(row);
+			String[] str = GeneralUtils.toStrObjArray(row);			
 			StructuralDataChange sdc = StructuralDataChange.fromString(str);
 			allEvents.add(sdc);
 		}

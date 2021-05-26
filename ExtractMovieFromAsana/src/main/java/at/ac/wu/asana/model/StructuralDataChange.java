@@ -1,5 +1,6 @@
 package at.ac.wu.asana.model;
 
+import java.nio.charset.StandardCharsets;
 import java.sql.Timestamp;
 import java.text.DateFormat;
 import java.time.LocalDateTime;
@@ -41,6 +42,7 @@ public class StructuralDataChange implements Comparable<StructuralDataChange> {
 	private String rawDataText;
 	private String messageType;
 	private String currentAssignee;
+	private String currentAssigneeId;
 	private String projectId;
 	private LocalDateTime createdAt;
 	private LocalDateTime modifiedAt;
@@ -82,6 +84,9 @@ public class StructuralDataChange implements Comparable<StructuralDataChange> {
 	private String grandChildName;
 	
 	private String aliveStatus;
+	
+	private String mergedCurrentAssignees;
+	private String mergedCurrentAssigneeIds;
 
 
 	public StructuralDataChange() {
@@ -206,6 +211,7 @@ public class StructuralDataChange implements Comparable<StructuralDataChange> {
 						isCircle+"",
 						storyCreatedById,
 						currentAssignee,
+						currentAssigneeId,
 						lastAssigneeId,
 						lastAssigneeName,
 						storyId,
@@ -240,6 +246,7 @@ public class StructuralDataChange implements Comparable<StructuralDataChange> {
 				isCircle+"",
 				storyCreatedById,
 				currentAssignee,
+				currentAssigneeId,
 				lastAssigneeId,
 				lastAssigneeName,
 				storyId,
@@ -280,7 +287,10 @@ public class StructuralDataChange implements Comparable<StructuralDataChange> {
 				storyCreatedByName,				
 				projectName,
 				storyCreatedById,
+				mergedCurrentAssigneeIds,
+				mergedCurrentAssignees,
 				currentAssignee,
+				((currentAssigneeId==null)? "": currentAssigneeId),
 				lastAssigneeId,
 				lastAssigneeName,
 				storyId,
@@ -323,6 +333,9 @@ public class StructuralDataChange implements Comparable<StructuralDataChange> {
 				(storyCreatedByName==null)? "":storyCreatedByName,				
 				storyCreatedById,
 				currentAssignee,
+				(currentAssigneeId==null)? "": currentAssigneeId,
+				mergedCurrentAssigneeIds+"",
+				mergedCurrentAssignees+"",
 				childName,
 				grandChildName,
 				circle,
@@ -670,6 +683,14 @@ public class StructuralDataChange implements Comparable<StructuralDataChange> {
 		}
 		return null;
 	}
+	
+	public String parseUnassigned() {
+		if(this.rawDataText.startsWith("unassigned")){
+			String[] split = this.rawDataText.split("assigned to");
+			return split[1].trim();
+		}
+		return null;
+	}
 
 	public void setAction(String action) {
 		this.action = action;
@@ -975,6 +996,7 @@ public class StructuralDataChange implements Comparable<StructuralDataChange> {
 				"isCircle",
 				"createdById",
 				"currentAssignee",
+				"currentAssigneeId",
 				"lastAssigneeId",
 				"lastAssigneeName",
 				"eventId",
@@ -1009,7 +1031,10 @@ public class StructuralDataChange implements Comparable<StructuralDataChange> {
 				"projectName",
 				"isCircle",
 				"createdById",
+				"mergedCurrentAssigneeIds",
+				"mergedCurrentAssignees",
 				"currentAssignee",
+				"currentAssigneeId",
 				"lastAssigneeId",
 				"lastAssigneeName",
 				"eventId",
@@ -1048,6 +1073,9 @@ public class StructuralDataChange implements Comparable<StructuralDataChange> {
 				"createdByName",
 				"createdById",
 				"currentAssignee",
+				"currentAssigneeId",
+				"mergedCurrentAssignee",
+				"mergedCurrentAssigneeId",
 				"childName",
 				"grandChildName",
 				"circles",
@@ -1092,7 +1120,10 @@ public class StructuralDataChange implements Comparable<StructuralDataChange> {
 				"createdByName",
 				"projectName",
 				"createdById",
+				"mergedCurrentAssigneeIds",
+				"mergedCurrentAssignees",
 				"currentAssignee",
+				"currentAssigneeId",
 				"lastAssigneeId",
 				"lastAssigneeName",
 				"eventId",
@@ -1134,7 +1165,11 @@ public class StructuralDataChange implements Comparable<StructuralDataChange> {
 		sdc.taskId = row[1].trim();	
 		sdc.parentTaskId = row[2].trim();
 		sdc.taskName = row[3].trim();
-		sdc.rawDataText = row[4].trim();
+		
+		byte[] bytes = row[4].trim().getBytes();
+		String rdt = new String(bytes, StandardCharsets.UTF_8);
+		
+		sdc.rawDataText = rdt;
 		sdc.messageType = row[5].trim();
 		sdc.typeOfChangeOriginal = Integer.parseInt(row[6]);
 		sdc.typeOfChangeDescriptionOriginal = row[7];
@@ -1145,6 +1180,7 @@ public class StructuralDataChange implements Comparable<StructuralDataChange> {
 		sdc.isCircle = Boolean.parseBoolean(row[12]);
 		sdc.storyCreatedById = row[13].trim();
 		sdc.currentAssignee = row[14].trim();
+//		sdc.currentAssigneeId = row[15].trim();
 		sdc.lastAssigneeId = row[15];
 		sdc.lastAssigneeName = row[16];
 		sdc.storyId = row[17];
@@ -1160,11 +1196,11 @@ public class StructuralDataChange implements Comparable<StructuralDataChange> {
 
 		if(row.length>29) {
 			//			System.out.println("Here length="+row.length);
-			sdc.setCircle(row[29]);
-			sdc.setCircleIds(row[30]);
+			sdc.setCircle(row[30]);
+			sdc.setCircleIds(row[31]);
 		}
 		if(row.length>=34)
-			sdc.setAccordingToCircle(row[33].trim());
+			sdc.setAccordingToCircle(row[34].trim());
 
 		return sdc;
 	}
@@ -1195,32 +1231,33 @@ public class StructuralDataChange implements Comparable<StructuralDataChange> {
 		sdc.projectName = row[14].trim();
 		sdc.storyCreatedById = row[15].trim();
 		sdc.currentAssignee = row[16].trim();
-		sdc.lastAssigneeId = row[17].trim();
-		sdc.lastAssigneeName = row[18].trim();
-		sdc.storyId = row[19];
-		sdc.projectId = row[20].trim();				
-		sdc.workspaceId = row[21];
-		sdc.workspaceName = row[22];
-		sdc.parentTaskName = row[23].trim();
-		sdc.taskCompletedAt = (!row[26].equals(""))? parseDateTime(row[26]):null;
-		sdc.taskModifiedAt = parseDateTime(row[27]);
-		sdc.taskNotes = row[28];
+		sdc.currentAssigneeId = row[17].trim();
+		sdc.lastAssigneeId = row[18].trim();
+		sdc.lastAssigneeName = row[19].trim();
+		sdc.storyId = row[20];
+		sdc.projectId = row[21].trim();				
+		sdc.workspaceId = row[22];
+		sdc.workspaceName = row[23];
+		sdc.parentTaskName = row[24].trim();
+		sdc.taskCompletedAt = (!row[27].equals(""))? parseDateTime(row[27]):null;
+		sdc.taskModifiedAt = parseDateTime(row[28]);
+		sdc.taskNotes = row[29];
 
-		if(row.length>29) {
+		if(row.length>30) {
 			//			System.out.println("Here length="+row.length);
-			sdc.setCircle(row[29]);
-			sdc.setCircleIds(row[30]);
+			sdc.setCircle(row[30]);
+			sdc.setCircleIds(row[31]);
 		}
 		if(row.length>=34) {
-			sdc.setAccordingToCircle(row[32].trim());
-			sdc.setSecondDegreeCircleRelationshipId(row[33].trim());
-			sdc.setSecondDegreeCircleRelationshipName(row[34].trim());
-			sdc.setRoleType(row[35].trim());
-			sdc.setGrandChildId(row[36].trim());
-			sdc.setChildId(row[37].trim());
-			sdc.setGrandChildName(row[38].trim());
-			sdc.setChildName(row[39].trim());
-			sdc.setAliveStatus(row[40].trim());
+			sdc.setAccordingToCircle(row[33].trim());
+			sdc.setSecondDegreeCircleRelationshipId(row[34].trim());
+			sdc.setSecondDegreeCircleRelationshipName(row[35].trim());
+			sdc.setRoleType(row[36].trim());
+			sdc.setGrandChildId(row[37].trim());
+			sdc.setChildId(row[38].trim());
+			sdc.setGrandChildName(row[39].trim());
+			sdc.setChildName(row[40].trim());
+			sdc.setAliveStatus(row[41].trim());
 		}
 
 		return sdc;
@@ -1357,6 +1394,7 @@ public class StructuralDataChange implements Comparable<StructuralDataChange> {
 		sdc.rawDataText = this.rawDataText +"";
 		sdc.messageType = this.messageType + "";
 		sdc.currentAssignee = this.currentAssignee + "";
+		sdc.currentAssigneeId = this.currentAssigneeId;
 		sdc.projectId = this.projectId + "";
 		sdc.createdAt = LocalDateTime.from(this.createdAt);
 		if(sdc.modifiedAt!=null)
@@ -1448,6 +1486,7 @@ public class StructuralDataChange implements Comparable<StructuralDataChange> {
 				"isCircle",
 				"createdById",
 				"currentAssignee",
+				"currentAssigneeId",
 				"lastAssigneeId",
 				"lastAssigneeName",
 				"eventId",
@@ -1486,6 +1525,7 @@ public class StructuralDataChange implements Comparable<StructuralDataChange> {
 					isCircle+"",
 					storyCreatedById,
 					currentAssignee,
+					currentAssigneeId,
 					lastAssigneeId,
 					lastAssigneeName,
 					storyId,
@@ -1525,6 +1565,30 @@ public class StructuralDataChange implements Comparable<StructuralDataChange> {
 
 	public void setAliveStatus(String aliveStatus) {
 		this.aliveStatus = aliveStatus;
+	}
+
+	public String getCurrentAssigneeId() {
+		return currentAssigneeId;
+	}
+
+	public void setCurrentAssigneeId(String currentAssigneeId) {
+		this.currentAssigneeId = currentAssigneeId;
+	}
+
+	public String getMergedCurrentAssignees() {
+		return mergedCurrentAssignees;
+	}
+
+	public void setMergedCurrentAssignees(String mergedCurrentAssignees) {
+		this.mergedCurrentAssignees = mergedCurrentAssignees;
+	}
+
+	public String getMergedCurrentAssigneeIds() {
+		return mergedCurrentAssigneeIds;
+	}
+
+	public void setMergedCurrentAssigneeIds(String mergedCurrentAssigneeIds) {
+		this.mergedCurrentAssigneeIds = mergedCurrentAssigneeIds;
 	}
 
 

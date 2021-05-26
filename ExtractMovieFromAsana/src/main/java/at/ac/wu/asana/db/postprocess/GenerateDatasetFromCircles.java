@@ -66,7 +66,7 @@ public class GenerateDatasetFromCircles {
 		//		int recordsWritten = WriteUtils.writeMapWithCircleToCsv(dataset, outFile);
 
 		System.out.println("Done in "+Duration.between(startWriting, Instant.now()));
-		//		System.out.println("Records written: "+recordsWritten);
+		System.out.println("Generated files in path: "+path);
 		System.out.println("Total time "+Duration.between(start, Instant.now()));
 
 
