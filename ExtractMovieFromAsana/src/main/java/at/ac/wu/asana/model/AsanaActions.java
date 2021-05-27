@@ -48,6 +48,7 @@ public class AsanaActions {
 	public static final int CREATE_CIRCLE = 19;
 	public static final int DESIGN_CIRCLE = 20;
 	public static final int DELETE_CIRCLE = 21;
+	public static final int IGNORE_EVENT = 990;
 	
 	
 	public static String codeToString(int code){
@@ -124,6 +125,9 @@ public class AsanaActions {
 			break;
 		case REMOVE_SUB_ROLE:
 			res = "REMOVE_SUB_ROLE";
+			break;
+		case IGNORE_EVENT:
+			res = "IGNORE_EVENT";
 			break;
 		default:
 			break;
