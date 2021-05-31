@@ -1,8 +1,11 @@
 package at.ac.wu.asana.csv;
 
+import java.io.BufferedReader;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -13,6 +16,8 @@ import java.util.Map;
 
 import com.google.common.collect.Lists;
 import com.opencsv.CSVReader;
+import com.opencsv.exceptions.CsvException;
+import com.opencsv.exceptions.CsvValidationException;
 
 import at.ac.wu.asana.db.postprocess.datastructures.AuthoritativeList;
 import at.ac.wu.asana.db.postprocess.datastructures.CircleTimeRange;
@@ -34,6 +39,9 @@ public abstract class ReadInfoFromCSV {
 			e.printStackTrace();
 		} catch (IOException e) {
 			e.printStackTrace();
+		} catch (CsvException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		}
 		return map;
 	}
@@ -52,6 +60,9 @@ public abstract class ReadInfoFromCSV {
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
 		} catch (IOException e) {
+			e.printStackTrace();
+		} catch (CsvException e) {
+			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		return res;
@@ -156,25 +167,33 @@ public abstract class ReadInfoFromCSV {
 		List<String> res = new ArrayList<String>();
 		System.out.println("Reading file "+filename);
 		try {
-			CSVReader reader = new CSVReader(new FileReader(filename));
+		    FileInputStream fis = new FileInputStream(filename);
+		    InputStreamReader is = new InputStreamReader(fis);
+			CSVReader reader = new CSVReader(is);
 			reader.readNext(); //skip header
-			List<String[]> allrows = reader.readAll();
-			reader.close();
-			
-			for (String[] row : allrows) {
+	
+			String[] row;
+			while((row = reader.readNext()) !=null) {
 				res.add(row[columnNR].trim());
 			}
+			reader.close();
 			
-			WriteUtils.writeList(allrows, "projs.csv");
+			System.out.println("Read "+reader.getRecordsRead()+" lines");
 			
-			System.out.println("Read "+allrows.size()+" lines");
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
 		} catch (IOException e) {
 			e.printStackTrace();
+		} catch (CsvValidationException e) {
+			e.printStackTrace();
+		} catch (CsvException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		}
 		return res;
 	}
+	
+	
 	
 	public static List<String[]> readAll(String filename){
 		List<String[]> res = new ArrayList<String[]>();
@@ -188,6 +207,9 @@ public abstract class ReadInfoFromCSV {
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
 		} catch (IOException e) {
+			e.printStackTrace();
+		} catch (CsvException e) {
+			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		return res;

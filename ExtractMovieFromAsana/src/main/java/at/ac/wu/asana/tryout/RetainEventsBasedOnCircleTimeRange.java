@@ -15,6 +15,7 @@ import java.util.List;
 
 import com.opencsv.CSVReader;
 import com.opencsv.CSVWriter;
+import com.opencsv.exceptions.CsvException;
 
 import at.ac.wu.asana.csv.ReadInfoFromCSV;
 import at.ac.wu.asana.db.postprocess.datastructures.CircleTimeRange;
@@ -98,6 +99,9 @@ public class RetainEventsBasedOnCircleTimeRange {
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
 		} catch (IOException e) {
+			e.printStackTrace();
+		} catch (CsvException e) {
+			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		return res;

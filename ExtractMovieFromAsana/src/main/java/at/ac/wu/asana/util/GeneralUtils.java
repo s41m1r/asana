@@ -1,5 +1,9 @@
 package at.ac.wu.asana.util;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -7,6 +11,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 public abstract class GeneralUtils {
 	
@@ -59,4 +64,18 @@ public abstract class GeneralUtils {
 
         return result;
     }
+
+	public static List<String> readFromTextFile(String filename){
+		List<String> list = new ArrayList<String>();
+
+        try (BufferedReader br = Files.newBufferedReader(Paths.get(filename))) {
+        	
+        	list = br.lines().collect(Collectors.toList());
+        	
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        
+        return list;
+	}
 }

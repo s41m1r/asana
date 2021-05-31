@@ -19,6 +19,7 @@ import org.graphstream.graph.implementations.SingleGraph;
 
 import com.google.api.client.util.DateTime;
 import com.opencsv.CSVReader;
+import com.opencsv.exceptions.CsvException;
 
 import at.ac.wu.asana.model.StructuralDataChange;
 
@@ -73,6 +74,9 @@ public class CreateVizEasy {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (CsvException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
