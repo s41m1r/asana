@@ -33,7 +33,7 @@ public class AsanaActions {
 	public static final int ADD_TO_CIRCLE = 4;
 	public static final int REMOVE_FROM_CIRCLE = 5;
 	public static final int COMMENT = 6;
-	public static final int DETELE_OR_MARK_COMPLETE = 7;
+	public static final int DELETE_OR_MARK_COMPLETE = 7;
 	public static final int REVIVE_OR_MARK_INCOMPLETE = 8;
 	public static final int CHANGE_NAME_OF_ROLE = 9;
 	public static final int IGNORE_OR_DELETE = 0;
@@ -78,7 +78,7 @@ public class AsanaActions {
 		case COMMENT:
 			res = "COMMENT";
 			break;
-		case DETELE_OR_MARK_COMPLETE:
+		case DELETE_OR_MARK_COMPLETE:
 			res = "DELETE_OR_MARK_COMPLETE";
 			break;
 		case REVIVE_OR_MARK_INCOMPLETE:

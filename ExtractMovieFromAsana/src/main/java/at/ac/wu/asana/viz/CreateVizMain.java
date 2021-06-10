@@ -145,7 +145,7 @@ public class CreateVizMain {
 				n.addAttribute("ui.class", "added");
 				break;
 			case AsanaActions.COMPLETE_ROLE:
-			case AsanaActions.DETELE_OR_MARK_COMPLETE:
+			case AsanaActions.DELETE_OR_MARK_COMPLETE:
 				n.addAttribute("ui.class", "deleted");
 				n.addAttribute("deleted", "true");
 				nodesAdded.remove(n);

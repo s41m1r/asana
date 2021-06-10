@@ -163,7 +163,7 @@ public class CreateSpringestViz {
 				//			case AsanaActions.REVIVE_OR_MARK_INCOMPLETE:
 				//				break;
 			case AsanaActions.COMPLETE_ROLE:
-			case AsanaActions.DETELE_OR_MARK_COMPLETE:
+			case AsanaActions.DELETE_OR_MARK_COMPLETE:
 				//			case AsanaActions.REMOVE_FROM_CIRCLE:
 				n.addAttribute("ui.class", "deleted");
 				n.addAttribute("deleted", "true");

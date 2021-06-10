@@ -201,7 +201,7 @@ public class CreateVizAsana {
 //				n.addAttribute("ui.class", "role");
 				break;
 			case AsanaActions.COMPLETE_ROLE:
-			case AsanaActions.DETELE_OR_MARK_COMPLETE:
+			case AsanaActions.DELETE_OR_MARK_COMPLETE:
 			case AsanaActions.REMOVE_FROM_CIRCLE:
 //				sleep(1000);
 				Node n2 = graph.removeNode(n);

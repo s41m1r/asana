@@ -938,7 +938,7 @@ public class StructuralDataChange implements Comparable<StructuralDataChange> {
 
 		else if(text.startsWith("completed this task") ||
 				text.startsWith("marked this task complete"))
-			return AsanaActions.DETELE_OR_MARK_COMPLETE;
+			return AsanaActions.DELETE_OR_MARK_COMPLETE;
 
 		else if(text.startsWith("marked incomplete") ||
 				text.startsWith("marked this task incomplete"))
