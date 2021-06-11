@@ -678,6 +678,11 @@ public class PostProcessFromDB {
 		Map<String, List<StructuralDataChange>> allChildrenDynamic = getSubMapWithHierarchy(all, "child");
 		Map<String, List<StructuralDataChange>> allParentsDynamic = getSubMapWithHierarchy(all, "parent");
 		promoteOrphans(allChildrenDynamic, allParentsDynamic);
+		
+		System.out.println(getEventAt(allParentsDynamic, "2013-10-15 13:39:50.249"));
+		System.out.println(getEventAt(allChildrenDynamic, "2013-10-15 13:39:50.249"));
+		System.out.println(getEventAt(all, "2013-10-15 13:39:50.249"));
+		System.exit(0);
 
 		Map<String, List<StructuralDataChange>> grandChildren = getGrandChildren(allChildrenDynamic);
 
