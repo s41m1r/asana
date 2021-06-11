@@ -99,7 +99,7 @@ public class PostProcessFromDB {
 //		Map<String, List<StructuralDataChange>> all = removeDesignDerivedDupli(dup, a);
 		
 		cleanUpDesignDupli(all, dup);
-		
+			
 		duplicateTaskToDesignRole(all, dup);
 
 		Map<String, String> dictionary = getAllTaskIdName(all);	
@@ -183,9 +183,14 @@ public class PostProcessFromDB {
 		Map<String, List<StructuralDataChange>> allEvents = setCurrentCircles(all);		
 		
 		Map<String,List<StructuralDataChange>> allEvents2 = sortHistory(dynamicChildToParent(allEvents));
+		
+		System.out.println(getEventAt(allEvents2, "2013-10-15 13:39:50.249"));
+		System.exit(0);
 	
 		fixCompletedAndRemoveLastModify(allEvents2);
 		fixTimeShift(allEvents2);// convert from UTC to Local time zone
+		
+		
 		
 		setRoleExtractionIntegration(allEvents2, forceToChild);
 
