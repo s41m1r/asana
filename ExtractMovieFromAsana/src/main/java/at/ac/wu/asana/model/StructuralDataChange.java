@@ -1,5 +1,7 @@
 package at.ac.wu.asana.model;
 
+import java.io.FileNotFoundException;
+import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
 import java.sql.Timestamp;
 import java.text.DateFormat;
@@ -1369,6 +1371,7 @@ public class StructuralDataChange implements Comparable<StructuralDataChange> {
 	public int compareTo(StructuralDataChange o) {		
 		return this.storyCreatedAt.compareTo(o.getStoryCreatedAt());
 	}
+
 
 	public StructuralDataChange makeCopy() {
 		StructuralDataChange sdc = new StructuralDataChange();

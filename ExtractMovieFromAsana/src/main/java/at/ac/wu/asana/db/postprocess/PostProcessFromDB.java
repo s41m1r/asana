@@ -1,5 +1,8 @@
 package at.ac.wu.asana.db.postprocess;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -32,10 +35,12 @@ import java.util.ListIterator;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
-import java.util.SortedSet;
 import java.util.TreeMap;
 import java.util.TreeSet;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
+
+import org.hibernate.metamodel.binding.AbstractSingularAttributeBinding;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
@@ -75,8 +80,14 @@ public class PostProcessFromDB {
 		subCirclesOf.put("1181577597127617", "1158107169298919");
 		subCirclesOf.put("1160287303922155", "1160716728801873");
 
-		Map<String, List<StructuralDataChange>> allParents = getParents();
-		Map<String, List<StructuralDataChange>> allChildren = getChildren();
+		Map<String, List<StructuralDataChange>> allParents = getParents(); //23488
+		Map<String, List<StructuralDataChange>> allChildren = getChildren(); //39945
+
+		Integer parentsSize = allParents.values().stream().mapToInt(List::size).sum();
+		Integer childrenSize = allChildren.values().stream().mapToInt(List::size).sum();
+
+		System.out.println("Checksum "+ (parentsSize + childrenSize) + ", DB (63433)");
+		assertEquals(63433, parentsSize + childrenSize);
 
 		// allProjects-2021-04-21-merged 
 		// allProjects-2021-05-25
@@ -84,30 +95,48 @@ public class PostProcessFromDB {
 		List<String> projects = getAllProjectNames(filename);
 		Set<String> forceToChild = getWeirdTasks();
 
-
 		//		isPresent("13078448643099", allParents.keySet());
 		//		isPresent("13078448643099", allChildren.keySet());
 
-		Map<String, List<StructuralDataChange>> all = new LinkedHashMap<String, List<StructuralDataChange>>();
-		all.putAll(allParents);
-		all.putAll(allChildren);
+		Map<String, List<StructuralDataChange>> merge = new LinkedHashMap<String, List<StructuralDataChange>>();
 
-		cleanup(allChildren);
-		cleanup(allParents);
+		//		int clearedChildren = cleanup(allChildren);
+		//		int clearedParents =  cleanup(allParents);
 
-		Map<String, List<StructuralDataChange>> dup = getAllDuplicatedTasks(all);
-//		Map<String, List<StructuralDataChange>> all = removeDesignDerivedDupli(dup, a);
-		
-		cleanUpDesignDupli(all, dup);
-			
+		merge.putAll(allParents);
+		merge.putAll(allChildren);
+
+		int allSize = merge.values().stream().mapToInt(List::size).sum();
+		assertEquals(63433, allSize);
+
+		Map<String, List<StructuralDataChange>> allNoSep = filterOutSeparator(merge); // filters out 6732 events
+
+		allSize = allNoSep.values().stream().mapToInt(List::size).sum();
+		assertEquals(63433, allSize+6732);
+		//		assertTrue(allNoSep.containsKey("472476427713571"));
+		//		Map<String, List<StructuralDataChange>> allDup = filterOutSubtasksWithNoEvent(allNoSep); // filters out 248 events
+		//		assertFalse(allNoSep.containsKey("472476427713571"));
+
+
+		allSize = allNoSep.values().stream().mapToInt(List::size).sum();
+		assertEquals(63433, allSize + 6732); 
+
+		Map<String, List<StructuralDataChange>> dup = getAllDuplicatedTasks(allNoSep); 
+		//		Map<String, List<StructuralDataChange>> all = removeDesignDerivedDupli(dup, a);
+
+		Map<String, List<StructuralDataChange>> all = cleanUpDesignDupli(allNoSep, dup); // filters out 1381 events
+		allSize = all.values().stream().mapToInt(List::size).sum();
+
+		assertEquals(63433, allSize + 6732 +  1381);
+
 		duplicateTaskToDesignRole(all, dup);
-
-		Map<String, String> dictionary = getAllTaskIdName(all);	
 
 		setRemoveSubRole(all, projects);
 		setComment(all);
 
 		manualFixForCode99(all);
+		
+		Map<String, String> dictionary = getAllTaskIdName(all);
 
 		//		fixChildAsRoleProblem(allParents, allChildren);
 		Set<String> allOrphanIds = fixOrphans(allParents, allChildren);
@@ -130,7 +159,8 @@ public class PostProcessFromDB {
 		setRoleType(all);					
 		setAliveStatus(all);
 
-		setDynamicHierarchy(all, allOrphanIds, forceToChild);
+		Set<String> tasksNeverAddedOrRemoved = getTasksNeverAddedOrRemoved(all);
+		setDynamicHierarchy(all, allOrphanIds, forceToChild, tasksNeverAddedOrRemoved);
 		setDynamicHierarchyDuplicated(all, forceToChild);
 
 		List<String> allTasksWhoChangedFather = getAllTasksWhoChangedFather(all, projects);
@@ -138,83 +168,107 @@ public class PostProcessFromDB {
 
 		allTasksWhoseFatherIsLast.removeAll(allTasksWhoChangedFather);
 
-//		List<String[]> matchedTasks = new ArrayList<String[]>();
+		List<String[]> matchedTasks = new ArrayList<String[]>();
+		
+		
+		Map<String, String> matchedParents = assignDynamicFather(
+				all,dictionary, 
+				allTasksWhoChangedFather, matchedTasks, 
+				allTasksWhoseFatherIsLast, forceToChild);
 
-//		Map<String, String> matchedParents = assignDynamicFather(
-//				all,dictionary, 
-//				allTasksWhoChangedFather, matchedTasks, 
-//				allTasksWhoseFatherIsLast, forceToChild);
 
-
-//		List<String[]> subsetEvents = addMatchedParents(dictionary,matchedTasks);
+		//		List<String[]> subsetEvents = addMatchedParents(dictionary,matchedTasks);
 
 		manualFixHierarchy(allParents, allChildren);
+
 		fillDynamicFather(all);
-		deleteParentTaskIdFromDynamicParent(all);
-		
-//		WriteUtils.writeList(subsetEvents, "/home/saimir/ownCloud/PhD/Collaborations/"
-//				+ "Waldemar/Springest/Data/Data Extracted from DB/Dataset with Manually Extracted Users/"
-//				+ "testing/subset-events"+VERSION+".csv");	
+
+		deleteParentTaskIdFromDynamicParent(all);		
+
+		//check that we really delete codes 14 and 15
+
+		//		WriteUtils.writeList(subsetEvents, "/home/saimir/ownCloud/PhD/Collaborations/"
+		//				+ "Waldemar/Springest/Data/Data Extracted from DB/Dataset with Manually Extracted Users/"
+		//				+ "testing/subset-events"+VERSION+".csv");	
 
 		WriteUtils.writeMapWithDynamic(all, "/home/saimir/ownCloud/PhD/Collaborations/"
 				+ "Waldemar/Springest/Data/Data Extracted from DB/Dataset with Manually Extracted Users/"
 				+ "testing/out"+VERSION+".csv");
-//
-//		WriteUtils.writeMap(matchedParents, "/home/saimir/ownCloud/PhD/Collaborations/" + 
-//				"Waldemar/Springest/Data/Data Extracted from DB/Dataset with Manually Extracted Users/" + 
-//				"testing/matched-parents"+VERSION+".csv");
-//
-//		WriteUtils.writeMap(dictionary, "/home/saimir/ownCloud/PhD/Collaborations/" + 
-//				"Waldemar/Springest/Data/Data Extracted from DB/Dataset with Manually Extracted Users/" + 
-//				"testing/dictionary"+VERSION+".csv");
+		//
+		//		WriteUtils.writeMap(matchedParents, "/home/saimir/ownCloud/PhD/Collaborations/" + 
+		//				"Waldemar/Springest/Data/Data Extracted from DB/Dataset with Manually Extracted Users/" + 
+		//				"testing/matched-parents"+VERSION+".csv");
+		//
+		//		WriteUtils.writeMap(dictionary, "/home/saimir/ownCloud/PhD/Collaborations/" + 
+		//				"Waldemar/Springest/Data/Data Extracted from DB/Dataset with Manually Extracted Users/" + 
+		//				"testing/dictionary"+VERSION+".csv");
 
-//		Set<String[]> m = new HashSet<String[]>(matchedTasks);
-//		WriteUtils.writeList(new ArrayList<String[]>(m), "/home/saimir/ownCloud/PhD/Collaborations/" + 
-//				"Waldemar/Springest/Data/Data Extracted from DB/Dataset with Manually Extracted Users/" + 
-//				"testing/matched-tasks"+VERSION+".csv");
+		//		Set<String[]> m = new HashSet<String[]>(matchedTasks);
+		//		WriteUtils.writeList(new ArrayList<String[]>(m), "/home/saimir/ownCloud/PhD/Collaborations/" + 
+		//				"Waldemar/Springest/Data/Data Extracted from DB/Dataset with Manually Extracted Users/" + 
+		//				"testing/matched-tasks"+VERSION+".csv");
 
 		//		 all good until here
-	
+
 		fixCodingAccordingToAuthoritativeList(all, projects);	
-		removeCode14(all);
-		
+
+		int removedCode14Events = removeCode14(all);
 		setDesignRole(all);
 
+		allSize = all.values().stream().mapToInt(List::size).sum();
+
+		assertEquals(63433, allSize + 6732 + 1381 + removedCode14Events);
+
 		Map<String, List<StructuralDataChange>> allEvents = setCurrentCircles(all);		
-		
-		Map<String,List<StructuralDataChange>> allEvents2 = sortHistory(dynamicChildToParent(allEvents));
-		
-		System.out.println(getEventAt(allEvents2, "2013-10-15 13:39:50.249"));
-		System.exit(0);
-	
-		fixCompletedAndRemoveLastModify(allEvents2);
+
+		assertEquals(allSize, allEvents.values().stream().mapToInt(List::size).sum());
+
+		allSize = allEvents.values().stream().mapToInt(List::size).sum();
+		assertEquals(63433, allSize + 6732 + 1381 + removedCode14Events);
+
+		int lastModRemoved = fixCompletedAndRemoveLastModify(allEvents);
+		allSize = allEvents.values().stream().mapToInt(List::size).sum();
+
+		assertEquals(63433, allSize + 6732 + 1381 + removedCode14Events + lastModRemoved);
+
+		Map<String,List<StructuralDataChange>> allEvents2 = sortHistory(dynamicChildToParent(allEvents)); // 0 events are being skipped 
+
+		assertEquals(52026, allEvents2.values().stream().mapToInt(List::size).sum());
+
+		allSize = allEvents2.values().stream().mapToInt(List::size).sum();
+		assertEquals(63433, allSize + 6732 + 1381 + removedCode14Events + lastModRemoved);
+
 		fixTimeShift(allEvents2);// convert from UTC to Local time zone
-		
-		
-		
+
+
 		setRoleExtractionIntegration(allEvents2, forceToChild);
 
 		//		checkIfNullTimestamp(allEvents);
-		Map<String, List<StructuralDataChange>> allEventsNoDup = removeDuplicateTasks(allEvents2);
+		//		Map<String, List<StructuralDataChange>> allEventsNoDup = removeDuplicateTasks(allEvents2); // 1804 events are removed because of same timestamp (duplicate)
+
 		//		System.out.println("Events after removeDuplicateTasks = " +countEvents(allEventsNoDup));
 		//		printHistoryOfTask("44330423794233", allEventsNoDup); 	
 
-		fillCurrentAssignees(allEventsNoDup);
-		
-		setYinYangAsCircleChange(allEventsNoDup);
-		
-//		manualFixCode17(allEventsNoDup);
-		
-		List<StructuralDataChange> uniqueEvents = removeDups(allEventsNoDup);	
-		System.out.println("There are unique events = "+uniqueEvents.size());
+		fillCurrentAssignees(allEvents2);
+
+		setYinYangAsCircleChange(allEvents2);
+		//		manualFixCode17(allEventsNoDup);
+
+		allSize = allEvents2.values().stream().mapToInt(List::size).sum();
+		System.out.println("Size before remove dups: "+allSize);
+		List<StructuralDataChange> uniqueEvents = removeDups(allEvents2);	//there are 3007 duplicates
+		System.out.println("There are unique events = "+uniqueEvents.size()); 
+
+		allSize = uniqueEvents.size();
+		assertEquals(63433, allSize + 6732 + 1381 + removedCode14Events + lastModRemoved + 3007);
 
 		fixChangeRoleName(uniqueEvents);
 		//		addCompletedEvent(uniqueEvents)
-		
+
 		fillTypeOfChangeNew(uniqueEvents);
 
 		Map<String, Set<String>> dict = uniformAssignees(uniqueEvents);
-		
+
 		Map<String, String> revDict = addCurrentAssigneeId(uniqueEvents,dict);
 		setMergedCurrentAssgineeIds(uniqueEvents,revDict);
 
@@ -228,19 +282,21 @@ public class PostProcessFromDB {
 		setOrphansToIgnore(uniqueEvents, allOrphanIds);
 
 		addIgnoreToChild(uniqueEvents);
-
 		fixCode5problems(uniqueEvents); 
 
 		fixCode15Problems(uniqueEvents);
-		
+
 		String code20createCircle = "auxFiles/code20CreateCircle.csv";
 		manuallySetCode20(uniqueEvents, code20createCircle, revDict);
 
-
 		//		printHistoryOfTask("11555199602323", allEventsNoDup);
+
+		
 
 		String outfile = "Springest-filtered.csv";
 		//		WriteUtils.writeListOfChangesWithCircleToCSV(uniqueEvents, outfile);
+		allSize = uniqueEvents.size();
+		assertEquals(63433, allSize + 6732 + 1381 + removedCode14Events + lastModRemoved + 3007);
 
 		outfile = outfile.replace("filtered", "Mappe1");
 		WriteUtils.writeMappeToCSV(uniqueEvents, outfile);
@@ -253,6 +309,22 @@ public class PostProcessFromDB {
 		System.out.println("Wrote on file "+outfile);
 	}
 
+	private static Set<String> getTasksNeverAddedOrRemoved(Map<String, List<StructuralDataChange>> all) {
+		Set<String> res = new HashSet<String>();
+		for (String k : all.keySet()) {
+			boolean addRem = false;
+			for (StructuralDataChange e : all.get(k)) {
+				if(e.getRawDataText().contains("added subtask to task") || e.getRawDataText().contains("removed from")) {
+					addRem = true;
+					break;
+				}
+			}
+			if(!addRem)
+				res.add(k);
+		}
+		return res;
+	}
+
 	private static void manualFixCode17(Map<String, List<StructuralDataChange>> allEventsNoDup) {
 		String[] allEvents = new String[] {
 				"2019-07-01 15:52:42.749",
@@ -260,7 +332,7 @@ public class PostProcessFromDB {
 				"2020-07-13 11:50:01.359",
 				"2020-07-13 11:50:12.608"
 		};
-		
+
 		for (String e : allEvents) {
 			StructuralDataChange sdc = getSDCAt(allEventsNoDup, e);
 			setChange(sdc, AsanaActions.IGNORE_EVENT);
@@ -268,23 +340,40 @@ public class PostProcessFromDB {
 		}	
 	}
 
-	private static void cleanUpDesignDupli(Map<String, List<StructuralDataChange>> all, Map<String, List<StructuralDataChange>> dup) {
-		Set<String> kset = new TreeSet<String>(all.keySet());
-		for (String k : kset) {
-			List<StructuralDataChange> hist = new ArrayList<StructuralDataChange>(all.get(k));
-			for (StructuralDataChange e : hist) {
+	private static Map<String, List<StructuralDataChange>> cleanUpDesignDupli(Map<String, List<StructuralDataChange>> all, Map<String, List<StructuralDataChange>> dup) {
+		Map<String, List<StructuralDataChange>> filtered = new LinkedHashMap<String, List<StructuralDataChange>>();
+		int removed = 0;
+		Set<StructuralDataChange> removeCand = new HashSet<StructuralDataChange>();
+		for (String k : all.keySet()) {
+			for (StructuralDataChange e : all.get(k)) {
 				if(dup.containsKey(e.getTaskId()) && e.getMessageType().equals("derived")) {//duplicated and derived
-					all.get(k).remove(e);
+					//					all.get(k).remove(e);
+					removed++;
+					removeCand.add(e);
 				}
 			}
-		}	
+		}
+
+		for (String k : all.keySet()) {
+			for (StructuralDataChange e : all.get(k)) {
+				if(!removeCand.contains(e)) {
+					if(!filtered.containsKey(k)) {
+						filtered.put(k, new ArrayList<StructuralDataChange>());
+					}
+					filtered.get(k).add(e);
+				}
+			}
+
+		}
+		System.out.println("Removed "+removed+ " derived events from duplicated tasks");
+		return filtered;
 	}
 
 	private static Map<String, List<StructuralDataChange>> removeDesignDerivedDupli(Map<String, List<StructuralDataChange>> all,
 			Map<String, List<StructuralDataChange>> dupli) {
 		Map<String, List<StructuralDataChange>> dup = getAllDuplicatedTasks(all);
 		Map<String, List<StructuralDataChange>> res = new LinkedHashMap<String, List<StructuralDataChange>>();
-		
+
 		for (String k : all.keySet()) {
 			List<StructuralDataChange> history = dup.get(k);
 			List<StructuralDataChange> newHist = new ArrayList<StructuralDataChange>();
@@ -315,7 +404,9 @@ public class PostProcessFromDB {
 	}
 
 	private static void fixCode15Problems(List<StructuralDataChange> uniqueEvents) {
-		uniqueEvents.stream().filter(e -> e.getTypeOfChangeNew() == AsanaActions.CHANGE_ACCOUNTABILITY_PURPOSE)
+		uniqueEvents.stream().filter(e -> e.getTypeOfChangeNew() == AsanaActions.CHANGE_ACCOUNTABILITY_PURPOSE && 
+				e.getTypeOfChange() != AsanaActions.COMMENT && 
+				e.getTypeOfChange() != AsanaActions.IGNORE_EVENT)
 		.forEach(e -> setChange(e, AsanaActions.CHANGE_ACCOUNTABILITY_PURPOSE));
 	}
 
@@ -490,13 +581,17 @@ public class PostProcessFromDB {
 		sdc.setRawDataText(newText);
 	}
 
-	private static void removeCode14(Map<String, List<StructuralDataChange>> all) {
+	private static int removeCode14(Map<String, List<StructuralDataChange>> all) {
+		int removedEvents = 0;
 		for (String k : all.keySet()) {
 			for (Iterator<StructuralDataChange> it = all.get(k).iterator(); it.hasNext();) {
-				if(it.next().getTypeOfChange() == AsanaActions.COMPLETE_ROLE)
+				if(it.next().getTypeOfChange() == AsanaActions.COMPLETE_ROLE) {
 					it.remove();
+					removedEvents++;
+				}
 			}
 		}
+		return removedEvents;
 	}
 
 	private static Map<String, List<StructuralDataChange>> duplicateTaskToDesignRole(Map<String, List<StructuralDataChange>> all, Map<String, List<StructuralDataChange>> dup) {
@@ -642,7 +737,7 @@ public class PostProcessFromDB {
 		for (String k : allEvents.keySet()) {
 			for(StructuralDataChange sdc : allEvents.get(k)) {
 				if(Timestamp.valueOf(sdc.getStoryCreatedAt()).toString().equals(searchTS)){
-					row = sdc.csvRowMappe1();
+					row = sdc.csvRowDynamic();
 				}
 			}
 		}
@@ -677,41 +772,70 @@ public class PostProcessFromDB {
 
 		Map<String, List<StructuralDataChange>> allChildrenDynamic = getSubMapWithHierarchy(all, "child");
 		Map<String, List<StructuralDataChange>> allParentsDynamic = getSubMapWithHierarchy(all, "parent");
-		promoteOrphans(allChildrenDynamic, allParentsDynamic);
-		
-		System.out.println(getEventAt(allParentsDynamic, "2013-10-15 13:39:50.249"));
-		System.out.println(getEventAt(allChildrenDynamic, "2013-10-15 13:39:50.249"));
-		System.out.println(getEventAt(all, "2013-10-15 13:39:50.249"));
-		System.exit(0);
+
+		int nAll = all.values().stream().mapToInt(List::size).sum();
+
+		int nChild0 = allChildrenDynamic.values().stream().mapToInt(List::size).sum();
+		int nParen0 = allParentsDynamic.values().stream().mapToInt(List::size).sum();
+		assertEquals(nAll, nChild0+nParen0);
+
+		Logger.getLogger(PostProcessFromDB.class.getName()).info("Begin "+nAll);
+
+		int promoted = promoteOrphans(allChildrenDynamic, allParentsDynamic);
+
+		int nChild1 = allChildrenDynamic.values().stream().mapToInt(List::size).sum();
+		int nParen1 = allParentsDynamic.values().stream().mapToInt(List::size).sum();
+
+		assertEquals(nChild0, nChild1 + promoted);
+		assertEquals(nParen0, nParen1 - promoted);
+		assertEquals(nAll, nChild1+nParen1);
 
 		Map<String, List<StructuralDataChange>> grandChildren = getGrandChildren(allChildrenDynamic);
+		int nGran = grandChildren.values().stream().mapToInt(List::size).sum();
 
-		removeOverlappingKeys(grandChildren, allChildrenDynamic);		
+		int grandChildEvents = removeOverlappingEvents(grandChildren, allChildrenDynamic);
+
+		int nChild2 = allChildrenDynamic.values().stream().mapToInt(List::size).sum();
+		int nGran2 = grandChildren.values().stream().mapToInt(List::size).sum();
+
+		assertEquals(nGran,nGran2);
+		assertEquals(nChild1, nChild2+grandChildEvents);
+		assertEquals(nChild1+nGran, nChild2+nGran2+grandChildEvents);
+		assertEquals(nAll, nChild2+grandChildEvents+promoted+nParen1-promoted); //assertEquals(nAll, nChild0+nParen0);
+
 		int gcB = grandChildren.size();
 		int chB = allChildrenDynamic.size();
 		int pB = allParentsDynamic.size();
 
-		WriteUtils.writeMapWithDynamic(allChildrenDynamic, "children.csv");
-		WriteUtils.writeMapWithDynamic(allParentsDynamic, "parents.csv");
-		WriteUtils.writeMapWithDynamic(grandChildren, "grandchildren.csv");
+		//		WriteUtils.writeMapWithDynamic(allChildrenDynamic, "children.csv");
+		//		WriteUtils.writeMapWithDynamic(allParentsDynamic, "parents.csv");
+		//		WriteUtils.writeMapWithDynamic(grandChildren, "grandchildren.csv");
 
 		System.out.println("grandChildren -> allChildrenDynamic");
 		assignHierarchy(grandChildren, "grandchild");
-		moveToDynamicParent(grandChildren, allChildrenDynamic);
-		assignHierarchy(allChildrenDynamic, "child");
-		//		assignHierarchy(allChildrenDynamic, "parent");
-		//		System.out.println("grandChildren -> allParentsDynamic");
-		//		moveToDynamicParent(grandChildren, allParentsDynamic); //because we promoted the orphans
-		System.out.println("allChildrenDynamic -> allParentsDynamic");
-		moveToDynamicParent(allChildrenDynamic, allParentsDynamic);
-
-		//		WriteUtils.writeMapWithDynamic(grandChildren, "grandchildren-after.csv");
+		int movedGrandCh = moveToDynamicParent(grandChildren, allChildrenDynamic);
 		//		WriteUtils.writeMapWithDynamic(allChildrenDynamic, "children-after.csv");
-		//		WriteUtils.writeMapWithDynamic(allParentsDynamic, "parents-after.csv");
 
-		System.out.println("grandchildren before "+gcB+" after "+grandChildren.size());
-		System.out.println("children before "+chB +  " after "+allChildrenDynamic.size());
-		System.out.println("parents before "+pB +  " after "+allParentsDynamic.size());
+		int nGran3 = grandChildren.values().stream().mapToInt(List::size).sum();
+		assertEquals(nGran3, 0);
+
+		int nChild3 = allChildrenDynamic.values().stream().mapToInt(List::size).sum();
+		assertEquals(nChild3, nChild2+movedGrandCh);		
+
+		assignHierarchy(allChildrenDynamic, "child");
+		System.out.println("allChildrenDynamic -> allParentsDynamic");
+		int movedChildren = moveToDynamicParent(allChildrenDynamic, allParentsDynamic);
+		int nParen2 = allParentsDynamic.values().stream().mapToInt(List::size).sum();
+		int nChild4 = allChildrenDynamic.values().stream().mapToInt(List::size).sum();
+
+		assertEquals(nParen2, movedChildren+nParen1);
+		assertEquals(nChild4, 0);
+
+		Logger.getLogger(PostProcessFromDB.class.getName()).info("End "+nParen2+". Skipped "+(nAll-nParen2) + " derived events during integration.");
+		//		
+		//		System.out.println("grandchildren before "+gcB+" after "+grandChildren.size());
+		//		System.out.println("children before "+chB +  " after "+allChildrenDynamic.size());
+		//		System.out.println("parents before "+pB +  " after "+allParentsDynamic.size());
 
 		return allParentsDynamic;
 	}
@@ -722,13 +846,16 @@ public class PostProcessFromDB {
 	 * @param grandChildren – timestamps to remove
 	 * @param allChildrenDynamic – where to removed them from
 	 */
-	private static void removeOverlappingKeys(Map<String, List<StructuralDataChange>> grandChildren,
+	private static int removeOverlappingEvents(Map<String, List<StructuralDataChange>> grandChildren,
 			Map<String, List<StructuralDataChange>> allChildrenDynamic) {
+		int removed = 0;
 		for (String k : grandChildren.keySet()) {
 			if(allChildrenDynamic.containsKey(k)) {
+				removed+=allChildrenDynamic.get(k).size();
 				allChildrenDynamic.remove(k);
 			}
 		}
+		return removed;
 	}
 
 	private static void assignHierarchy(Map<String, List<StructuralDataChange>> map, String hierarchy) {
@@ -767,31 +894,35 @@ public class PostProcessFromDB {
 		return res;
 	}
 
-	private static void moveToDynamicParent(Map<String, List<StructuralDataChange>> children,
+	private static int moveToDynamicParent(Map<String, List<StructuralDataChange>> children,
 			Map<String, List<StructuralDataChange>> parents) {
 		List<String> keys = new ArrayList<String>(children.keySet());
 		Set<String> childrenAdded = new HashSet<String>();
+		int moved = 0;
 
 		for (String childId : keys) {			
 			List<StructuralDataChange> childHistory = children.get(childId);
 			for (StructuralDataChange event : childHistory) {
+				boolean ok = false;
 				String parentTaskId = event.getParentTaskId();
 				List<StructuralDataChange> parentsEvents = parents.get(parentTaskId);
-				
+
 				if(parentsEvents!=null) {
 					boolean parentIsCircle = false;
 					if(isCircle(parentsEvents.get(0).getTaskName(), parentsEvents.get(0).getTaskId()))
 						parentIsCircle=true;
 
 					if(parentIsCircle) {
-						addToParentCircle(event, parentsEvents);
+						ok = addToParentCircle(event, parentsEvents);
 					}
 
 					else { // regular task
-						addToParentTask(event, parentsEvents);
+						ok = addToParentTask(event, parentsEvents);
 					}
 
 					childrenAdded.add(childId);
+					if(ok) 
+						moved++;
 				}
 				else {
 					System.err.println("task "+childId+": parent id "+parentTaskId+" not found");
@@ -799,6 +930,7 @@ public class PostProcessFromDB {
 			}
 		}
 		children.keySet().removeAll(childrenAdded);
+		return moved;
 	}
 
 	private static boolean isCircle(String taskName, String taskId) {
@@ -810,7 +942,7 @@ public class PostProcessFromDB {
 		return false;
 	}
 
-	private static void addToParentTask(StructuralDataChange event, List<StructuralDataChange> parentsEvents) {
+	private static boolean addToParentTask(StructuralDataChange event, List<StructuralDataChange> parentsEvents) {
 		int newChange = -999;
 
 		switch (event.getTypeOfChange()) {
@@ -850,11 +982,11 @@ public class PostProcessFromDB {
 				newChange = AsanaActions.CHANGE_SUB_ROLE;
 		}
 
-		addToParent("[EVENT FROM SUB-TASK] ", event, parentsEvents, newChange);
+		return addToParent("[EVENT FROM SUB-TASK] ", event, parentsEvents, newChange);
 
 	}
 
-	private static void addToParentCircle(StructuralDataChange event, List<StructuralDataChange> parentsEvents) {
+	private static boolean addToParentCircle(StructuralDataChange event, List<StructuralDataChange> parentsEvents) {
 		int newChange = -9999;
 		switch (event.getTypeOfChange()) {
 		case AsanaActions.IGNORE_OR_DELETE:
@@ -892,15 +1024,18 @@ public class PostProcessFromDB {
 				newChange = AsanaActions.CIRCLE_CHANGE;
 		}
 
-		addToParent("[EVENT FROM SUB-TASK] ", event, parentsEvents, newChange);
+		return addToParent("[EVENT FROM SUB-TASK] ", event, parentsEvents, newChange);
 	}
 
-	private static void promoteOrphans(Map<String, List<StructuralDataChange>> allChildrenDynamic,
+	private static int promoteOrphans(Map<String, List<StructuralDataChange>> allChildrenDynamic,
 			Map<String, List<StructuralDataChange>> allParentsDynamic) {
+		int promoted = 0;
 		List<String> keys = new ArrayList<String>(allChildrenDynamic.keySet());
 		List<String> idsAddedToParent = new ArrayList<String>();
 		boolean add = false;
 		for (String k : keys) {
+			//			if(k.equals("8172983842889"))
+			//				System.out.println("debug getSubMapWithHierarchy");
 			add = false;
 			for(StructuralDataChange sdc : allChildrenDynamic.get(k)) {
 				if(sdc.getDynamicHierarchy().equals("child") && 
@@ -912,11 +1047,18 @@ public class PostProcessFromDB {
 				}
 			}
 			if(add) {
-				allParentsDynamic.put(k, allChildrenDynamic.get(k));
+				if(allParentsDynamic.containsKey(k)) {
+					allParentsDynamic.get(k).addAll(allChildrenDynamic.get(k));
+				}
+				else {
+					allParentsDynamic.put(k, allChildrenDynamic.get(k));
+				}
 				idsAddedToParent.add(k);
+				promoted += allChildrenDynamic.get(k).size();
 			}
 		}
 		allChildrenDynamic.keySet().removeAll(idsAddedToParent);
+		return promoted;
 	}
 
 	private static Map<String, List<StructuralDataChange>> getSubMapWithHierarchy(
@@ -1646,7 +1788,7 @@ public class PostProcessFromDB {
 	//		}
 	//	}
 
-	private static void setDynamicHierarchy(Map<String, List<StructuralDataChange>> all, Set<String> allOrphanIds, Set<String> forceToChild) {
+	private static void setDynamicHierarchy(Map<String, List<StructuralDataChange>> all, Set<String> allOrphanIds, Set<String> forceToChild, Set<String> tasksNeverAddedOrRemoved) {
 		Set<String> keySet = all.keySet();
 		for (String k : keySet) {
 			List<StructuralDataChange> events = all.get(k);
@@ -1656,7 +1798,7 @@ public class PostProcessFromDB {
 			for (StructuralDataChange e : events) {
 				String rawDataText = e.getRawDataText().trim();
 
-				if(forceToChild.contains(k)) {
+				if(forceToChild.contains(k) || tasksNeverAddedOrRemoved.contains(k)) {
 					hierarchy = "child";
 					parentName = e.getParentTaskName();
 				}
@@ -1895,6 +2037,10 @@ public class PostProcessFromDB {
 						int toc = AsanaActions.CHANGE_ACCOUNTABILITY_PURPOSE;
 						if(sdc.getMessageType().equals("comment"))
 							toc = AsanaActions.COMMENT;
+						else if(sdc.getTypeOfChange() == AsanaActions.UNCLEAR_OR_CONFLICT_WITH_CODEBOOK)
+							toc = AsanaActions.UNCLEAR_OR_CONFLICT_WITH_CODEBOOK;
+						else if(sdc.getTypeOfChange() == AsanaActions.IGNORE_OR_DELETE)
+							toc = AsanaActions.IGNORE_OR_DELETE;
 						sdc.setTypeOfChange(toc);
 						sdc.setTypeOfChangeDescription(AsanaActions.codeToString(toc));
 					}
@@ -2042,34 +2188,34 @@ public class PostProcessFromDB {
 		List<StructuralDataChange> changed = new ArrayList<StructuralDataChange>();
 		CSVReader reader;
 		List<String[]> rows = null;
-		
+
 		try {
 			reader = new CSVReader(new FileReader(fileName));
 			reader.readNext();
 			rows = reader.readAll();
 			//			System.out.println("Read "+reader.getLinesRead()+" lines.");
 			reader.close();
-			
-					} catch (FileNotFoundException e) {
+
+		} catch (FileNotFoundException e) {
 			e.printStackTrace();
 		} catch (IOException e) {
 			e.printStackTrace();
 		} catch (CsvException e) {
 			e.printStackTrace();
 		}
-		
+
 		List<String> timestamps = rows.stream().map(e -> e[0].trim()).collect(Collectors.toList());
-		
-		
+
+
 		List<StructuralDataChange> subsetEvents = uniqueEvents.stream().filter(
 				e -> timestamps.contains(Timestamp.valueOf(e.getStoryCreatedAt()).toString()))
 				.collect(Collectors.toList());
-		
+
 		int found = subsetEvents.size();
 		for (StructuralDataChange sdc : subsetEvents) {
 
 			String timestamp = Timestamp.valueOf(sdc.getStoryCreatedAt()).toString();
-			
+
 			for(String[] row : rows) {
 				if(row[0].trim().equals(timestamp)) {
 					String name = row[10].trim();
@@ -2078,9 +2224,9 @@ public class PostProcessFromDB {
 				}
 			}
 		}
-		
+
 		System.out.println("Manually set "+found+ " code 20 entries.");		
-	
+
 		return changed;
 	}
 
@@ -2303,14 +2449,14 @@ public class PostProcessFromDB {
 					//						System.out.println("debug YinYangAsCircleChange");
 
 					if(!sdc.getMessageType().equals("derived") && 
-//							sdc.getTypeOfChange()!=AsanaActions.ADD_TO_CIRCLE
-//							&& sdc.getTypeOfChange()!=AsanaActions.REMOVE_FROM_CIRCLE
-//							&& sdc.getTypeOfChange()!=AsanaActions.CREATE_ROLE
-//							&& sdc.getTypeOfChange()!=AsanaActions.COMMENT 
-//							&& sdc.getTypeOfChange() != AsanaActions.CIRCLE_CHANGE
-//							&& sdc.getTypeOfChange() != AsanaActions.DESIGN_ROLE
-//							&& sdc.getTypeOfChange() != AsanaActions.DELETE_OR_MARK_COMPLETE
-//							&& sdc.getTypeOfChange() != AsanaActions.CHANGE_ACCOUNTABILITY_PURPOSE
+							//							sdc.getTypeOfChange()!=AsanaActions.ADD_TO_CIRCLE
+							//							&& sdc.getTypeOfChange()!=AsanaActions.REMOVE_FROM_CIRCLE
+							//							&& sdc.getTypeOfChange()!=AsanaActions.CREATE_ROLE
+							//							&& sdc.getTypeOfChange()!=AsanaActions.COMMENT 
+							//							&& sdc.getTypeOfChange() != AsanaActions.CIRCLE_CHANGE
+							//							&& sdc.getTypeOfChange() != AsanaActions.DESIGN_ROLE
+							//							&& sdc.getTypeOfChange() != AsanaActions.DELETE_OR_MARK_COMPLETE
+							//							&& sdc.getTypeOfChange() != AsanaActions.CHANGE_ACCOUNTABILITY_PURPOSE
 							sdc.getTypeOfChange() == AsanaActions.CHANGE_SUB_ROLE
 							&& (sdc.getChildId()==null || sdc.getChildId().isEmpty())) {
 						sdc.setTypeOfChange(AsanaActions.CIRCLE_CHANGE);
@@ -2372,6 +2518,8 @@ public class PostProcessFromDB {
 		for (String tId : taskIds) {
 			uniqueEvents.addAll(allEvents2.get(tId));
 		}
+		Logger.getLogger(PostProcessFromDB.class.getName()).info(
+				"Removed "+(allEvents2.values().stream().mapToInt(List::size).sum() - uniqueEvents.size())+" duplicates");
 		return new LinkedList<StructuralDataChange>(uniqueEvents);
 	}
 
@@ -2386,31 +2534,22 @@ public class PostProcessFromDB {
 	private static Map<String, List<StructuralDataChange>> removeDuplicateTasks(Map<String, List<StructuralDataChange>> allEvents2) {
 		Map<LocalDateTime, StructuralDataChange> datetimeTask = new HashMap<LocalDateTime, StructuralDataChange>();
 		Map<String, List<StructuralDataChange>> res = new TreeMap<String, List<StructuralDataChange>>();
-		int c = 0; int tot = 0;
+		int tot = 0;
+
+		int size0 = allEvents2.values().stream().mapToInt(List::size).sum();
+
 		for (String taskId : allEvents2.keySet()) {
-
-			//			if(taskId.equals("44330423794233"))
-			//				System.out.println("FOUND!!!!!!!!!");
-
-
 			List<StructuralDataChange> changes = allEvents2.get(taskId);
 			for (StructuralDataChange sdc : changes) {
-				tot++;
 				if(!datetimeTask.containsKey(sdc.getStoryCreatedAt()))
 					datetimeTask.put(sdc.getStoryCreatedAt(), sdc);
 				else {
-					//					System.out.println("Found 2 events at the same time!!!");
-					c++;
 					StructuralDataChange existing = datetimeTask.get(sdc.getStoryCreatedAt());
-					//					System.out.println("Here they are.");
-					//					System.out.println(Arrays.asList(existing.csvRowCircle()));
-					//					System.out.println(Arrays.asList(sdc.csvRowCircle()));
-					if(existing.getCircleIds()==null || existing.getCircleIds().isEmpty() || 
-							existing.getCircle().equals("NO CIRCLE")) {
-						//							existing = sdc;
-						//						datetimeTask.remove(new Long(sdc.getStoryCreatedAt().getValue()));
+					if(existing.getTaskId().equals(sdc.getTaskId()) && 
+							(existing.getCircleIds()==null || existing.getCircleIds().isEmpty() || 
+							existing.getCircle().equals("NO CIRCLE"))) {
 						datetimeTask.put(sdc.getStoryCreatedAt(), sdc.makeCopy());
-						//						System.out.println("Keeping "+Arrays.asList(sdc.csvRowCircle()));
+						tot++;
 					}
 				}
 			}
@@ -2425,8 +2564,11 @@ public class PostProcessFromDB {
 			}
 			res.put(taskId, newChanges);
 		}
-		//		System.out.println("Events at same time="+c);
-		//		System.out.println("Total events="+tot);
+
+		int size1 = allEvents2.values().stream().mapToInt(List::size).sum();
+
+		Logger.getLogger(Class.class.getName()).info("Found "+tot+ " events with same timestamp.");
+		Logger.getLogger(Class.class.getName()).info("Begin: "+size0+ ". End: "+size1);
 		return res;
 	}
 
@@ -2482,7 +2624,7 @@ public class PostProcessFromDB {
 	}
 
 
-	private static void fixCompletedAndRemoveLastModify(Map<String, List<StructuralDataChange>> allEvents) {
+	private static int fixCompletedAndRemoveLastModify(Map<String, List<StructuralDataChange>> allEvents) {
 		//		Map<String, List<StructuralDataChange>> map = new HashMap<String, List<StructuralDataChange>>(allEvents);
 		//		Set<String> allKeys = new HashSet<String>(map.keySet());
 		//		for(String k : allKeys) {
@@ -2494,11 +2636,13 @@ public class PostProcessFromDB {
 		//		}
 		//		
 		Map<String, List<StructuralDataChange>> res = new HashMap<String, List<StructuralDataChange>>(allEvents);
+		int lastModCnt = 0;
 		for(String k : allEvents.keySet()) {
 			List<StructuralDataChange> evts = new ArrayList<StructuralDataChange>();
 			for(StructuralDataChange sdc : allEvents.get(k)) {
 				if((sdc.getTypeOfChange()==AsanaActions.COMPLETE_ROLE && sdc.getTaskCompletedAt()==null) || 
 						sdc.getTypeOfChange()==AsanaActions.LAST_MODIFY_ROLE) {
+					lastModCnt++;
 					continue;
 				}
 				else if(sdc.getTypeOfChange()==AsanaActions.COMPLETE_ROLE) {
@@ -2508,8 +2652,10 @@ public class PostProcessFromDB {
 			}
 			res.put(k, evts);
 		}
+		System.out.println("Skipped "+lastModCnt+" LAST_MODIFY_ROLE events.");
 		allEvents.clear();
 		allEvents.putAll(res);
+		return lastModCnt;
 	}
 
 	private static void checkIfNoDesigned(Map<String, List<StructuralDataChange>> allEvents) {
@@ -2542,6 +2688,7 @@ public class PostProcessFromDB {
 	private static Map<String, List<StructuralDataChange>> setCurrentCircles(Map<String, List<StructuralDataChange>> allEvents) {
 		Map<String, List<StructuralDataChange>> res = new LinkedHashMap<String, List<StructuralDataChange>>();
 		Set<String> taskIds = allEvents.keySet();
+		int neverAdded = 0;
 		for (String taskId : taskIds) {
 			//			if(taskId.equals("1158107169298928"))
 			//				System.out.println("HERE!");
@@ -2549,10 +2696,10 @@ public class PostProcessFromDB {
 			List<String> circles = new ArrayList<String>();
 			List<StructuralDataChange> taskHistory = new LinkedList<StructuralDataChange>(allEvents.get(taskId));
 			java.util.Collections.sort(taskHistory);
-			SortedSet<StructuralDataChange> sortedSDC = new TreeSet<StructuralDataChange>();
+			List<StructuralDataChange> newList = new LinkedList<StructuralDataChange>();
 
 			for (StructuralDataChange sdc : taskHistory) {
-				
+
 				if(Timestamp.valueOf(sdc.getStoryCreatedAt()).toString().contains(":29:21.115"))
 					System.out.println("debug setCurrentCircles");
 
@@ -2575,13 +2722,6 @@ public class PostProcessFromDB {
 					else {
 						if(sdc.getMessageType().equals("comment"))
 							setChange(sdc, AsanaActions.COMMENT);
-						//						else {
-						//							
-						//							////// TODO: continue here
-						//							if(taskId.equals("14815184973186"))
-						//								System.out.println("setCurrentCircles debug");
-						//							setChange(sdc, AsanaActions.IGNORE_OR_DELETE);
-						//						}
 					}
 				}
 
@@ -2592,24 +2732,24 @@ public class PostProcessFromDB {
 						if(circles.contains(curCircle))
 							circles.remove(curCircle);
 						else {
-							System.err.println("This task "+sdc.getTaskId()+" "+sdc.getTaskName()
-							+" was never added to "+curCircle);
+							neverAdded++;
+							//							System.err.println("This task "+sdc.getTaskId()+" "+sdc.getTaskName()
+							//							+" was never added to "+curCircle);
 						}
 					}
 					else {
 						if(sdc.getMessageType().equals("comment"))
 							setChange(sdc, AsanaActions.COMMENT);
-						//						else {
-						//							setChange(sdc, AsanaActions.IGNORE_OR_DELETE);
-						//						}
 					}
 				}
 				sdc.setCircle(commaSeparate(circles));
 				sdc.setCircleIds(commaSeparateIds(circles));
-				sortedSDC.add(sdc.makeCopy());
+				newList.add(sdc.makeCopy());
 			}
-			res.put(taskId, new LinkedList<StructuralDataChange>(sortedSDC));
+			res.put(taskId, newList);
 		}
+		assertTrue(allEvents.size() == res.size());
+		System.err.println("I found "+neverAdded+" tasks that were removed from a circle without having been added before.");
 		return res;
 	}
 
@@ -2635,7 +2775,7 @@ public class PostProcessFromDB {
 		Set<String> keys = allEvents.keySet();
 		for (String key : keys) {
 			String curAssignee = "";
-			List<StructuralDataChange> changes = allEvents.get(key);
+			List<StructuralDataChange> changes = allEvents.get(key);			
 			Collections.sort(changes);
 			for (StructuralDataChange sdc : changes) { 
 				if(sdc.getTypeOfChange() == AsanaActions.ASSIGN_TO_ACTOR)
@@ -2756,14 +2896,53 @@ public class PostProcessFromDB {
 		return parentsEvents;
 	}
 
-	private static void cleanup(Map<String, List<StructuralDataChange>> events) {
-		Set<String> keys = new TreeSet<String>(events.keySet());
+	private static Map<String, List<StructuralDataChange>> filterOutSubtasksWithNoEvent(Map<String, List<StructuralDataChange>> events) {
 
-		for (String k : keys) {
-			if(events.get(k).get(0).isRenderedAsSeparator()) {
-				events.remove(k);
+		Map<String, List<StructuralDataChange>> res = new LinkedHashMap<String, List<StructuralDataChange>>();
+
+		int tot = 0;
+
+		Integer beginSize = events.values().stream().mapToInt(List::size).sum();
+
+		Set<String> removeKeys = new HashSet<String>();
+		Set<StructuralDataChange> removeEvents = new HashSet<StructuralDataChange>();
+
+		for (String key : events.keySet()) {	
+			List<StructuralDataChange> changes = new ArrayList<StructuralDataChange>(events.get(key));
+			for (StructuralDataChange sdc : changes) {
+				if(sdc.getIsSubtask() && sdc.getMessageType().equals("derived")) {
+					removeEvents.add(sdc);
+					tot++;
+					if(events.get(key).size() == 0)
+						removeKeys.add(key);
+				}
 			}
 		}
+
+		for(String k : events.keySet()) { // populate new map
+			if(!removeKeys.contains(k)) {
+				for (StructuralDataChange e : events.get(k)) {
+					if(!removeEvents.contains(e)) {
+						res.put(k, events.get(k));
+					}
+				}
+			}
+		}
+
+		Integer endSize = res.values().stream().mapToInt(List::size).sum();
+
+		System.out.println("Cleanup. Begin: "+beginSize + " End: "+endSize +
+				". Filtered out "+(beginSize-endSize)+ " events with empty history.");
+
+		return res;
+	}
+
+	private static int cleanup(Map<String, List<StructuralDataChange>> events) {
+
+		Integer beginSize = events.values().stream().mapToInt(List::size).sum();
+
+		Set<String> keys = new TreeSet<String>(events.keySet());
+		int tot = 0;
 
 		List<String> removeKeys = new ArrayList<String>();
 
@@ -2773,15 +2952,38 @@ public class PostProcessFromDB {
 			for (StructuralDataChange sdc : changes) {
 				if(sdc.getIsSubtask() && sdc.getMessageType().equals("derived")) {
 					events.get(key).remove(sdc);
+					tot++;
 					if(events.get(key).size() == 0)
 						removeKeys.add(key);
 				}
 			}
 		}
 
-		for (String k : removeKeys) {
+		for (String k : removeKeys) { //the all have size 0
 			events.remove(k);
-		}	
+		}
+
+		Integer endSize = events.values().stream().mapToInt(List::size).sum();
+
+		System.out.println("Cleanup. Begin: "+beginSize + " End: "+endSize);
+		System.out.println("Test: "+ events.containsKey("472476427713571"));
+
+		return tot;
+	}
+
+	private static Map<String, List<StructuralDataChange>> filterOutSeparator(Map<String, List<StructuralDataChange>> events) {
+		Map<String, List<StructuralDataChange>> res = new LinkedHashMap<String, List<StructuralDataChange>>();
+		int c = 0;
+		for (String k : events.keySet()) {
+			if(!events.get(k).get(0).isRenderedAsSeparator()) {
+				res.put(k, events.get(k));
+			}
+			else {
+				c+=events.get(k).size();
+			}
+		}
+		System.out.println("Filtered out "+c+ " events from separators.");
+		return res;
 	}
 
 	private static void markChangeToAccountabilityPurpose(Map<String, List<StructuralDataChange>> allChildren) {
@@ -2867,10 +3069,10 @@ public class PostProcessFromDB {
 		parentsEvents.add(sdc.makeCopy());
 	}
 
-	private static void addToParent(String prefix, StructuralDataChange sdc, List<StructuralDataChange> parentsEvents, int code) {
-		if(sdc.getMessageType().equals("derived"))
-			return;
-		
+	private static boolean addToParent(String prefix, StructuralDataChange sdc, List<StructuralDataChange> parentsEvents, int code) {
+		//		if(sdc.getMessageType().equals("derived"))
+		//			return false;
+
 		//		sdc.setEventId(sdc.getTaskId());
 		int i = (parentsEvents.size() > 1)? 1 : 0;  // to avoid picking a "derived" event in the father
 		sdc.setParentTaskId(parentsEvents.get(i).getParentTaskId());
@@ -2890,6 +3092,7 @@ public class PostProcessFromDB {
 		sdc.setDynamicHierarchy(parentsEvents.get(i).getDynamicHierarchy());
 		sdc.setDynamicParentName(parentsEvents.get(i).getDynamicParentName());
 		parentsEvents.add(sdc.makeCopy());
+		return true;
 	}
 
 	private static String setToString(Set<String> allAssigness) {
