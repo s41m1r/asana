@@ -40,8 +40,6 @@ import java.util.TreeSet;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
-import org.hibernate.metamodel.binding.AbstractSingularAttributeBinding;
-
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.opencsv.CSVReader;
@@ -171,11 +169,11 @@ public class PostProcessFromDB {
 		List<String[]> matchedTasks = new ArrayList<String[]>();
 		
 		
-		Map<String, String> matchedParents = assignDynamicFather(
+		assignDynamicFather(
 				all,dictionary, 
 				allTasksWhoChangedFather, matchedTasks, 
 				allTasksWhoseFatherIsLast, forceToChild);
-
+		
 
 		//		List<String[]> subsetEvents = addMatchedParents(dictionary,matchedTasks);
 
@@ -183,7 +181,7 @@ public class PostProcessFromDB {
 
 		fillDynamicFather(all);
 
-		deleteParentTaskIdFromDynamicParent(all);		
+		deleteParentTaskIdFromDynamicParent(all);	
 
 		//check that we really delete codes 14 and 15
 
@@ -272,8 +270,7 @@ public class PostProcessFromDB {
 		Map<String, String> revDict = addCurrentAssigneeId(uniqueEvents,dict);
 		setMergedCurrentAssgineeIds(uniqueEvents,revDict);
 
-		String circleEvents = "/home/saimir/ownCloud/PhD/Collaborations/Waldemar/Springest/Data/Data Extracted from DB/circleDependencies/"
-				+ "circleParents-3.csv";
+		String circleEvents = "circleParents-3.csv";
 		addSecondDegreeCircle(uniqueEvents, circleEvents);
 
 		setIgnoreEvent(uniqueEvents);
@@ -1539,8 +1536,13 @@ public class PostProcessFromDB {
 			if(!forceToChild.contains(k)) {
 				for (StructuralDataChange e : all.get(k)) {
 					if(e.getDynamicHierarchy().equals("child")) {
-
 						String lookedUpID = reverseLookUp(e.getDynamicParentName(),taskIdNameMap);
+						// here we have to mark it as orphan
+						if(lookedUpID.isEmpty()) {
+							setChange(e, AsanaActions.IGNORE_EVENT);
+							setChangeNew(e, AsanaActions.IGNORE_EVENT);
+							e.setRawDataText(String.join(" ", "[EVENT FROM ORPHAN]",e.getRawDataText()));
+						}
 						e.setParentTaskId(lookedUpID);
 						matched.put(lookedUpID,e.getDynamicParentName());
 						matchedTasks.add(new String[] {e.getTaskId(), e.getTaskName(),lookedUpID,e.getDynamicParentName()});
