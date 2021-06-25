@@ -159,10 +159,13 @@ public class PostProcessFromDB {
 
 		assertEquals(63433, allSize + 6732 + 1381 + lastModRemoved);
 		
+		int removedCode14Events = removeCode14(all);
+		Logger.getLogger(PostProcessFromDB.class.getName()).info("Removed "+removedCode14Events+" events with code 14 (AsanaActions.COMPLETE_ROLE)");
+		
 		setRoleType(all);
 		
 		setAliveStatus(all);
-
+		
 		Set<String> tasksNeverAddedOrRemoved = getTasksNeverAddedOrRemoved(all);
 	
 		setDynamicHierarchy(all, allOrphanIds, forceToChild, tasksNeverAddedOrRemoved);
@@ -213,9 +216,10 @@ public class PostProcessFromDB {
 
 		//		 all good until here
 
-		fixCodingAccordingToAuthoritativeList(all, projects);	
-
-		int removedCode14Events = removeCode14(all);
+		fixCodingAccordingToAuthoritativeList(all, projects);
+		
+		setTextOfDesignRole(all);
+	
 		setDesignRole(all);
 
 		allSize = all.values().stream().mapToInt(List::size).sum();
@@ -257,7 +261,7 @@ public class PostProcessFromDB {
 		System.out.println("There are unique events = "+uniqueEvents.size()); 
 
 		allSize = uniqueEvents.size();
-		assertEquals(63433, allSize + 6732 + 1381 + removedCode14Events + lastModRemoved + 1850);
+		assertEquals(63433, allSize + 6732 + 1381 + removedCode14Events + lastModRemoved + 1800);
 
 		fixChangeRoleName(uniqueEvents);
 		//		addCompletedEvent(uniqueEvents)
@@ -292,7 +296,7 @@ public class PostProcessFromDB {
 		String outfile = "Springest-filtered.csv";
 		//		WriteUtils.writeListOfChangesWithCircleToCSV(uniqueEvents, outfile);
 		allSize = uniqueEvents.size();
-		assertEquals(63433, allSize + 6732 + 1381 + removedCode14Events + lastModRemoved + 1850);
+		assertEquals(63433, allSize + 6732 + 1381 + removedCode14Events + lastModRemoved + 1800);
 		
 		outfile = outfile.replace("filtered", "Mappe1");
 		WriteUtils.writeMappeToCSV(uniqueEvents, outfile);
@@ -598,6 +602,8 @@ public class PostProcessFromDB {
 	private static int removeCode14(Map<String, List<StructuralDataChange>> all) {
 		int removedEvents = 0;
 		for (String k : all.keySet()) {
+			if(k.equals("1124479127191211"))
+				System.out.println("removeCode14 debug");
 			for (Iterator<StructuralDataChange> it = all.get(k).iterator(); it.hasNext();) {
 				if(it.next().getTypeOfChange() == AsanaActions.COMPLETE_ROLE) {
 					it.remove();
@@ -1552,10 +1558,6 @@ public class PostProcessFromDB {
 
 		for (String k : rest) {
 			
-			if(k.equals("10633521294333"))
-				System.out.println("debug assignDynamicFather");
-			
-			
 			if(!forceToChild.contains(k)) {
 				for (StructuralDataChange e : all.get(k)) {
 					if(e.getDynamicHierarchy().equals("child")) {
@@ -1678,9 +1680,6 @@ public class PostProcessFromDB {
 			boolean everAdded = false;
 
 			for(StructuralDataChange sdc: allDupChange.get(k)) {
-				
-				if(k.equals("1173980377019858"))
-					System.out.println("debug setDynamicHierarchyDuplicated");
 
 				if(forceToChild.contains(k)) {
 					hierarchy = "child";
@@ -1828,9 +1827,6 @@ public class PostProcessFromDB {
 			String lastParent = "NO PARENT";
 			for (StructuralDataChange e : events) {
 				String rawDataText = e.getRawDataText().trim();
-				
-				if(k.equals("203200325148496"))
-					System.out.println("debug setDynamicHierarchy");
 				
 				if(forceToChild.contains(k) || tasksNeverAddedOrRemoved.contains(k)) {
 					hierarchy = "child";
@@ -2717,6 +2713,16 @@ public class PostProcessFromDB {
 				if(sdc.getTypeOfChange()==15) {//CREATE_ROLE -> DESIGN_ROLE
 					sdc.setTypeOfChange(AsanaActions.DESIGN_ROLE);
 					sdc.setTypeOfChangeDescription(AsanaActions.codeToString(AsanaActions.DESIGN_ROLE));
+				}
+			}
+		}
+	}
+	
+	private static void setTextOfDesignRole(Map<String, List<StructuralDataChange>> allEvents) {
+		for(String k : allEvents.keySet()) {
+			for(StructuralDataChange sdc : allEvents.get(k)) {
+				if(sdc.getTypeOfChange()==15) {//CREATE_ROLE -> DESIGN_ROLE
+					sdc.setRawDataText("created this task");
 				}
 			}
 		}
