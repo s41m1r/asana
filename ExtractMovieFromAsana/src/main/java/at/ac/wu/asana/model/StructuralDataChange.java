@@ -1,7 +1,5 @@
 package at.ac.wu.asana.model;
 
-import java.io.FileNotFoundException;
-import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
 import java.sql.Timestamp;
 import java.text.DateFormat;
@@ -89,6 +87,8 @@ public class StructuralDataChange implements Comparable<StructuralDataChange> {
 	
 	private String mergedCurrentAssignees;
 	private String mergedCurrentAssigneeIds;
+	
+	private String circleInheritedFromParent;
 
 
 	public StructuralDataChange() {
@@ -361,6 +361,49 @@ public class StructuralDataChange implements Comparable<StructuralDataChange> {
 				projectName	
 		};
 	}
+	
+	public String[] csvRowMappe2(){
+		return new String[]{ 
+				Timestamp.valueOf(storyCreatedAt).toString(),
+				taskId,
+				childId,
+				grandChildId,
+				taskName,
+				rawDataText,
+				(typeOfChangeDescriptionNew==null || typeOfChangeDescriptionNew.isEmpty())?"":typeOfChangeNew+"",
+				typeOfChangeDescriptionNew,
+				typeOfChangeOriginal+"",
+				typeOfChangeDescriptionOriginal,
+				(storyCreatedByName==null)? "":storyCreatedByName,				
+				storyCreatedById,
+				currentAssignee,
+				(currentAssigneeId==null)? "": currentAssigneeId,
+				mergedCurrentAssigneeIds+"",
+				mergedCurrentAssignees+"",
+				childName,
+				grandChildName,
+				circleInheritedFromParent,
+				circle,
+				circleIds,
+				aliveStatus,
+				messageType,
+				storyCreatedAt.toLocalDate().toString(),
+				storyCreatedAt.toLocalTime().toString(),
+				((taskCompletedAt!= null)? taskCompletedAt.toString():""),
+				((taskModifiedAt != null)? taskModifiedAt.toString(): ""),
+				taskNotes,
+				parentCircle,
+				accordingToCircle,
+				secondDegreeCircleRelationshipId,
+				secondDegreeCircleRelationshipName,
+				roleType,
+				storyId,
+				projectId,
+				workspaceId,
+				workspaceName,
+				projectName	
+		};
+	}
 
 	private String extractTaskTags(Collection<Tag> tags) {
 		String res = "";
@@ -389,6 +432,14 @@ public class StructuralDataChange implements Comparable<StructuralDataChange> {
 	public String getCircle() {
 		return circle;
 	}
+	public String getCircleInheritedFromParent() {
+		return circleInheritedFromParent;
+	}
+
+	public void setCircleInheritedFromParent(String circleInheritedFromParent) {
+		this.circleInheritedFromParent = circleInheritedFromParent;
+	}
+
 	public LocalDateTime getCompletedAt() {
 		return completedAt;
 	}
@@ -1080,6 +1131,49 @@ public class StructuralDataChange implements Comparable<StructuralDataChange> {
 				"mergedCurrentAssigneeId",
 				"childName",
 				"grandChildName",
+				"circles",
+				"circleIds",
+				"aliveStatus",
+				"messageType",
+				"date",
+				"time",
+				"taskCompletedAt",
+				"taskModifiedAt",
+				"taskNotes",
+				"parentCircle",
+				"accordingToCircle",
+				"secondDegreeCircleRelationshipId",
+				"secondDegreeCircleRelationshipName",
+				"roleType",
+				"eventId",
+				"projectId",
+				"workspaceId",
+				"workspaceName",
+				"projectName"	
+		};
+	}
+	
+	public static String[] csvHeaderMappe2() {
+		return new String[] {
+				"timestamp",
+				"taskId",
+				"childID",
+				"grandChildID",
+				"taskName",
+				"rawDataText",
+				"typeOfChangeNew",
+				"typeOfChangeDescriptionNew",
+				"typeOfChangeOrignal",
+				"typeOfChangeDescriptionOriginal",
+				"createdByName",
+				"createdById",
+				"currentAssignee",
+				"currentAssigneeId",
+				"mergedCurrentAssignee",
+				"mergedCurrentAssigneeId",
+				"childName",
+				"grandChildName",
+				"circleInheritedFromParent",
 				"circles",
 				"circleIds",
 				"aliveStatus",

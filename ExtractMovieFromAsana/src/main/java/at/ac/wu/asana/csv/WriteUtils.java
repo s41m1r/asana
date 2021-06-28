@@ -100,10 +100,10 @@ public abstract class WriteUtils {
 							new FileOutputStream(csv), StandardCharsets.UTF_8));
 
 			CSVWriter csvWriter = new CSVWriter(rolesFileWriter);
-			String[] header = StructuralDataChange.csvHeaderMappe1();
+			String[] header = StructuralDataChange.csvHeaderMappe2();
 			csvWriter.writeNext(header);
 			for (StructuralDataChange change : taskChanges) {
-				csvWriter.writeNext(change.csvRowMappe1());
+				csvWriter.writeNext(change.csvRowMappe2());
 			}
 			csvWriter.flush();
 			csvWriter.close();
