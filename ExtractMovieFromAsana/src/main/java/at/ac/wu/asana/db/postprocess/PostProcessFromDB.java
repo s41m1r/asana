@@ -236,8 +236,20 @@ public class PostProcessFromDB {
 		
 		Map<String,List<StructuralDataChange>> allEvents2 = sortHistory(dynamicChildToParent(allEvents)); // 0 events are being skipped 
 		
+		List<StructuralDataChange> children = filterForChildren(allEvents2);
+		List<StructuralDataChange> childrenWithCircle = children.stream()
+				.filter(c -> (c.getCircleIds()!=null && !c.getCircleIds().isEmpty() && !c.getCircle().equals("NO CIRCLE")))
+				.collect(Collectors.toList());
+		
 		setCircleInheritanceFromParent(allEvents2);
-
+		
+		// check if different than parent
+		
+		List<StructuralDataChange> differentThanInherited = checkContainedInInherited(allEvents2,childrenWithCircle);
+		System.out.println(differentThanInherited.size());
+		
+		WriteUtils.writeMappeToCSV(differentThanInherited, "different-than-inherited.csv");
+				
 //		assertEquals(47231, allEvents2.values().stream().mapToInt(List::size).sum());
 
 		allSize = allEvents2.values().stream().mapToInt(List::size).sum();
@@ -275,6 +287,7 @@ public class PostProcessFromDB {
 
 		Map<String, String> revDict = addCurrentAssigneeId(uniqueEvents,dict);
 		setMergedCurrentAssgineeIds(uniqueEvents,revDict);
+		
 
 		String circleEvents = "auxFiles/circleParents-3.csv";
 		addSecondDegreeCircle(uniqueEvents, circleEvents);
@@ -293,7 +306,7 @@ public class PostProcessFromDB {
 
 		String code20createCircle = "auxFiles/code20CreateCircle.csv";
 		manuallySetCode20(uniqueEvents, code20createCircle, revDict);
-
+		
 		//		printHistoryOfTask("11555199602323", allEventsNoDup);
 
 		String outfile = "Springest-filtered.csv";
@@ -315,6 +328,29 @@ public class PostProcessFromDB {
 
 		System.out.println("Done in "+(System.currentTimeMillis()-start)/1000+" sec.");
 		System.out.println("Wrote on file "+outfile);
+	}
+
+	private static List<StructuralDataChange> checkContainedInInherited(
+			Map<String, List<StructuralDataChange>> allEvents2, List<StructuralDataChange> childrenWithCircle) {
+		List<StructuralDataChange> res = new ArrayList<StructuralDataChange>();
+		for (StructuralDataChange e : childrenWithCircle) {
+			if(!e.getCircleInheritedFromParent().contains(e.getCircle())) {
+				res.add(e);
+			}
+		}
+		return res;
+	}
+
+	private static List<StructuralDataChange> filterForChildren(Map<String, List<StructuralDataChange>> allEvents2) {
+		List<StructuralDataChange> res = new ArrayList<StructuralDataChange>();
+		for(String k : allEvents2.keySet()) {
+			for(StructuralDataChange sdc : allEvents2.get(k)) {
+				if(sdc.getParentTaskId()==null || sdc.getParentTaskId().isEmpty()) {
+					res.add(sdc);
+				}
+			}
+		}
+		return res;
 	}
 
 	private static void setCircleInheritanceFromParent(Map<String, List<StructuralDataChange>> allEvents2) {
@@ -678,8 +714,10 @@ public class PostProcessFromDB {
 		}
 
 		for (StructuralDataChange change : uniqueEvents) {
-			if(revDict.containsKey(change.getCurrentAssignee()))
+			if(revDict.containsKey(change.getCurrentAssignee())) {
 				change.setCurrentAssigneeId(revDict.get(change.getCurrentAssignee()));
+				change.setCurrentAssignee(dict.get(change.getCurrentAssigneeId()).toArray(new String[] {})[0]); //get first name in the list
+			}
 		}
 
 		return revDict;
@@ -2757,6 +2795,9 @@ public class PostProcessFromDB {
 		Map<String, List<StructuralDataChange>> res = new LinkedHashMap<String, List<StructuralDataChange>>();
 		Set<String> taskIds = allEvents.keySet();
 		int neverAdded = 0;
+		
+		List<StructuralDataChange> bag = new ArrayList<StructuralDataChange>();
+		
 		for (String taskId : taskIds) {
 			//			if(taskId.equals("1158107169298928"))
 			//				System.out.println("HERE!");
@@ -2800,6 +2841,7 @@ public class PostProcessFromDB {
 							neverAdded++;
 							//							System.err.println("This task "+sdc.getTaskId()+" "+sdc.getTaskName()
 							//							+" was never added to "+curCircle);
+							bag.add(sdc);
 						}
 					}
 					else {
@@ -2815,6 +2857,7 @@ public class PostProcessFromDB {
 		}
 		assertTrue(allEvents.size() == res.size());
 		System.err.println("I found "+neverAdded+" tasks that were removed from a circle without having been added before.");
+		WriteUtils.writeMappeToCSV(bag, "removed-not-added.csv");
 		return res;
 	}
 
