@@ -70,7 +70,6 @@ public class PostProcessFromDB {
 		long start = System.currentTimeMillis();
 		//parent, child
 		subCirclesOf.put("404651189519209", "236886514207498");
-		subCirclesOf.put("11555199602299", "560994092069672");
 		subCirclesOf.put("11555199602299", "561311958443380");
 		subCirclesOf.put("11347525454570", "824769296181501");
 		subCirclesOf.put("11555199602299", "1133031362168396");
@@ -228,7 +227,10 @@ public class PostProcessFromDB {
 		assertEquals(63433, allSize + 6732 + 1381 + removedCode14Events + lastModRemoved);
 
 		Map<String, List<StructuralDataChange>> allEvents = setCurrentCircles(all);		
-
+		
+//		System.out.println(getEventAt(allEvents, "2013-10-14 07:57:31.072"));
+//		System.exit(0);
+		
 		assertEquals(allSize, allEvents.values().stream().mapToInt(List::size).sum());
 
 		allSize = allEvents.values().stream().mapToInt(List::size).sum();
@@ -2799,8 +2801,6 @@ public class PostProcessFromDB {
 		List<StructuralDataChange> bag = new ArrayList<StructuralDataChange>();
 		
 		for (String taskId : taskIds) {
-			//			if(taskId.equals("1158107169298928"))
-			//				System.out.println("HERE!");
 			boolean firstTimeAddedToCircle = true;
 			List<String> circles = new ArrayList<String>();
 			List<StructuralDataChange> taskHistory = new LinkedList<StructuralDataChange>(allEvents.get(taskId));
@@ -2811,7 +2811,10 @@ public class PostProcessFromDB {
 
 				if(sdc.getTypeOfChange()==AsanaActions.ADD_TO_CIRCLE || 
 						sdc.getTypeOfChange() == AsanaActions.DESIGN_ROLE) {
-					String curCircle = sdc.getRawDataText().replaceAll("\\[EVENT FROM SUB-TASK\\]","").replaceAll("added to ", "").trim();
+					String curCircle = sdc.getRawDataText()
+							.replaceAll("\\[EVENT FROM SUB-TASK\\]","")
+							.replaceAll("\\[EVENT FROM ORPHAN\\]","")
+							.replaceAll("added to ", "").trim();
 					int i = lookup(curCircle); // if -1 then it is not a circle
 					if(i!=-1) {
 						if(firstTimeAddedToCircle ) {
