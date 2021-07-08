@@ -1,6 +1,5 @@
 package at.ac.wu.asana.csv;
 
-import java.io.BufferedReader;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
