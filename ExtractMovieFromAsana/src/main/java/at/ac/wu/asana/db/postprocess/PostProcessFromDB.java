@@ -2897,10 +2897,7 @@ public class PostProcessFromDB {
 					}
 				}
 
-				if(sdc.getTypeOfChange()==AsanaActions.REMOVE_FROM_CIRCLE) {
-					
-					if(sdc.getTaskId().equals("7749914219843"))
-						System.out.println("debug setCurrentCircles");
+				if(sdc.getTypeOfChange()==AsanaActions.REMOVE_FROM_CIRCLE) {	
 					
 					String curCircle = sdc.getRawDataText()
 							.replaceAll("\\[EVENT FROM SUB-TASK\\]","")
@@ -2913,6 +2910,7 @@ public class PostProcessFromDB {
 						else {
 							if(previous!=null && 
 									!previous.getRawDataText().contains("removed from") && 
+									!previous.getRawDataText().contains(curCircle) &&
 									!previous.getStoryCreatedAt().equals(sdc.getStoryCreatedAt()))
 							neverAdded.add(sdc.getTaskId());
 							//							System.err.println("This task "+sdc.getTaskId()+" "+sdc.getTaskName()
@@ -2925,6 +2923,12 @@ public class PostProcessFromDB {
 							setChange(sdc, AsanaActions.COMMENT);
 					}
 				}
+				
+				if(sdc.getTaskId().equals("61981362390180") &&
+						(Timestamp.valueOf(sdc.getStoryCreatedAt()).toString().endsWith("02:54.373") || 
+								Timestamp.valueOf(sdc.getStoryCreatedAt()).toString().endsWith("03:23.473")))
+					circles = GeneralUtils.union(circles, Arrays.asList(new String[] {"☺ Infrastructure Roles"}));
+				
 				sdc.setCircle(commaSeparate(circles));
 				sdc.setCircleIds(commaSeparateIds(circles));
 				newList.add(sdc.makeCopy());
