@@ -63,6 +63,8 @@ public class PostProcessFromDB {
 	static Map<String, TreeSet<TimestampCircle>> circlesOfTasks = new HashMap<String, TreeSet<TimestampCircle>>();
 	static Map<String, ArrayList<StructuralDataChange>> mapTaskStories = new LinkedHashMap<String, ArrayList<StructuralDataChange>>();
 
+	static Logger log = Logger.getLogger(PostProcessFromDB.class.getName());
+
 	public static void main(String[] args) throws IOException {
 
 		final String VERSION = "-test";
@@ -105,7 +107,7 @@ public class PostProcessFromDB {
 
 		int allSize = merge.values().stream().mapToInt(List::size).sum();
 		assertEquals(63433, allSize);
-		
+
 		Map<String, List<StructuralDataChange>> allNoSep = filterOutSeparator(merge); // filters out 6732 events
 
 		allSize = allNoSep.values().stream().mapToInt(List::size).sum();
@@ -132,12 +134,12 @@ public class PostProcessFromDB {
 		setComment(all);
 
 		manualFixForCode99(all);
-		
+
 		Map<String, String> dictionary = getAllTaskIdName(all);
-			
+
 		//		fixChildAsRoleProblem(allParents, allChildren);
 		Set<String> allOrphanIds = fixOrphans(allParents, allChildren);
-		
+
 		String manAnnoAssiFile = "auxFiles/assigned-the-task-complete.csv";
 		integrateManuallyAnnotatedCurrentAssignee(allParents, manAnnoAssiFile, false);
 		integrateManuallyAnnotatedCurrentAssignee(allChildren, manAnnoAssiFile, false);
@@ -152,38 +154,38 @@ public class PostProcessFromDB {
 
 		//		List<String> downgradedRolesEvents = getIdsOfChildrenOlderThanFather(allParents,allChildren);		
 		//		fixDowngradedRoles(allParents, allChildren, downgradedRolesEvents);
-		
+
 		int lastModRemoved = fixCompletedAndRemoveLastModify(all);
 		allSize = all.values().stream().mapToInt(List::size).sum();
 
 		assertEquals(63433, allSize + 6732 + 1381 + lastModRemoved);
-		
+
 		int removedCode14Events = removeCode14(all);
-		Logger.getLogger(PostProcessFromDB.class.getName()).info("Removed "+removedCode14Events+" events with code 14 (AsanaActions.COMPLETE_ROLE)");
-		
+		log.info("Removed "+removedCode14Events+" events with code 14 (AsanaActions.COMPLETE_ROLE)");
+
 		setRoleType(all);
-		
+
 		setAliveStatus(all);
-		
+
 		Set<String> tasksNeverAddedOrRemoved = getTasksNeverAddedOrRemoved(all);
-	
+
 		setDynamicHierarchy(all, allOrphanIds, forceToChild, tasksNeverAddedOrRemoved);
 		setDynamicHierarchyDuplicated(all, forceToChild, projects);
-		
+
 		List<String> allTasksWhoChangedFather = getAllTasksWhoChangedFather(all, projects);
 		Set<String> allTasksWhoseFatherIsLast = getAllTasksAddedAndNotRemoved(all);
 
 		allTasksWhoseFatherIsLast.removeAll(allTasksWhoChangedFather);
 
 		List<String[]> matchedTasks = new ArrayList<String[]>();
-				
+
 		assignDynamicFather(
 				all,dictionary, 
 				allTasksWhoChangedFather, matchedTasks, 
 				allTasksWhoseFatherIsLast, forceToChild);
-		
+
 		//		List<String[]> subsetEvents = addMatchedParents(dictionary,matchedTasks);
-			
+
 		manualFixHierarchy(allParents, allChildren);
 
 		fillDynamicFather(all);
@@ -214,44 +216,46 @@ public class PostProcessFromDB {
 		//				"testing/matched-tasks"+VERSION+".csv");
 
 		//		 all good until here
-		
-		
+
+
 		fixCodingAccordingToAuthoritativeList(all, projects);
-		
+
 		setTextOfDesignRole(all);
-	
+
 		setDesignRole(all);
 
 		allSize = all.values().stream().mapToInt(List::size).sum();
 
 		assertEquals(63433, allSize + 6732 + 1381 + removedCode14Events + lastModRemoved);
 
-		Map<String, List<StructuralDataChange>> allEvents = setCurrentCircles(all);		
-		
-//		System.out.println(getEventAt(allEvents, "2013-10-14 07:57:31.072"));
-//		System.exit(0);
-		
+		System.out.println(getEventAt(all, "2013-09-16 14:39:15.896"));
+		Map<String, List<StructuralDataChange>> allEvents = setCurrentCircles(all);
+		String out = getEventAt(allEvents, "2013-09-16 14:39:15.896");
+		System.out.println(out);
+		assertTrue(!out.contains("☺ Infrastructure Roles"));
+
 		assertEquals(allSize, allEvents.values().stream().mapToInt(List::size).sum());
 
 		allSize = allEvents.values().stream().mapToInt(List::size).sum();
 		assertEquals(63433, allSize + 6732 + 1381 + removedCode14Events + lastModRemoved);
-		
+
 		Map<String,List<StructuralDataChange>> allEvents2 = sortHistory(dynamicChildToParent(allEvents)); // 0 events are being skipped 
-		
-		List<StructuralDataChange> children = filterForChildren(allEvents2);
-		List<StructuralDataChange> childrenWithCircle = children.stream()
-				.filter(c -> (c.getCircleIds()!=null && !c.getCircleIds().isEmpty() && !c.getCircle().equals("NO CIRCLE")))
-				.collect(Collectors.toList());
-		
+
+//		List<StructuralDataChange> children = filterForChildren(allEvents2);
+//		List<StructuralDataChange> childrenWithCircle = children.stream()
+//				.filter(c -> (c.getCircleIds()!=null && !c.getCircleIds().isEmpty() && !c.getCircle().equals("NO CIRCLE")))
+//				.collect(Collectors.toList());
+
 		setCircleInheritanceFromParent(allEvents2);
-		
+
 		// check if different than parent
+//		List<StructuralDataChange> differentThanInherited = checkContainedInInherited(allEvents2,childrenWithCircle);
+//		System.out.println(differentThanInherited.size());
+//		
+//		WriteUtils.writeMappeToCSV(differentThanInherited, "different-than-inherited.csv");
 		
-		List<StructuralDataChange> differentThanInherited = checkContainedInInherited(allEvents2,childrenWithCircle);
-		System.out.println(differentThanInherited.size());
-		
-		WriteUtils.writeMappeToCSV(differentThanInherited, "different-than-inherited.csv");
-				
+//		includeCirclesFromParent(differentThanInherited, allEvents2);
+
 //		assertEquals(47231, allEvents2.values().stream().mapToInt(List::size).sum());
 
 		allSize = allEvents2.values().stream().mapToInt(List::size).sum();
@@ -289,16 +293,19 @@ public class PostProcessFromDB {
 
 		Map<String, String> revDict = addCurrentAssigneeId(uniqueEvents,dict);
 		setMergedCurrentAssgineeIds(uniqueEvents,revDict);
-		
+
 
 		String circleEvents = "auxFiles/circleParents-3.csv";
 		addSecondDegreeCircle(uniqueEvents, circleEvents);
 
 		setIgnoreEvent(uniqueEvents);
-		
+
 		setCompleteAsAlive(uniqueEvents);
 		setEventFromOrphan(uniqueEvents, allOrphanIds);
 		setOrphansToIgnore(uniqueEvents, allOrphanIds);
+		int c = setDynamicOrphanToIgnore(uniqueEvents);
+		log.info("Set "+c+" \"remove\" events from dyanamic orphan to "+AsanaActions.codeToString(AsanaActions.IGNORE_EVENT));
+
 		removeOrphanLabelFromSubtask(uniqueEvents);
 
 		addIgnoreToChild(uniqueEvents);
@@ -308,29 +315,78 @@ public class PostProcessFromDB {
 
 		String code20createCircle = "auxFiles/code20CreateCircle.csv";
 		manuallySetCode20(uniqueEvents, code20createCircle, revDict);
-		
+
 		//		printHistoryOfTask("11555199602323", allEventsNoDup);
 
 		String outfile = "Springest-filtered.csv";
 		//		WriteUtils.writeListOfChangesWithCircleToCSV(uniqueEvents, outfile);
 		allSize = uniqueEvents.size();
 		assertEquals(63433, allSize + 6732 + 1381 + removedCode14Events + lastModRemoved + 1800);
-		
+
 		outfile = outfile.replace("filtered", "Mappe1");
 		WriteUtils.writeMappeToCSV(uniqueEvents, outfile);
 
 		//		WriteUtils.writeMapOfChangesWithCircleToCSV2(allEventsNoDup, outfile);
 
 		//		checkIfNoDesigned(allEvents);
-		
+
 		List<StructuralDataChange> l = uniqueEvents.stream().filter(
 				e -> e.getRawDataText().trim().equals("[EVENT FROM SUB-TASK]")).collect(Collectors.toList());
-		
+
 		WriteUtils.writeMappeToCSV(l, "test.csv");
 
 		System.out.println("Done in "+(System.currentTimeMillis()-start)/1000+" sec.");
 		System.out.println("Wrote on file "+outfile);
 	}
+
+//	private static void includeCirclesFromParent(Map<String, List<StructuralDataChange>> allEvents2) {
+//		
+//		List<StructuralDataChange> toChange = differentThanInherited.stream()
+//			.filter(e -> !e.getCircle().contains(e.getCircleInheritedFromParent()))
+//			.collect(Collectors.toList());
+//		
+//		for (StructuralDataChange sdc : toChange) {
+//			List<StructuralDataChange> history = allEvents2.get(sdc.getTaskId());
+//			for (StructuralDataChange e : history) {
+//				if(e.getStoryCreatedAt().equals(sdc.getStoryCreatedAt())) { // found the event to change
+//					e.setCircle(String.join(", ", e.getCircle(), e.getCircleInheritedFromParent()));
+//					String[] parentCircleNames = e.getCircleInheritedFromParent().trim().split(",");
+//					String ids = "";
+//					for (String p : parentCircleNames) {
+//						if(!p.isEmpty() && !p.equals("NO CIRCLE")) {
+//							int idx = lookup(p.trim());
+//							
+//							if(idx==-1)
+//								log.severe("Circle name "+p+" NOT FOUND!");
+//							
+//							ids += AuthoritativeList.authoritativeListNames[idx];
+//						}
+//					}
+//					if(!ids.isEmpty()) {
+//						e.setCircleIds(String.join(", ", e.getCircleIds(), ids));
+//					}
+//				}
+//			}
+//			
+//		}
+//	}
+
+	private static int setDynamicOrphanToIgnore(List<StructuralDataChange> uniqueEvents) {
+		int c = 0;
+		Map<String, String> previousRDT = new HashMap<String, String>();
+		for (StructuralDataChange sdc : uniqueEvents) {
+			if(sdc.getTypeOfChange() == AsanaActions.ROLE_EXTRACTION &&
+					previousRDT.containsKey(sdc.getTaskId()) &&
+					previousRDT.get(sdc.getTaskId()).contains("[EVENT FROM ORPHAN]")) {
+				setChange(sdc, AsanaActions.IGNORE_EVENT);
+				setChangeNew(sdc, AsanaActions.IGNORE_EVENT);
+				c++;
+			}
+			previousRDT.put(sdc.getTaskId(), sdc.getRawDataText());
+		}
+		return c;
+	}
+
 
 	private static List<StructuralDataChange> checkContainedInInherited(
 			Map<String, List<StructuralDataChange>> allEvents2, List<StructuralDataChange> childrenWithCircle) {
@@ -359,15 +415,18 @@ public class PostProcessFromDB {
 		for (String k : allEvents2.keySet()) {
 			String curC = "NO CIRCLE";
 			for (StructuralDataChange sdc : allEvents2.get(k)) {
-				if(Timestamp.valueOf(sdc.getStoryCreatedAt()).toString().contains("27:48.109"))
-					System.out.println("debug setCircleInheritanceFromParent");
-					
-				if(sdc.getChildId()==null && sdc.getGrandChildId()==null && 
-						(sdc.getTypeOfChange()==AsanaActions.ADD_TO_CIRCLE || 
-						sdc.getTypeOfChange() == AsanaActions.CREATE_ROLE || 
-						sdc.getTypeOfChange() == AsanaActions.REMOVE_FROM_CIRCLE ||
-						sdc.getTypeOfChange() == AsanaActions.ROLE_EXTRACTION || 
-						sdc.getTypeOfChange() == AsanaActions.REMOVE_SUB_ROLE) ) { // any circle change at parent 
+				
+//				if(sdc.getTaskId().equals("142596961031410"))
+//					System.out.println("debug setCircleInheritanceFromParent");
+				
+				if(sdc.getChildId()==null && sdc.getGrandChildId()==null 
+//						&& 
+//						(sdc.getTypeOfChange()==AsanaActions.ADD_TO_CIRCLE || 
+//						sdc.getTypeOfChange() == AsanaActions.CREATE_ROLE || 
+//						sdc.getTypeOfChange() == AsanaActions.REMOVE_FROM_CIRCLE ||
+//						sdc.getTypeOfChange() == AsanaActions.ROLE_EXTRACTION || 
+//						sdc.getTypeOfChange() == AsanaActions.REMOVE_SUB_ROLE) 
+						){ // any circle change at parent 
 					curC = sdc.getCircle();
 				}	
 				sdc.setCircleInheritedFromParent(curC);
@@ -383,7 +442,7 @@ public class PostProcessFromDB {
 			String newRdt = rdt.replace("[EVENT FROM ORPHAN] ", "");
 			e.setRawDataText(newRdt);
 		});		
-		
+
 	}
 
 	private static Set<String> getTasksNeverAddedOrRemoved(Map<String, List<StructuralDataChange>> all) {
@@ -663,8 +722,6 @@ public class PostProcessFromDB {
 	private static int removeCode14(Map<String, List<StructuralDataChange>> all) {
 		int removedEvents = 0;
 		for (String k : all.keySet()) {
-			if(k.equals("1124479127191211"))
-				System.out.println("removeCode14 debug");
 			for (Iterator<StructuralDataChange> it = all.get(k).iterator(); it.hasNext();) {
 				if(it.next().getTypeOfChange() == AsanaActions.COMPLETE_ROLE) {
 					it.remove();
@@ -820,7 +877,7 @@ public class PostProcessFromDB {
 		for (String k : allEvents.keySet()) {
 			for(StructuralDataChange sdc : allEvents.get(k)) {
 				if(Timestamp.valueOf(sdc.getStoryCreatedAt()).toString().equals(searchTS)){
-					row = sdc.csvRowDynamic();
+					row = sdc.csvRowMappe1();
 				}
 			}
 		}
@@ -1620,7 +1677,7 @@ public class PostProcessFromDB {
 		rest.retainAll(allTasksWhoChangedFather); 
 
 		for (String k : rest) {
-			
+
 			if(!forceToChild.contains(k)) {
 				for (StructuralDataChange e : all.get(k)) {
 					if(e.getDynamicHierarchy().equals("child")) {
@@ -1891,7 +1948,7 @@ public class PostProcessFromDB {
 			String lastParent = "NO PARENT";
 			for (StructuralDataChange e : events) {
 				String rawDataText = e.getRawDataText().trim();
-				
+
 				if(forceToChild.contains(k) || tasksNeverAddedOrRemoved.contains(k)) {
 					hierarchy = "child";
 					parentName = e.getParentTaskName();
@@ -2390,14 +2447,14 @@ public class PostProcessFromDB {
 		for (String k : keys) {
 			List<StructuralDataChange> allChanges = a.get(k);
 			for (StructuralDataChange sdc : allChanges) {
-				
-				
+
+
 				int typeOfChange = sdc.getTypeOfChange(); // set this!
-//				if(Timestamp.valueOf(sdc.getStoryCreatedAt()).toString().contains("27:48.109") 
-//						//						&& sdc.getRawDataText().contains("added to ☺ Marketplace (NL/BE/UK/SE/COM) Roles")
-//						) {
-//					System.out.println("debug fixCodingAccordingToAuthoritativeList");
-//				}
+				//				if(Timestamp.valueOf(sdc.getStoryCreatedAt()).toString().contains("27:48.109") 
+				//						//						&& sdc.getRawDataText().contains("added to ☺ Marketplace (NL/BE/UK/SE/COM) Roles")
+				//						) {
+				//					System.out.println("debug fixCodingAccordingToAuthoritativeList");
+				//				}
 				if(sdc.getTypeOfChange() == AsanaActions.COMMENT)
 					typeOfChange = AsanaActions.COMMENT;
 				else if(containsCircleName(sdc.getRawDataText()))
@@ -2782,7 +2839,7 @@ public class PostProcessFromDB {
 			}
 		}
 	}
-	
+
 	private static void setTextOfDesignRole(Map<String, List<StructuralDataChange>> allEvents) {
 		for(String k : allEvents.keySet()) {
 			for(StructuralDataChange sdc : allEvents.get(k)) {
@@ -2796,28 +2853,34 @@ public class PostProcessFromDB {
 	private static Map<String, List<StructuralDataChange>> setCurrentCircles(Map<String, List<StructuralDataChange>> allEvents) {
 		Map<String, List<StructuralDataChange>> res = new LinkedHashMap<String, List<StructuralDataChange>>();
 		Set<String> taskIds = allEvents.keySet();
-		int neverAdded = 0;
-		
-		List<StructuralDataChange> bag = new ArrayList<StructuralDataChange>();
-		
+		List<String> neverAdded = new ArrayList<String>(); 
+
+		//		List<StructuralDataChange> bag = new ArrayList<StructuralDataChange>();
+
 		for (String taskId : taskIds) {
 			boolean firstTimeAddedToCircle = true;
 			List<String> circles = new ArrayList<String>();
 			List<StructuralDataChange> taskHistory = new LinkedList<StructuralDataChange>(allEvents.get(taskId));
 			java.util.Collections.sort(taskHistory);
 			List<StructuralDataChange> newList = new LinkedList<StructuralDataChange>();
+			StructuralDataChange previous = null;
 
 			for (StructuralDataChange sdc : taskHistory) {
+				
+				if(Timestamp.valueOf(sdc.getStoryCreatedAt()).toString().endsWith("39:15.896"))
+					System.out.println("debug setCurrentCircles");
 
-				if(sdc.getTypeOfChange()==AsanaActions.ADD_TO_CIRCLE || 
-						sdc.getTypeOfChange() == AsanaActions.DESIGN_ROLE) {
+				if(sdc.getTypeOfChange()==AsanaActions.ADD_TO_CIRCLE 
+//						|| 
+//						sdc.getTypeOfChange() == AsanaActions.DESIGN_ROLE
+						) {
 					String curCircle = sdc.getRawDataText()
 							.replaceAll("\\[EVENT FROM SUB-TASK\\]","")
 							.replaceAll("\\[EVENT FROM ORPHAN\\]","")
 							.replaceAll("added to ", "").trim();
 					int i = lookup(curCircle); // if -1 then it is not a circle
 					if(i!=-1) {
-						if(firstTimeAddedToCircle ) {
+						if(firstTimeAddedToCircle) {
 							setChange(sdc, AsanaActions.CREATE_ROLE);
 							circles.add(curCircle);
 						}
@@ -2835,16 +2898,26 @@ public class PostProcessFromDB {
 				}
 
 				if(sdc.getTypeOfChange()==AsanaActions.REMOVE_FROM_CIRCLE) {
-					String curCircle = sdc.getRawDataText().replaceAll("\\[EVENT FROM SUB-TASK\\]","").replaceAll("removed from ", "").trim();
+					
+					if(sdc.getTaskId().equals("7749914219843"))
+						System.out.println("debug setCurrentCircles");
+					
+					String curCircle = sdc.getRawDataText()
+							.replaceAll("\\[EVENT FROM SUB-TASK\\]","")
+							.replaceAll("\\[EVENT FROM ORPHAN\\]","")
+							.replaceAll("removed from ", "").trim();
 					int i = lookup(curCircle); // if -1 then it is not a circle
 					if(i!=-1) { 
-						if(circles.contains(curCircle))
+						if(circles.contains(curCircle))  
 							circles.remove(curCircle);
 						else {
-							neverAdded++;
+							if(previous!=null && 
+									!previous.getRawDataText().contains("removed from") && 
+									!previous.getStoryCreatedAt().equals(sdc.getStoryCreatedAt()))
+							neverAdded.add(sdc.getTaskId());
 							//							System.err.println("This task "+sdc.getTaskId()+" "+sdc.getTaskName()
 							//							+" was never added to "+curCircle);
-							bag.add(sdc);
+							//							bag.add(sdc);
 						}
 					}
 					else {
@@ -2855,12 +2928,56 @@ public class PostProcessFromDB {
 				sdc.setCircle(commaSeparate(circles));
 				sdc.setCircleIds(commaSeparateIds(circles));
 				newList.add(sdc.makeCopy());
+				previous = sdc;
 			}
 			res.put(taskId, newList);
 		}
 		assertTrue(allEvents.size() == res.size());
-		System.err.println("I found "+neverAdded+" tasks that were removed from a circle without having been added before.");
-		WriteUtils.writeMappeToCSV(bag, "removed-not-added.csv");
+		log.info("I found "+neverAdded.size()+" tasks that were removed from a circle without having been added before.");
+		log.info("Will now set the circle of these tasks backwards.");
+
+		for (String tId : neverAdded) { //set circle backwards
+			List<StructuralDataChange> history = res.get(tId);
+
+			int idx = 0;
+			
+			while(idx<history.size() && 
+					history.get(idx).getTypeOfChange() != AsanaActions.REMOVE_FROM_CIRCLE) {
+				idx++;
+			}
+			if(tId.equals("142596961031410"))
+				System.out.println("debug setCurrentCircles");
+
+			String theCircle = stripProjectName(history.get(idx).getRawDataText());
+			int i = lookup(theCircle);
+			String theCircleId = "";
+			if(i!=-1) 
+				theCircleId = AuthoritativeList.authoritativeList[i];
+			else 
+				log.severe("lookup("+theCircle+") returned "+i);
+			
+			if(Timestamp.valueOf(history.get(idx).getStoryCreatedAt()).toString().endsWith("39:15.896"))
+				System.out.println("debug setCurrentCircles");
+
+			idx--;
+			while(idx>=0) {
+				
+				if(tId.equals("7749914219843"))
+					System.out.println("debug setCurrentCircles");
+				
+				if(!history.get(idx).getCircle().contains(theCircle)) {
+					history.get(idx).setCircle(""+String.join(",", history.get(idx).getCircle(), theCircle).replaceAll("NO CIRCLE,", ""));
+					history.get(idx).setCircleIds(""+String.join(",", history.get(idx).getCircleIds(), theCircleId).replaceAll("^,+", ""));
+				}
+				if(idx==0) {
+					setChange(history.get(idx), AsanaActions.CREATE_ROLE);
+					setChangeNew(history.get(idx), AsanaActions.CREATE_ROLE);
+				}
+				idx--;
+			}
+		}
+
+		//		WriteUtils.writeMappeToCSV(bag, "removed-not-added.csv");
 		return res;
 	}
 

@@ -5,6 +5,7 @@ import java.util.List;
 
 import at.ac.wu.asana.csv.ReadInfoFromCSV;
 import at.ac.wu.asana.csv.WriteUtils;
+import at.ac.wu.asana.model.StructuralDataChange;
 
 public class MakeDiff {
 	
@@ -16,8 +17,8 @@ public class MakeDiff {
 		List<String[]> data2 = ReadInfoFromCSV.readAll(file2);
 		
 		List<String[]> differences = makeDiff(data1, data2);
-		
-		WriteUtils.writeList(differences, "differences.csv");
+		String[] header = StructuralDataChange.csvHeaderMappe1();
+		WriteUtils.writeList(differences, "differences.csv", header);
 	}
 
 	private static List<String[]> makeDiff(List<String[]> data1, List<String[]> data2) {

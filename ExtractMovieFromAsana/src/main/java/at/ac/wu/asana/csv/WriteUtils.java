@@ -297,6 +297,23 @@ public abstract class WriteUtils {
 			e.printStackTrace();
 		}
 	}
+
+	public static void writeList(List<String[]> list, String csv, String[] header) {
+		PrintWriter writer = null;	
+		try {
+			writer = new PrintWriter(
+					new OutputStreamWriter(
+							new FileOutputStream(csv), StandardCharsets.UTF_8));
+			CSVWriter csvWriter = new CSVWriter(writer);
+			csvWriter.writeNext(header);
+			csvWriter.writeAll(list);
+			csvWriter.flush();
+			csvWriter.close();
+		}
+		catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
 	
 	
 }
