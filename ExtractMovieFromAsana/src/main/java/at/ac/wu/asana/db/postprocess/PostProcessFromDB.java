@@ -34,6 +34,7 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
@@ -129,7 +130,6 @@ public class PostProcessFromDB {
 		assertEquals(63433, allSize + 6732 +  1381);
 
 		duplicateTaskToDesignRole(all, dup);
-
 		setRemoveSubRole(all, projects);
 		setComment(all);
 
@@ -141,6 +141,7 @@ public class PostProcessFromDB {
 		Set<String> allOrphanIds = fixOrphans(allParents, allChildren);
 
 		String manAnnoAssiFile = "auxFiles/assigned-the-task-complete.csv";
+//		String manAnnoAssiFile = "auxFiles/assigned-the-task-complete-20210714.csv";
 		integrateManuallyAnnotatedCurrentAssignee(allParents, manAnnoAssiFile, false);
 		integrateManuallyAnnotatedCurrentAssignee(allChildren, manAnnoAssiFile, false);
 		includeManuallyAnnotatedCreatedByName(allParents);
@@ -288,12 +289,16 @@ public class PostProcessFromDB {
 		//		addCompletedEvent(uniqueEvents)
 
 		fillTypeOfChangeNew(uniqueEvents);
-
+		
+		String manAssiFile = "auxFiles/Assignee_Names_manual.csv";
+		manuallySetAssignee(uniqueEvents, manAssiFile);
+		
+		assertEquals("Peter Koelewijn", getSDC(uniqueEvents, "2014-04-01 14:13:04.089").getCurrentAssignee());
+		
 		Map<String, Set<String>> dict = uniformAssignees(uniqueEvents);
 
 		Map<String, String> revDict = addCurrentAssigneeId(uniqueEvents,dict);
 		setMergedCurrentAssgineeIds(uniqueEvents,revDict);
-
 
 		String circleEvents = "auxFiles/circleParents-3.csv";
 		addSecondDegreeCircle(uniqueEvents, circleEvents);
@@ -315,6 +320,8 @@ public class PostProcessFromDB {
 
 		String code20createCircle = "auxFiles/code20CreateCircle.csv";
 		manuallySetCode20(uniqueEvents, code20createCircle, revDict);
+		
+		manuallySetIgnore(uniqueEvents);
 
 		//		printHistoryOfTask("11555199602323", allEventsNoDup);
 
@@ -330,13 +337,37 @@ public class PostProcessFromDB {
 
 		//		checkIfNoDesigned(allEvents);
 
-		List<StructuralDataChange> l = uniqueEvents.stream().filter(
-				e -> e.getRawDataText().trim().equals("[EVENT FROM SUB-TASK]")).collect(Collectors.toList());
-
-		WriteUtils.writeMappeToCSV(l, "test.csv");
+//		List<StructuralDataChange> l = uniqueEvents.stream().filter(
+//				e -> e.getRawDataText().trim().equals("[EVENT FROM SUB-TASK]")).collect(Collectors.toList());
+//
+//		WriteUtils.writeMappeToCSV(l, "test.csv");
 
 		System.out.println("Done in "+(System.currentTimeMillis()-start)/1000+" sec.");
 		System.out.println("Wrote on file "+outfile);
+	}
+
+	private static void manuallySetAssignee(List<StructuralDataChange> uniqueEvents, String manAssiFile) {
+		try {
+			CSVReader reader = new CSVReader(new FileReader(manAssiFile));
+			reader.skip(1);
+			List<String[]> rows = reader.readAll();
+			reader.close();
+			for (String[] row : rows) {
+				StructuralDataChange sdc = getEventAtList(uniqueEvents, row[0]);
+				sdc.setCurrentAssignee(row[12]);
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+		} catch (CsvException e) {
+			e.printStackTrace();
+		}	
+	}
+
+	private static void manuallySetIgnore(List<StructuralDataChange> uniqueEvents) {
+		String ts = "2014-03-18 13:33:45.876";
+		StructuralDataChange sdc = getSDC(uniqueEvents, ts);
+		setChange(sdc, AsanaActions.IGNORE_EVENT);
+		setChangeNew(sdc, AsanaActions.IGNORE_EVENT);
 	}
 
 //	private static void includeCirclesFromParent(Map<String, List<StructuralDataChange>> allEvents2) {
@@ -538,6 +569,20 @@ public class PostProcessFromDB {
 		}
 		return Arrays.toString(row);
 	}
+	
+	private static StructuralDataChange getSDC(List<StructuralDataChange> uniqueEvents, String searchTS) {
+		Optional<StructuralDataChange> res = uniqueEvents.stream().filter(e -> Timestamp.valueOf(e.getStoryCreatedAt()).toString().equals(searchTS)).findFirst();
+		return res.get();
+	}
+	
+	private static StructuralDataChange getEventAtList(List<StructuralDataChange> uniqueEvents, String searchTS) {
+			for(StructuralDataChange sdc : uniqueEvents) {
+				if(Timestamp.valueOf(sdc.getStoryCreatedAt()).toString().equals(searchTS)){
+					return sdc;
+				}
+			}
+		return null;
+	}
 
 	private static void fixCode15Problems(List<StructuralDataChange> uniqueEvents) {
 		uniqueEvents.stream().filter(e -> e.getTypeOfChangeNew() == AsanaActions.CHANGE_ACCOUNTABILITY_PURPOSE && 
@@ -586,9 +631,11 @@ public class PostProcessFromDB {
 	private static void setEventFromOrphan(List<StructuralDataChange> uniqueEvents, Set<String> allOrphanIds) {
 		uniqueEvents.stream().filter(e -> allOrphanIds.contains(e.getTaskId())).
 		forEach(e -> {
-			String rdt = e.getRawDataText();
-			String newRdt = String.join(" ", "[EVENT FROM ORPHAN]", rdt);
-			e.setRawDataText(newRdt);
+			if(e.getTypeOfChange()!=AsanaActions.DESIGN_ROLE) {
+				String rdt = e.getRawDataText();
+				String newRdt = String.join(" ", "[EVENT FROM ORPHAN]", rdt);
+				e.setRawDataText(newRdt);
+			}
 		});		
 	}
 
@@ -1689,7 +1736,8 @@ public class PostProcessFromDB {
 								setChange(e, AsanaActions.IGNORE_EVENT);
 								setChangeNew(e, AsanaActions.IGNORE_EVENT);
 							}
-							e.setRawDataText(String.join(" ", "[EVENT FROM ORPHAN]",e.getRawDataText()));
+							if(e.getTypeOfChange()!=AsanaActions.DESIGN_ROLE)
+								e.setRawDataText(String.join(" ", "[EVENT FROM ORPHAN]",e.getRawDataText()));
 						}
 						e.setParentTaskId(lookedUpID);
 						matched.put(lookedUpID,e.getDynamicParentName());
@@ -2281,7 +2329,8 @@ public class PostProcessFromDB {
 			reader = new CSVReader(new FileReader(fileName));
 			reader.readNext();
 			List<String[]> rows = reader.readAll();
-			//			System.out.println("Read "+reader.getLinesRead()+" lines.");
+			System.out.println("Read "+reader.getLinesRead()+" lines.");
+			
 			reader.close();
 			int found = 0;
 			for (String[] row : rows) {
@@ -2292,6 +2341,10 @@ public class PostProcessFromDB {
 					continue;
 				for (StructuralDataChange structuralDataChange : eventsOfTask) {
 					//					DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SS[S]");
+					
+//					if(Timestamp.valueOf(structuralDataChange.getStoryCreatedAt()).toString().equals("2014-04-01 14:13:04.089"))
+//						System.out.println("debug integrateManuallyAnnotatedCurrentAssignee");
+//					
 					DateTimeFormatter formatter = new DateTimeFormatterBuilder()
 							.appendPattern("yyyy-MM-dd HH:mm:ss")
 							.appendFraction(ChronoField.MILLI_OF_SECOND, 1, 3, true) // min 2 max 3
@@ -2867,8 +2920,8 @@ public class PostProcessFromDB {
 
 			for (StructuralDataChange sdc : taskHistory) {
 				
-				if(Timestamp.valueOf(sdc.getStoryCreatedAt()).toString().endsWith("39:15.896"))
-					System.out.println("debug setCurrentCircles");
+//				if(Timestamp.valueOf(sdc.getStoryCreatedAt()).toString().endsWith("39:15.896"))
+//					System.out.println("debug setCurrentCircles");
 
 				if(sdc.getTypeOfChange()==AsanaActions.ADD_TO_CIRCLE 
 //						|| 
@@ -2949,8 +3002,8 @@ public class PostProcessFromDB {
 					history.get(idx).getTypeOfChange() != AsanaActions.REMOVE_FROM_CIRCLE) {
 				idx++;
 			}
-			if(tId.equals("142596961031410"))
-				System.out.println("debug setCurrentCircles");
+//			if(tId.equals("142596961031410"))
+//				System.out.println("debug setCurrentCircles");
 
 			String theCircle = stripProjectName(history.get(idx).getRawDataText());
 			int i = lookup(theCircle);
@@ -2960,14 +3013,14 @@ public class PostProcessFromDB {
 			else 
 				log.severe("lookup("+theCircle+") returned "+i);
 			
-			if(Timestamp.valueOf(history.get(idx).getStoryCreatedAt()).toString().endsWith("39:15.896"))
-				System.out.println("debug setCurrentCircles");
+//			if(Timestamp.valueOf(history.get(idx).getStoryCreatedAt()).toString().endsWith("39:15.896"))
+//				System.out.println("debug setCurrentCircles");
 
 			idx--;
 			while(idx>=0) {
 				
-				if(tId.equals("7749914219843"))
-					System.out.println("debug setCurrentCircles");
+//				if(tId.equals("7749914219843"))
+//					System.out.println("debug setCurrentCircles");
 				
 				if(!history.get(idx).getCircle().contains(theCircle)) {
 					history.get(idx).setCircle(""+String.join(",", history.get(idx).getCircle(), theCircle).replaceAll("NO CIRCLE,", ""));

@@ -773,7 +773,7 @@ public class StructuralDataChange implements Comparable<StructuralDataChange> {
 	}
 
 	public void setAssigneeName(String assigneeName) {
-		this.lastAssigneeName = assigneeName;
+		this.lastAssigneeName = ""+assigneeName;
 	}
 
 
