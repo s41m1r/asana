@@ -14,11 +14,11 @@ public class MakeDiff {
 		String file2 = args[1];
 		
 		List<String[]> data1 = ReadInfoFromCSV.readAll(file1);
-		List<String[]> data2 = ReadInfoFromCSV.readAll(file2);
+		List<String[]> data2 = ReadInfoFromCSV.readAll(file2); 
 		
 		List<String[]> differences = makeDiff(data1, data2);
-		String[] header = StructuralDataChange.csvHeaderMappe1();
-		WriteUtils.writeList(differences, "differences.csv", header);
+		String[] header = StructuralDataChange.csvHeaderMappe2();
+		WriteUtils.writeList(differences, "differences_"+file1+"_vs_"+file2+".csv", header);
 	}
 
 	private static List<String[]> makeDiff(List<String[]> data1, List<String[]> data2) {

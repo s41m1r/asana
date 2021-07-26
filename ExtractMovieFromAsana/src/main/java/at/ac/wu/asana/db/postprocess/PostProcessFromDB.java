@@ -333,6 +333,8 @@ public class PostProcessFromDB {
 		manuallySetIgnore(uniqueEvents);
 
 		setCreateCircle(uniqueEvents);
+		
+//		changeNameToProviders(uniqueEvents);
 
 		//		printHistoryOfTask("11555199602323", allEventsNoDup);
 
@@ -355,6 +357,24 @@ public class PostProcessFromDB {
 
 		System.out.println("Done in "+(System.currentTimeMillis()-start)/1000+" sec.");
 		System.out.println("Wrote on file "+outfile);
+	}
+
+	private static void changeNameToProviders(List<StructuralDataChange> uniqueEvents) {
+		uniqueEvents.stream().filter(e -> e.getCircle().contains("☺ Providers Roles") ||
+				e.getCircle().contains("☺ Providers roles") ||
+				e.getCircleInheritedFromParent().contains("☺ Providers Roles") ||
+				e.getCircleInheritedFromParent().contains("☺ Providers Roles")).forEach(
+						e -> {
+							if(e.getCircle().contains("☺ Providers Roles"))
+								e.setCircle(e.getCircle().replace("☺ Providers Roles", "☺ Providers Roles 1"));
+							if(e.getCircle().contains("☺ Providers roles"))
+								e.setCircle(e.getCircle().replace("☺ Providers roles", "☺ Providers Roles 2"));
+							if(e.getCircleInheritedFromParent().contains("☺ Providers Roles"))
+								e.setCircleInheritedFromParent(e.getCircle().replace("☺ Providers Roles", "☺ Providers Roles 1"));
+							if(e.getCircleInheritedFromParent().contains("☺ Providers roles"))
+								e.setCircleInheritedFromParent(e.getCircle().replace("☺ Providers roles", "☺ Providers Roles 2"));
+						}
+						);
 	}
 
 	private static void setCreatorToDerivedEvents(Map<String, List<StructuralDataChange>> merge) {
