@@ -159,8 +159,8 @@ public class PostProcessFromDB {
 		String neverAssiButUnassign = "auxFiles/manuallyFixUnassigned.csv";
 		integrateManuallyAnnotatedCurrentAssignee(all, neverAssiButUnassign, true);	
 
-		System.out.println(getEventAt(all, "2014-04-01 12:13:04.089"));
-
+//		System.out.println(getEventAt(all, "2014-04-01 12:13:04.089"));
+		
 		//		List<String> downgradedRolesEvents = getIdsOfChildrenOlderThanFather(allParents,allChildren);		
 		//		fixDowngradedRoles(allParents, allChildren, downgradedRolesEvents);
 
@@ -315,7 +315,7 @@ public class PostProcessFromDB {
 		setIgnoreEvent(uniqueEvents);
 
 		setCompleteAsAlive(uniqueEvents);
-		setEventFromOrphan(uniqueEvents, allOrphanIds);
+//		setEventFromOrphan(uniqueEvents, allOrphanIds);
 		setOrphansToIgnore(uniqueEvents, allOrphanIds);
 		int c = setDynamicOrphanToIgnore(uniqueEvents);
 		log.info("Set "+c+" \"remove\" events from dyanamic orphan to "+AsanaActions.codeToString(AsanaActions.IGNORE_EVENT));
@@ -2279,14 +2279,19 @@ public class PostProcessFromDB {
 			}
 
 		}
-
-		System.out.println("Found "+orphans.size()+ " orphans");
+		
+		log.info("Found "+orphans.size()+ " orphans");
 
 		for (StructuralDataChange orphan : orphans) { // transfer
 			List<StructuralDataChange> history = allChildren.remove(orphan.getTaskId());
+			boolean seenAddedSubtask = false;
 			for (StructuralDataChange sdc : history) {
 				sdc.setParentTaskId("");
 				sdc.setParentTaskName("");
+				if(sdc.getRawDataText().startsWith("added subtask to task"))
+					seenAddedSubtask = true;
+				if(seenAddedSubtask)
+					sdc.setRawDataText(String.join(" ", "[EVENT FROM ORPHAN]",sdc.getRawDataText()));
 			}
 			allParents.put(orphan.getTaskId(), history);
 			allOrphanIds.add(orphan.getTaskId());
