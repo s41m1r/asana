@@ -82,7 +82,7 @@ public class PostProcessFromDB {
 
 		Map<String, List<StructuralDataChange>> allParents = getParents(); //23488
 		Map<String, List<StructuralDataChange>> allChildren = getChildren(); //39945
-
+	
 		Integer parentsSize = allParents.values().stream().mapToInt(List::size).sum();
 		Integer childrenSize = allChildren.values().stream().mapToInt(List::size).sum();
 
@@ -108,7 +108,7 @@ public class PostProcessFromDB {
 
 		int allSize = merge.values().stream().mapToInt(List::size).sum();
 		assertEquals(63433, allSize);
-
+		
 		// TODO: later
 		setCreatorToDerivedEvents(merge);
 
@@ -288,7 +288,7 @@ public class PostProcessFromDB {
 
 		setYinYangAsCircleChange(allEvents2);
 		//		manualFixCode17(allEventsNoDup);	
-
+		
 		allSize = allEvents2.values().stream().mapToInt(List::size).sum();
 		System.out.println("Size before remove dups: "+allSize);
 		List<StructuralDataChange> uniqueEvents = removeDups(allEvents2);	//there are 1850 duplicates
@@ -342,6 +342,8 @@ public class PostProcessFromDB {
 		//		WriteUtils.writeListOfChangesWithCircleToCSV(uniqueEvents, outfile);
 		allSize = uniqueEvents.size();
 		assertEquals(63433, allSize + 6732 + 1381 + removedCode14Events + lastModRemoved + 1800);
+		
+		setRuleAge(uniqueEvents);
 
 		outfile = outfile.replace("filtered", "Mappe1");
 		WriteUtils.writeMappeToCSV(uniqueEvents, outfile);
@@ -357,6 +359,18 @@ public class PostProcessFromDB {
 
 		System.out.println("Done in "+(System.currentTimeMillis()-start)/1000+" sec.");
 		System.out.println("Wrote on file "+outfile);
+	}
+
+	private static void setRuleAge(List<StructuralDataChange> uniqueEvents) {
+		Map<String, LocalDateTime> roleCreatedMap = new HashMap<String, LocalDateTime>();
+		for (StructuralDataChange e : uniqueEvents) {
+			if(e.getTypeOfChangeNew()==AsanaActions.CREATE_ROLE)
+				roleCreatedMap.put(e.getTaskId(), e.getStoryCreatedAt());
+			if(roleCreatedMap.containsKey(e.getTaskId())) {
+				e.setNewTaskCreatedAt(roleCreatedMap.get(e.getTaskId()));
+				e.setRuleAge(Duration.between(roleCreatedMap.get(e.getTaskId()), e.getStoryCreatedAt()));
+			}
+		}
 	}
 
 	private static void changeNameToProviders(List<StructuralDataChange> uniqueEvents) {
@@ -1030,7 +1044,7 @@ public class PostProcessFromDB {
 		for (String k : allEvents.keySet()) {
 			for(StructuralDataChange sdc : allEvents.get(k)) {
 				if(Timestamp.valueOf(sdc.getStoryCreatedAt()).toString().equals(searchTS)){
-					row = sdc.csvRowMappe1();
+					row = sdc.csvRowMappe2();
 				}
 			}
 		}

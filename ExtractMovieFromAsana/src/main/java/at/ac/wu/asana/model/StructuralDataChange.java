@@ -3,6 +3,7 @@ package at.ac.wu.asana.model;
 import java.nio.charset.StandardCharsets;
 import java.sql.Timestamp;
 import java.text.DateFormat;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Collection;
@@ -90,6 +91,9 @@ public class StructuralDataChange implements Comparable<StructuralDataChange> {
 	
 	private String circleInheritedFromParent;
 
+	private Duration ruleAge;
+
+	private LocalDateTime newTaskCreatedAt;
 
 	public StructuralDataChange() {
 	}
@@ -389,6 +393,8 @@ public class StructuralDataChange implements Comparable<StructuralDataChange> {
 				messageType,
 				storyCreatedAt.toLocalDate().toString(),
 				storyCreatedAt.toLocalTime().toString(),
+				((newTaskCreatedAt!= null)? newTaskCreatedAt.toString():""),
+				(ruleAge!=null)? ruleAge.toString(): "",
 				((taskCompletedAt!= null)? taskCompletedAt.toString():""),
 				((taskModifiedAt != null)? taskModifiedAt.toString(): ""),
 				taskNotes,
@@ -465,6 +471,14 @@ public class StructuralDataChange implements Comparable<StructuralDataChange> {
 		return modifiedAt;
 	}
 
+	public LocalDateTime getNewTaskCreatedAt() {
+		return newTaskCreatedAt;
+	}
+
+	public void setNewTaskCreatedAt(LocalDateTime newTaskCreatedAt) {
+		this.newTaskCreatedAt = newTaskCreatedAt;
+	}
+
 	public String getCircleIds() {
 		return circleIds;
 	}
@@ -526,6 +540,14 @@ public class StructuralDataChange implements Comparable<StructuralDataChange> {
 
 	public LocalDateTime getTaskCreatedAt() {
 		return taskCreatedAt;
+	}
+
+	public Duration getTaskAge() {
+		return ruleAge;
+	}
+
+	public void setRuleAge(Duration taskAge) {
+		this.ruleAge = taskAge;
 	}
 
 	public String getTaskId() {
@@ -1180,6 +1202,8 @@ public class StructuralDataChange implements Comparable<StructuralDataChange> {
 				"messageType",
 				"date",
 				"time",
+				"ruleCreatedAt", //new variable 
+				"taskAge",
 				"taskCompletedAt",
 				"taskModifiedAt",
 				"taskNotes",
@@ -1286,6 +1310,7 @@ public class StructuralDataChange implements Comparable<StructuralDataChange> {
 		sdc.isSubtask = Boolean.parseBoolean(row[21]);
 		sdc.isRenderedAsSeparator = Boolean.parseBoolean(row[22]);
 		sdc.parentTaskName = row[23].trim();
+		sdc.newTaskCreatedAt = LocalDateTime.from(sdc.taskCreatedAt);
 		sdc.taskCompletedAt = (!row[26].equals(""))? parseDateTime(row[26]):null;
 		sdc.taskModifiedAt = parseDateTime(row[27]);
 		sdc.taskNotes = row[28];
