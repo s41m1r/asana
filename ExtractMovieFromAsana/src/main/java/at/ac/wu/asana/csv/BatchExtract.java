@@ -3,11 +3,18 @@ package at.ac.wu.asana.csv;
 import com.asana.Client;
 import com.asana.models.Project;
 import com.asana.models.Workspace;
+import com.asana.requests.ItemRequest;
+import com.google.gson.JsonElement;
+import com.google.protobuf.Option;
+
 import scala.util.parsing.combinator.testing.Str;
 
 import java.io.IOException;
 import java.util.*;
+import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import org.omg.CORBA.TCKind;
 
 public class BatchExtract {
 
@@ -23,12 +30,12 @@ public class BatchExtract {
 
 
         List<String> gids = new ArrayList<String>();//ReadInfoFromCSV.getColumn(0, projectsFile);
-        List<String> projectNames = new ArrayList<String>();//ReadInfoFromCSV.getColumn(9, projectsFile);
+//        List<String> projectNames = new ArrayList<String>();//ReadInfoFromCSV.getColumn(9, projectsFile);
 
         for (String[] row: all
         ) {
             gids.add(row[0]);
-            projectNames.add(row[9]);
+//            projectNames.add(row[9]);
         }
 
 
@@ -59,12 +66,10 @@ public class BatchExtract {
     private static void computeTasksPerProject(Client client, String ws, List<String> gids, String outFile) {
 
         try {
-            String wsid = null;
             boolean found = false;
 
             for (Workspace w : client.workspaces.findAll()) {
                 if (w.name.equals(ws)) {
-                    wsid = w.gid;
                     found = true;
                     break;
                 }
@@ -74,18 +79,31 @@ public class BatchExtract {
                 logger.severe("Workspace not found.");
                 System.exit(-1);
             }
-            Workspace workspace = client.workspaces.findById(wsid).execute();
-
 
             Map<String, String> mapGidName = new HashMap<String, String>();
 
             LinkedHashMap<String, Integer> tasksPerProject = new LinkedHashMap<String, Integer>();
 
             for (String gid : gids) {
-                Project project = client.projects.findById(gid).execute();
-                logger.info("Found project: " + project.name);
-                logger.info("Retrieving all the tasks.");
-                Integer tCount = client.projects.getTaskCountsForProject(gid).execute().getAsNumber().intValue();
+            	Project project;
+            	try {
+            		project = client.projects.findById(gid).execute();
+            	}
+            	catch (com.asana.errors.NotFoundError e) {
+            		logger.log(Level.SEVERE, "Project not found for "+gid);
+            		continue;
+				}
+                
+                Integer tCount = 0;
+                ItemRequest<JsonElement> request = client.projects.getTaskCountsForProject(gid);
+                request.query.put("opt_fields", Arrays.asList(
+                		"num_tasks","num_incomplete_tasks","num_completed_tasks"));
+                JsonElement element = request.execute();
+                if(!element.isJsonNull())
+                	tCount = element.getAsJsonObject().get("num_tasks").getAsInt();
+                
+                logger.info("Found "+tCount+" tasks in project " + project.name);
+               
                 mapGidName.put(gid, project.name);
                 tasksPerProject.put(gid, tCount);
             }
