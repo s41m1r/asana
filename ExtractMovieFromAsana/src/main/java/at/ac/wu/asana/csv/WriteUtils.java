@@ -6,15 +6,12 @@ import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.TreeSet;
+import java.util.*;
 
 import com.opencsv.CSVWriter;
 
 import at.ac.wu.asana.model.StructuralDataChange;
+import scala.util.parsing.combinator.testing.Str;
 
 public abstract class WriteUtils {
 
@@ -299,7 +296,7 @@ public abstract class WriteUtils {
 	}
 
 	public static void writeList(List<String[]> list, String csv, String[] header) {
-		PrintWriter writer = null;	
+		PrintWriter writer = null;
 		try {
 			writer = new PrintWriter(
 					new OutputStreamWriter(
@@ -314,6 +311,26 @@ public abstract class WriteUtils {
 			e.printStackTrace();
 		}
 	}
-	
-	
+
+
+    public static void writeTaskCounts(Map<String, String> mapGidName, LinkedHashMap<String, Integer> tasksPerProject, String outFile) {
+		PrintWriter writer = null;
+		try {
+			writer = new PrintWriter(
+					new OutputStreamWriter(
+							new FileOutputStream(outFile), StandardCharsets.UTF_8));
+			CSVWriter csvWriter = new CSVWriter(writer);
+			String[] header = new String[]{"project id", "project name", "task count"};
+			csvWriter.writeNext(header);
+			for (String gid: tasksPerProject.keySet()) {
+				String[] row = new String[]{gid, mapGidName.get(gid), tasksPerProject.get(gid).toString()};
+				csvWriter.writeNext(row);
+			}
+			csvWriter.flush();
+			csvWriter.close();
+		}
+		catch (Exception e) {
+			e.printStackTrace();
+		}
+    }
 }

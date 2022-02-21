@@ -856,10 +856,10 @@ public class PostProcessFromDB {
 	/**
 	 * Rule: If rawDataText = removed from T and T is a task (no project, no circle),
 	 *  then code it as remove sub role
-	 * @param all
-	 * @param dictionary 
-	 * @param projects 
-	 * @param forceToChild 
+	 * @param //all
+	 * @param //dictionary
+	 * @param //projects
+	 * @param //forceToChild
 	 */
 	private static void setRemoveSubRole(Map<String, List<StructuralDataChange>> all, List<String> projects) {
 		for (String k : all.keySet()) {

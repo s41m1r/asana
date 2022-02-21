@@ -15,6 +15,7 @@ import java.util.Map;
 
 import com.google.common.collect.Lists;
 import com.opencsv.CSVReader;
+import com.opencsv.CSVReaderHeaderAware;
 import com.opencsv.exceptions.CsvException;
 import com.opencsv.exceptions.CsvValidationException;
 
@@ -191,9 +192,7 @@ public abstract class ReadInfoFromCSV {
 		}
 		return res;
 	}
-	
-	
-	
+
 	public static List<String[]> readAll(String filename){
 		List<String[]> res = new ArrayList<String[]>();
 		System.out.println("Reading file "+filename);
@@ -213,5 +212,6 @@ public abstract class ReadInfoFromCSV {
 		}
 		return res;
 	}
+
 	
 }
