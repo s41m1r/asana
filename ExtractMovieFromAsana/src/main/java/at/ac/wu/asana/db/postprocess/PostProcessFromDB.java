@@ -1,21 +1,15 @@
 package at.ac.wu.asana.db.postprocess;
 
-import at.ac.wu.asana.csv.ReadInfoFromCSV;
-import at.ac.wu.asana.csv.WriteUtils;
-import at.ac.wu.asana.db.io.ReadFromDB;
-import at.ac.wu.asana.db.postprocess.datastructures.AuthoritativeList;
-import at.ac.wu.asana.db.postprocess.datastructures.CircleTimeRange;
-import at.ac.wu.asana.db.postprocess.datastructures.TimestampCircle;
-import at.ac.wu.asana.model.AsanaActions;
-import at.ac.wu.asana.model.StructuralDataChange;
-import at.ac.wu.asana.util.GeneralUtils;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Sets;
-import com.opencsv.CSVReader;
-import com.opencsv.CSVWriter;
-import com.opencsv.exceptions.CsvException;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -27,13 +21,41 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
 import java.time.temporal.ChronoField;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.ListIterator;
+import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
+import java.util.Set;
+import java.util.TreeMap;
+import java.util.TreeSet;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
+import com.opencsv.CSVReader;
+import com.opencsv.CSVWriter;
+import com.opencsv.exceptions.CsvException;
+
+import at.ac.wu.asana.csv.ReadInfoFromCSV;
+import at.ac.wu.asana.csv.WriteUtils;
+import at.ac.wu.asana.db.io.ReadFromDB;
+import at.ac.wu.asana.db.postprocess.datastructures.AuthoritativeList;
+import at.ac.wu.asana.db.postprocess.datastructures.CircleTimeRange;
+import at.ac.wu.asana.db.postprocess.datastructures.TimestampCircle;
+import at.ac.wu.asana.model.AsanaActions;
+import at.ac.wu.asana.model.StructuralDataChange;
+import at.ac.wu.asana.util.GeneralUtils;
 
 public class PostProcessFromDB {
 
@@ -834,8 +856,10 @@ public class PostProcessFromDB {
 	/**
 	 * Rule: If rawDataText = removed from T and T is a task (no project, no circle),
 	 *  then code it as remove sub role
-	 * @param all
-	 * @param projects
+	 * @param //all
+	 * @param //dictionary
+	 * @param //projects
+	 * @param //forceToChild
 	 */
 	private static void setRemoveSubRole(Map<String, List<StructuralDataChange>> all, List<String> projects) {
 		for (String k : all.keySet()) {

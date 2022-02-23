@@ -362,7 +362,7 @@ public class ExtractStructuralDataChanges {
 		}
 	}
 
-	private static Options initOpts() {
+	static Options initOpts() {
 		Option csvOutFile   = new Option("csv", "csv", true, "use given file for csv logging");
 		Option pat = new Option("pat", "personalAccessToken", true, "use given personalAccessToken");
 		Option wspace = new Option("ws", "workspace", true, "use given workspace name");
@@ -650,7 +650,7 @@ public class ExtractStructuralDataChanges {
 		return String.format("%03d %02d:%02d:%02d.%03d [days h:m:s.msec]", day, hour, minute, second, elapsed%1000);
 	}
 
-	private static void extractTasksFromPID2(String pat, String ws, String csv, String pid, String r, Boolean ots,
+	public static void extractTasksFromPID2(String pat, String ws, String csv, String pid, String r, Boolean ots,
 			Boolean os) {
 
 		Client client = Client.accessToken(pat);
