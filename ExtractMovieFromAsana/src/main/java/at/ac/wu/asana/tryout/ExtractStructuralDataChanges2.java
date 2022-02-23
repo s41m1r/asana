@@ -1,5 +1,15 @@
 package at.ac.wu.asana.tryout;
 
+import at.ac.wu.asana.model.StructuralDataChange;
+import com.asana.Client;
+import com.asana.models.Project;
+import com.asana.models.Story;
+import com.asana.models.Task;
+import com.asana.models.Workspace;
+import com.asana.requests.CollectionRequest;
+import com.opencsv.CSVWriter;
+import org.apache.commons.cli.*;
+
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
@@ -11,23 +21,6 @@ import java.util.List;
 import java.util.logging.FileHandler;
 import java.util.logging.Logger;
 import java.util.logging.SimpleFormatter;
-
-import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.CommandLineParser;
-import org.apache.commons.cli.DefaultParser;
-import org.apache.commons.cli.Option;
-import org.apache.commons.cli.Options;
-import org.apache.commons.cli.ParseException;
-
-import com.asana.Client;
-import com.asana.models.Project;
-import com.asana.models.Story;
-import com.asana.models.Task;
-import com.asana.models.Workspace;
-import com.asana.requests.CollectionRequest;
-import com.opencsv.CSVWriter;
-
-import at.ac.wu.asana.model.StructuralDataChange;
 
 public class ExtractStructuralDataChanges2 {
 
@@ -121,7 +114,7 @@ public class ExtractStructuralDataChanges2 {
 			}
 		}
 
-		Iterable<Project> projects = client.projects.findByWorkspace(workspace.id);
+		Iterable<Project> projects = client.projects.findByWorkspace(workspace.gid);
 
 		try {
 			PrintWriter rolesFileWriter = new PrintWriter(
@@ -147,7 +140,7 @@ public class ExtractStructuralDataChanges2 {
 //				System.out.println("Found ("+project.name+")");
 				logger.info("Retrieving all the tasks and subtasks.");
 //				System.out.println("Retrieving all the tasks and subtasks.");
-				Iterable<Task> tasksIt = client.tasks.findByProject(project.id);
+				Iterable<Task> tasksIt = client.tasks.findByProject(project.gid);
 				List<Task> tasks = new ArrayList<Task>();
 				for (Task task : tasksIt) {
 					if(onlySmileys){
@@ -173,17 +166,17 @@ public class ExtractStructuralDataChanges2 {
 						if(!task.name.contains(specificTask))
 							continue;
 					}
-					CollectionRequest<Story> stories = client.stories.findByTask(task.id);
+					CollectionRequest<Story> stories = client.stories.findByTask(task.gid);
 //					System.out.println("Extracting stories (events) of "+task.name);
 					logger.info("Extracting stories (events) of "+task.name);
 					for (Story story : stories) {
 						try{
 							StructuralDataChange change = new StructuralDataChange(task, story, client.users.me().execute().name.trim());
-							change.setProjectId(project.id);
-							change.setWorkspaceId(workspace.id);
-							change.setProjectId(project.id);
+							change.setProjectId(project.gid);
+							change.setWorkspaceId(workspace.gid);
+							change.setProjectId(project.gid);
 							change.setProjectName(project.name);
-							change.setWorkspaceId(workspace.id);
+							change.setWorkspaceId(workspace.gid);
 							change.setWorkspaceName(workspace.name);
 							csvWriter.writeNext(change.csvRow());
 						}
@@ -224,7 +217,7 @@ public class ExtractStructuralDataChanges2 {
 		for (Task task : roots) {
 			List<Task> subtasks = null;
 			try {
-				subtasks = client.tasks.subtasks(task.id).execute();
+				subtasks = client.tasks.subtasks(task.gid).execute();
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -253,7 +246,7 @@ public class ExtractStructuralDataChanges2 {
 
 	public static void printTasks(List<Task> tasks){
 		for (Task task : tasks) {
-			System.out.println("Task id:\t"+task.id+ 
+			System.out.println("Task id:\t"+task.gid+
 					"\tname:"+task.name+
 					"\ttask.createdAt:"+task.createdAt + 
 					"\ttask.modifiedAt:"+task.modifiedAt + 
