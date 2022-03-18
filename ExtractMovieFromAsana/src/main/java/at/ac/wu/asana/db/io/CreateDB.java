@@ -9,7 +9,6 @@ import com.asana.models.Story;
 import com.asana.models.Task;
 import com.asana.models.Workspace;
 import com.asana.requests.CollectionRequest;
-import jdk.internal.org.jline.reader.impl.DefaultParser;
 import org.apache.commons.cli.*;
 import org.hibernate.SessionFactory;
 import org.hibernate.StatelessSession;
@@ -145,16 +144,16 @@ public class CreateDB {
 			}
 		}
 
-		System.out.println("Workspace id:"+workspace.id+ " name:"+ workspace.name);
+		System.out.println("Workspace id:"+workspace.gid+ " name:"+ workspace.name);
 
-		CollectionRequest<Project> projects = client.projects.findByWorkspace(workspace.id);
+		CollectionRequest<Project> projects = client.projects.findByWorkspace(workspace.gid);
 		Long pId = new Long(0);
 
 		for (Project project : projects) {
 
 			at.ac.wu.asana.db.model.Project dbProject = new at.ac.wu.asana.db.model.Project();
 			dbProject.id = pId++;
-			dbProject.workspaceId = workspace.id;
+			dbProject.workspaceId = workspace.gid;
 			dbProject.name = project.name;
 
 			session.insert(dbProject);
@@ -174,7 +173,7 @@ public class CreateDB {
 			}
 		}
 
-		Iterable<Project> projects = client.projects.findByWorkspace(workspace.id);
+		Iterable<Project> projects = client.projects.findByWorkspace(workspace.gid);
 
 
 		boolean foundSpecificProject = false;
@@ -191,7 +190,7 @@ public class CreateDB {
 			System.out.println("Found ("+project.name+")");
 			
 			at.ac.wu.asana.db.model.Project p = new at.ac.wu.asana.db.model.Project(project, pId);
-			p.workspaceId = workspace.id;
+			p.workspaceId = workspace.gid;
 			p.workspaceName = workspace.name;
 			
 			session.insert(p);
@@ -201,7 +200,7 @@ public class CreateDB {
 			System.out.println("Retrieving all the tasks and subtasks.");
 			List<Task> tasks;
 			try {
-				tasks = client.tasks.findByProject(project.id).execute();
+				tasks = client.tasks.findByProject(project.gid).execute();
 
 				List<Task> allTasksAndSubtasks = null;
 
@@ -222,16 +221,16 @@ public class CreateDB {
 
 					persistTask(task, p, session);
 					
-					CollectionRequest<Story> stories = client.stories.findByTask(task.id);
+					CollectionRequest<Story> stories = client.stories.findByTask(task.gid);
 					System.out.println("Extracting stories (events) of "+task.name);
 					
 					for (Story story : stories) {
 						StructuralDataChange change = new StructuralDataChange(task, story, client.users.me().execute().name.trim());
-						change.setProjectId(project.id);
-						change.setWorkspaceId(workspace.id);
-						change.setProjectId(project.id);
+						change.setProjectId(project.gid);
+						change.setWorkspaceId(workspace.gid);
+						change.setProjectId(project.gid);
 						change.setProjectName(project.name);
-						change.setWorkspaceId(workspace.id);
+						change.setWorkspaceId(workspace.gid);
 						change.setWorkspaceName(workspace.name);
 						
 						persistStory(change, task, client, session);
@@ -282,7 +281,7 @@ public class CreateDB {
 	private static void persistTask(Task task, at.ac.wu.asana.db.model.Project theProject, StatelessSession session) {
 		at.ac.wu.asana.db.model.Task t = new at.ac.wu.asana.db.model.Task();
 
-		t.asanaId = task.id;
+		t.asanaId = task.gid;
 		t.name = task.name;
 		
 		t.project = theProject;

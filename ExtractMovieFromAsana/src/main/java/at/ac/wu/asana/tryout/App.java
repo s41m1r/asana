@@ -1,31 +1,19 @@
 package at.ac.wu.asana.tryout;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
-import java.net.SocketTimeoutException;
-import java.sql.Timestamp;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.Iterator;
-import java.util.List;
-
-import org.hibernate.criterion.CountProjection;
-
 import com.asana.Client;
 import com.asana.models.Project;
 import com.asana.models.Story;
 import com.asana.models.Task;
 import com.asana.models.Workspace;
 import com.asana.requests.CollectionRequest;
-import com.google.api.client.util.Sleeper;
 import com.opencsv.CSVWriter;
+
+import java.io.*;
+import java.net.SocketTimeoutException;
+import java.sql.Timestamp;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 
 /**
  * APIs
@@ -148,10 +136,10 @@ public class App
 	private static void printStories(List<Story> stories, CSVWriter pr, String taskId, String taskName) {
 		for (Story story : stories) {
 			pr.writeNext(new String[]{
-					story.id,
+					story.gid,
 					story.type,
 					(new Timestamp(story.createdAt.getValue())).toString(),
-					story.createdBy.id,
+					story.createdBy.gid,
 					story.createdBy.name,
 					story.text,
 					taskId,
@@ -278,7 +266,7 @@ public class App
 	
 	public static void printTasks(List<Task> tasks, CSVWriter pr, String pid, String pname, boolean isSubtask){
 		for (Task task : tasks) {
-			pr.writeNext(new String[]{pid,pname,task.id,task.name,isSubtask+""});
+			pr.writeNext(new String[]{pid,pname,task.gid,task.name,isSubtask+""});
 //					+
 //					","+task.createdAt + 
 //					","+task.modifiedAt + 
@@ -304,9 +292,9 @@ public class App
 			}
 		}
 
-		System.out.println("Workspace id:"+workspace.id+ " name:"+ workspace.name);
+		System.out.println("Workspace id:"+workspace.gid+ " name:"+ workspace.name);
 
-		Iterable<Project> projects = client.projects.findByWorkspace(workspace.id);
+		Iterable<Project> projects = client.projects.findByWorkspace(workspace.gid);
 		int count=0;
 		Iterator<Project> it= projects.iterator();
 		try {
@@ -317,10 +305,10 @@ public class App
 			Character c = 9786; //smiley character
 			while (it.hasNext()) {
 				Project p = it.next();
-				pr.println(p.id);
+				pr.println(p.gid);
 				pr2.println(p.name);
 				if(p.name.contains(c+"")){
-					pr3.println(p.id+ ","+p.name);
+					pr3.println(p.gid+ ","+p.name);
 //					System.out.println(p.id);
 				}
 				count++;
@@ -355,9 +343,9 @@ public class App
 			}
 		}
 
-		System.out.println("Workspace id:"+workspace.id+ " name:"+ workspace.name);
+		System.out.println("Workspace id:"+workspace.gid+ " name:"+ workspace.name);
 
-		Iterable<Project> projects = client.projects.findByWorkspace(workspace.id);
+		Iterable<Project> projects = client.projects.findByWorkspace(workspace.gid);
 
 		Project theProject = null;
 
@@ -387,7 +375,7 @@ public class App
 
 			theProject = project;
 
-			CollectionRequest<Task> tasks = client.tasks.findByProject(theProject.id);
+			CollectionRequest<Task> tasks = client.tasks.findByProject(theProject.gid);
 
 			try {
 				PrintWriter rolesFileWriter = new PrintWriter(new FileOutputStream(
@@ -403,7 +391,7 @@ public class App
 					if(!task.name.contains("Rep Link (Organisations)"))
 						continue;
 
-					System.out.println("Task id:\t"+task.id+ 
+					System.out.println("Task id:\t"+task.gid+
 							"	 name:"+task.name+
 							"	 task.createdAt:"+task.createdAt + 
 							"	 task.modifiedAt:"+task.modifiedAt + 
@@ -419,7 +407,7 @@ public class App
 					//							"\ttask.completedAt:"+task.completedAt
 					//							);
 
-					CollectionRequest<Story> stories = client.stories.findByTask(task.id);
+					CollectionRequest<Story> stories = client.stories.findByTask(task.gid);
 					for (Story story : stories) {
 						String action = "";
 
@@ -445,7 +433,7 @@ public class App
 						//										"	 createdAt:"+ story.createdAt +
 						//										"	 createdBy:"+ story.createdBy.name
 						//										);
-						rolesFileWriter.println("Story id:"+story.id + 
+						rolesFileWriter.println("Story id:"+story.gid +
 								"\ttype:"+ story.type + 
 								"\ttext:"+ story.text +
 								"\tcreatedAt:"+ story.createdAt +
@@ -491,9 +479,9 @@ public class App
 			}
 		}
 
-		System.out.println("Workspace id:"+workspace.id+ " name:"+ workspace.name);
+		System.out.println("Workspace id:"+workspace.gid+ " name:"+ workspace.name);
 
-		Iterable<Project> projects = client.projects.findByWorkspace(workspace.id);
+		Iterable<Project> projects = client.projects.findByWorkspace(workspace.gid);
 
 		Project theProject = null;
 
@@ -515,14 +503,14 @@ public class App
 			theProject = project;
 			System.out.println("=== Circle (Project): "+theProject.name);
 
-			CollectionRequest<Task> taks = client.tasks.findByProject(theProject.id);
+			CollectionRequest<Task> taks = client.tasks.findByProject(theProject.gid);
 			//		CollectionRequest<Task> taks = client.tasks.findByProject("11351056125206");
 
 			for (Task task : taks) {
 				//			if(!task.name.contains("Rep Link (Org"))
 				//				continue;
 
-				System.out.println("Task id:\t"+task.id+ 
+				System.out.println("Task id:\t"+task.gid+
 						"\tname:"+task.name+
 						"\ttask.createdAt:"+task.createdAt + 
 						"\ttask.modifiedAt:"+task.modifiedAt + 
@@ -533,8 +521,8 @@ public class App
 						);
 
 				try {
-					for(Task t : client.tasks.subtasks(task.id).execute()){
-						System.out.println("Subtask id:\t"+t.id+ 
+					for(Task t : client.tasks.subtasks(task.gid).execute()){
+						System.out.println("Subtask id:\t"+t.gid+
 								"\tname:"+t.name+
 								"\ttask.createdAt:"+t.createdAt + 
 								"\ttask.modifiedAt:"+t.modifiedAt + 
@@ -543,10 +531,10 @@ public class App
 								"\ttask.completed:"+t.completed + 
 								"\ttask.parent:"+t.parent
 								);
-						CollectionRequest<Story> stories = client.stories.findByTask(t.id);
+						CollectionRequest<Story> stories = client.stories.findByTask(t.gid);
 
 						for (Story story : stories) {
-							System.out.println("****Story id:\t"+story.id + 
+							System.out.println("****Story id:\t"+story.gid +
 									"\ttype:"+ story.type + 
 									"\ttext:"+ story.text +
 									"\tcreatedAt:"+ story.createdAt +
@@ -562,9 +550,9 @@ public class App
 				}
 
 
-				CollectionRequest<Story> stories = client.stories.findByTask(task.id);
+				CollectionRequest<Story> stories = client.stories.findByTask(task.gid);
 				for (Story story : stories) {
-					System.out.println("Story id:\t"+story.id + 
+					System.out.println("Story id:\t"+story.gid +
 							"\ttype:"+ story.type + 
 							"\ttext:"+ story.text +
 							"\tcreatedAt:"+ story.createdAt +

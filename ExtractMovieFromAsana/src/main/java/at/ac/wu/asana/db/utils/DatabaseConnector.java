@@ -4,7 +4,6 @@ import org.hibernate.SessionFactory;
 import org.hibernate.boot.registry.StandardServiceRegistryBuilder;
 import org.hibernate.cfg.Configuration;
 import org.hibernate.service.ServiceRegistry;
-import org.hibernate.tool.hbm2ddl.SchemaUpdate;
 
 public class DatabaseConnector {
 	private static Configuration cfg = new Configuration().configure();
@@ -39,6 +38,6 @@ public class DatabaseConnector {
 	}
 
 	public static void synch(boolean sideEffectOnDatabase) {
-		new SchemaUpdate(cfg).execute(true, sideEffectOnDatabase);
+		//new SchemaUpdate(cfg).execute(true, sideEffectOnDatabase);
 	}
 }

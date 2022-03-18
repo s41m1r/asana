@@ -1,16 +1,15 @@
 package at.ac.wu.asana.tryout;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.List;
-
+import at.ac.wu.asana.csv.ExtractStructuralDataChanges;
 import com.asana.Client;
 import com.asana.models.Project;
 import com.asana.models.Workspace;
 import com.asana.requests.CollectionRequest;
 
-import at.ac.wu.asana.csv.ExtractStructuralDataChanges;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.List;
 
 public class DownloadAllCiclesAndSubcircles {
 	
@@ -49,7 +48,7 @@ public class DownloadAllCiclesAndSubcircles {
 			}
 		}
 		
-		CollectionRequest<com.asana.models.Project> projects =  client.projects.findByWorkspace(workspace.id).
+		CollectionRequest<com.asana.models.Project> projects =  client.projects.findByWorkspace(workspace.gid).
 				option("fields",
 				Arrays.asList(
 						"created_at", "name", "completed",

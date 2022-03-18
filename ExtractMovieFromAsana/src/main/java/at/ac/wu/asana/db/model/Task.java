@@ -1,15 +1,8 @@
 package at.ac.wu.asana.db.model;
 
+import javax.persistence.*;
 import java.util.ArrayList;
 import java.util.Collection;
-
-import javax.persistence.CascadeType;
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-import javax.persistence.ManyToOne;
-import javax.persistence.OneToMany;
 
 @Entity
 public class Task {
@@ -25,21 +18,21 @@ public class Task {
 	@ManyToOne
 	public Project project;
 	
-	@ManyToOne(optional=true)
+	@ManyToOne()
 	public Task parent;
 	
 	@OneToMany(mappedBy="task", cascade=CascadeType.ALL)
 	public Collection<Story> storyLines;
 	
 	public Task() {
-		storyLines = new ArrayList<Story>();
+		storyLines = new ArrayList<>();
 	}
 	
 	public Task(com.asana.models.Task apiTask) {
-		asanaId = apiTask.id;
+		asanaId = apiTask.gid;
 		name = apiTask.name;
 		
-		storyLines = new ArrayList<Story>();
+		storyLines = new ArrayList<>();
 	}
 	
 	
