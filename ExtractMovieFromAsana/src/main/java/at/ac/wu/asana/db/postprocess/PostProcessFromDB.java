@@ -1,15 +1,21 @@
 package at.ac.wu.asana.db.postprocess;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import at.ac.wu.asana.csv.ReadInfoFromCSV;
+import at.ac.wu.asana.csv.WriteUtils;
+import at.ac.wu.asana.db.io.ReadFromDB;
+import at.ac.wu.asana.db.postprocess.datastructures.AuthoritativeList;
+import at.ac.wu.asana.db.postprocess.datastructures.CircleTimeRange;
+import at.ac.wu.asana.db.postprocess.datastructures.TimestampCircle;
+import at.ac.wu.asana.model.AsanaActions;
+import at.ac.wu.asana.model.StructuralDataChange;
+import at.ac.wu.asana.util.GeneralUtils;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
+import com.opencsv.CSVReader;
+import com.opencsv.CSVWriter;
+import com.opencsv.exceptions.CsvException;
 
-import java.io.BufferedReader;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.OutputStreamWriter;
-import java.io.PrintWriter;
+import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -21,41 +27,13 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
 import java.time.temporal.ChronoField;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.ListIterator;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Optional;
-import java.util.Set;
-import java.util.TreeMap;
-import java.util.TreeSet;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
-import com.google.common.collect.Lists;
-import com.google.common.collect.Sets;
-import com.opencsv.CSVReader;
-import com.opencsv.CSVWriter;
-import com.opencsv.exceptions.CsvException;
-
-import at.ac.wu.asana.csv.ReadInfoFromCSV;
-import at.ac.wu.asana.csv.WriteUtils;
-import at.ac.wu.asana.db.io.ReadFromDB;
-import at.ac.wu.asana.db.postprocess.datastructures.AuthoritativeList;
-import at.ac.wu.asana.db.postprocess.datastructures.CircleTimeRange;
-import at.ac.wu.asana.db.postprocess.datastructures.TimestampCircle;
-import at.ac.wu.asana.model.AsanaActions;
-import at.ac.wu.asana.model.StructuralDataChange;
-import at.ac.wu.asana.util.GeneralUtils;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public class PostProcessFromDB {
 
@@ -207,9 +185,9 @@ public class PostProcessFromDB {
 		//				+ "Waldemar/Springest/Data/Data Extracted from DB/Dataset with Manually Extracted Users/"
 		//				+ "testing/subset-events"+VERSION+".csv");	
 
-		WriteUtils.writeMapWithDynamic(all, "/home/saimir/ownCloud/PhD/Collaborations/"
-				+ "Waldemar/Springest/Data/Data Extracted from DB/Dataset with Manually Extracted Users/"
-				+ "testing/out"+VERSION+".csv");
+//		WriteUtils.writeMapWithDynamic(all, "/home/saimir/ownCloud/PhD/Collaborations/"
+//				+ "Waldemar/Springest/Data/Data Extracted from DB/Dataset with Manually Extracted Users/"
+//				+ "testing/out"+VERSION+".csv");
 		//
 		//		WriteUtils.writeMap(matchedParents, "/home/saimir/ownCloud/PhD/Collaborations/" + 
 		//				"Waldemar/Springest/Data/Data Extracted from DB/Dataset with Manually Extracted Users/" + 
@@ -282,7 +260,8 @@ public class PostProcessFromDB {
 		
 	
 		fillCurrentAssignees(allEvents2);
-		
+
+		System.out.println(getSDCAt(allEvents2, "2016-01-21 09:07:39.728").getCurrentAssignee());
 		assertEquals("Debbie",getSDCAt(allEvents2, "2014-05-28 23:23:05.623").getCurrentAssignee());
 		assertEquals("Debbie",getSDCAt(allEvents2, "2014-06-02 16:14:01.558").getCurrentAssignee());
 
@@ -996,11 +975,12 @@ public class PostProcessFromDB {
 			Set<String> currentAssignees = new HashSet<String>();
 
 			for (StructuralDataChange sdc : allEventsNoDup.get(k)) {
-				if(k.equals("12685694210861"))
+				if(k.equals("80331055628436"))
 					System.out.println("fillCurrentAssignees debug");
 				if(!sdc.getRoleType().equals("accountability/purpose")) {
 					if(sdc.getTypeOfChangeOriginal()==AsanaActions.ASSIGN_TO_ACTOR) {
 						String assi = sdc.getCurrentAssignee();
+						currentAssignees.clear();
 						currentAssignees.add(assi.trim());
 					}
 
@@ -2384,9 +2364,7 @@ public class PostProcessFromDB {
 
 	private static void includeManuallyAnnotatedCreatedByName(Map<String, List<StructuralDataChange>> allEvents) {
 		// read list of userId, userName
-		String usersFile = "/home/saimir/ownCloud/PhD/Collaborations/Waldemar/Springest/Data/"
-				+ "Data Extracted from DB/extracted20201127-only-smooth-ops/Saimir-Manual-Annotation/"
-				+ "all-users-for-createdByName.csv";
+		String usersFile = "auxFiles/all-users-for-createdByName.csv";
 
 		List<String[]> users = readUsersFile(usersFile);
 

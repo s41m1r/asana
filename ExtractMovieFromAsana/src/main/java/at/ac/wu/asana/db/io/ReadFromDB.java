@@ -1,18 +1,16 @@
 package at.ac.wu.asana.db.io;
 
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-
+import at.ac.wu.asana.db.utils.DatabaseConnector;
+import at.ac.wu.asana.model.StructuralDataChange;
+import at.ac.wu.asana.util.GeneralUtils;
 import org.hibernate.Query;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 
-import at.ac.wu.asana.db.utils.DatabaseConnector;
-import at.ac.wu.asana.model.StructuralDataChange;
-import at.ac.wu.asana.util.GeneralUtils;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 public abstract class ReadFromDB {
 
@@ -194,7 +192,6 @@ public abstract class ReadFromDB {
 			allEvents.add(sdc);
 		}
 
-		session.flush();
 		session.close();
 		sf.close();
 
