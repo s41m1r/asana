@@ -5,16 +5,11 @@ import com.asana.models.Project;
 import com.asana.models.Workspace;
 import com.asana.requests.ItemRequest;
 import com.google.gson.JsonElement;
-import com.google.protobuf.Option;
-
-import scala.util.parsing.combinator.testing.Str;
 
 import java.io.IOException;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import org.omg.CORBA.TCKind;
 
 public class BatchExtract {
 
@@ -29,7 +24,7 @@ public class BatchExtract {
         List<String[]> all = ReadInfoFromCSV.readAll(projectsFile);
 
 
-        List<String> gids = new ArrayList<String>();//ReadInfoFromCSV.getColumn(0, projectsFile);
+        List<String> gids = new ArrayList<>();//ReadInfoFromCSV.getColumn(0, projectsFile);
 //        List<String> projectNames = new ArrayList<String>();//ReadInfoFromCSV.getColumn(9, projectsFile);
 
         for (String[] row: all
@@ -80,9 +75,9 @@ public class BatchExtract {
                 System.exit(-1);
             }
 
-            Map<String, String> mapGidName = new HashMap<String, String>();
+            Map<String, String> mapGidName = new HashMap<>();
 
-            LinkedHashMap<String, Integer> tasksPerProject = new LinkedHashMap<String, Integer>();
+            LinkedHashMap<String, Integer> tasksPerProject = new LinkedHashMap<>();
 
             for (String gid : gids) {
             	Project project;
@@ -94,7 +89,7 @@ public class BatchExtract {
             		continue;
 				}
                 
-                Integer tCount = 0;
+                int tCount = 0;
                 ItemRequest<JsonElement> request = client.projects.getTaskCountsForProject(gid);
                 request.query.put("opt_fields", Arrays.asList(
                 		"num_tasks","num_incomplete_tasks","num_completed_tasks"));
