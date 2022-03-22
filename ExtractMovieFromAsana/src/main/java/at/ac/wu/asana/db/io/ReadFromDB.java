@@ -124,11 +124,12 @@ public abstract class ReadFromDB {
 
 		List<StructuralDataChange> allEvents = new ArrayList<StructuralDataChange>();
 
-		Query queryEvents = session.createSQLQuery((sql!=null)? sql: ""
-				+ "SELECT * FROM `Springest`"
-				+ "ORDER BY taskId, `timestamp`, `parentTaskId`");
+//		Query queryEvents = session.createSQLQuery((sql!=null)? sql: ""
+//				+ "SELECT * FROM `Springest`"
+//				+ "ORDER BY taskId, `timestamp`, `parentTaskId`");
 
-		List<Object> results = queryEvents.list();
+		List<Object> results = null;
+//		results = queryEvents.list();
 		List<StructuralDataChange> changeEvents = new ArrayList<StructuralDataChange>();
 
 		for (Object e : results) {
@@ -153,8 +154,9 @@ public abstract class ReadFromDB {
 
 		List<StructuralDataChange> allEvents = new ArrayList<StructuralDataChange>();
 
-		Query queryEvents = session.createSQLQuery((sql!=null)? sql: ""
-				+ "SELECT * FROM `"+dbname+"`.SpringestRaw");
+		Query queryEvents = null;
+//		queryEvents = session.createSQLQuery((sql!=null)? sql: ""
+//				+ "SELECT * FROM `"+dbname+"`.SpringestRaw");
 
 		List<Object> results = queryEvents.list();
 
@@ -180,10 +182,11 @@ public abstract class ReadFromDB {
 
 		List<StructuralDataChange> allEvents = new ArrayList<StructuralDataChange>();
 
-		Query queryEvents = session.createSQLQuery((sql!=null)? sql: ""
-				+ "SELECT * FROM `"+dbname+"`.SpringestRaw");
+//		Query queryEvents = session.createSQLQuery((sql!=null)? sql: ""
+//				+ "SELECT * FROM `"+dbname+"`.SpringestRaw");
 
-		List<Object> results = queryEvents.list();
+		List<Object> results = null;
+		// results = queryEvents.list();
 
 		for (Object e : results) {
 			Object[] row = (Object[]) e;
