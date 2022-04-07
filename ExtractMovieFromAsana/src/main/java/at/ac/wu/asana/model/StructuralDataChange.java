@@ -1,5 +1,8 @@
 package at.ac.wu.asana.model;
 
+import com.asana.models.*;
+import com.google.api.client.util.DateTime;
+
 import java.nio.charset.StandardCharsets;
 import java.sql.Timestamp;
 import java.text.DateFormat;
@@ -8,14 +11,6 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Collection;
 import java.util.logging.Logger;
-
-import com.asana.models.Project;
-import com.asana.models.Story;
-import com.asana.models.Tag;
-import com.asana.models.Task;
-import com.asana.models.User;
-import com.asana.models.Workspace;
-import com.google.api.client.util.DateTime;
 
 public class StructuralDataChange implements Comparable<StructuralDataChange> {	
 
@@ -97,27 +92,6 @@ public class StructuralDataChange implements Comparable<StructuralDataChange> {
 
 	public StructuralDataChange() {
 	}
-
-	/**
-	 * 
-	 * @param task
-	 * @param story
-	 * @param me = client
-	 */
-	//	public StructuralDataChange(Task task, Story story, String me) {
-	//		storyCreatedAt = story.createdAt;
-	//		storyId = story.gid;
-	//		taskId = task.gid;
-	//		pathToHere = getPath(task);
-	//		setActionAndAssignee(story.text, story.type, me);
-	//		actor = story.createdBy.name;
-	//		isSubtask = (task.parent!=null);
-	//		taskName = task.name;
-	//		if(isSubtask)
-	//			parentTaskName = task.parent.name;
-	//		rawDataText = story.text;
-	//		setMessageType(story.type); 
-	//	}
 
 	public StructuralDataChange(Task task, DateTime eventTimestamp, int typeOfChange) {
 		DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSX");
@@ -844,7 +818,7 @@ public class StructuralDataChange implements Comparable<StructuralDataChange> {
 	}
 
 	public void setCurrentAssignee(String newAssignee) {
-		this.currentAssignee = newAssignee;
+		this.currentAssignee = ""+ newAssignee;
 	}
 
 	public void setNewAssignee(User assignee) {
@@ -1191,8 +1165,8 @@ public class StructuralDataChange implements Comparable<StructuralDataChange> {
 				"createdById",
 				"currentAssignee",
 				"currentAssigneeId",
-				"mergedCurrentAssignee",
 				"mergedCurrentAssigneeId",
+				"mergedCurrentAssignee",
 				"childName",
 				"grandChildName",
 				"circleInheritedFromParent",

@@ -183,10 +183,13 @@ public abstract class ReadFromDB {
 		List<StructuralDataChange> allEvents = new ArrayList<StructuralDataChange>();
 
 //		Query queryEvents = session.createSQLQuery((sql!=null)? sql: ""
-//				+ "SELECT * FROM `"+dbname+"`.SpringestRaw");
+//				+ "SELECT * FROM "+dbname+".SpringestRaw");
+
+		org.hibernate.query.Query queryEvents = session.createSQLQuery((sql!=null)? sql: ""
+				+ "SELECT * FROM "+dbname+".springestraw");
 
 		List<Object> results = null;
-		// results = queryEvents.list();
+		results = queryEvents.list();
 
 		for (Object e : results) {
 			Object[] row = (Object[]) e;
